@@ -593,3 +593,50 @@ class ExamsToFreq(Resource):
             return {'errMsg': 'generic error'}, 500
 
 
+# ------------- GET PROFESSORS -------------
+
+
+parser = api.parser()
+parser.add_argument('aaId', type=str, required=True, help='User stuId')
+parser.add_argument('cdsId', type=str, required=True, help='User pianoId')
+
+
+@ns.doc(parser=parser)
+class getProfessors(Resource):
+    def get(self, aaId, cdsId):
+        """Get professor's list"""
+
+        headers = {
+            'Content-Type': "application/json",
+        }
+
+        array = []
+
+        try:
+            response = requests.request("GET", url + "offerta-service-v1/offerte/" + aaId + "/" + cdsId + "/docentiPerUD", headers=headers)
+            _response = response.json()
+
+            if response.status_code == 200:
+                for i in range(0, len(_response)):
+                    item = ({
+                        'docenteNome': _response[i]['docenteNome'],
+                        'docenteCognome': _response[i]['docenteCognome'],
+                        'docenteId':_response[i]['docenteId'],
+                        'docenteMat': _response[i]['docenteMatricola'],
+                        'corso': _response[i]['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adDes'],
+                        'adId': _response[i]['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adId']
+                    })
+                    array.append(item)
+
+            return array
+
+        except requests.exceptions.HTTPError as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.ConnectionError as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.Timeout as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.RequestException as e:
+            return {'errMsg': e}, 500
+        except:
+            return {'errMsg': 'generic error'}, 500

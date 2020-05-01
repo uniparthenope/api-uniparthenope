@@ -7,7 +7,8 @@ url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('UniparthenopeApp', description='UniParthenope App operations')
 
 from app.apis.uniparthenope.v1.login_v1 import Login, Logout
-from app.apis.uniparthenope.v1.students_v1 import GetPianoId, GetAverage, GetTotalExams, GetExams, CheckExam, CheckAppello, CheckPrenotazione, getReservations, ExamsToFreq
+from app.apis.uniparthenope.v1.students_v1 import GetPianoId, GetAverage, GetTotalExams, GetExams, CheckExam, CheckAppello, CheckPrenotazione, getReservations, ExamsToFreq, getProfessors
+from app.apis.uniparthenope.v1.professor_v1 import getCourses
 
 ns.add_resource(Login, '/v1/login', methods=['GET'])
 ns.add_resource(Logout, '/v1/logout', methods=['GET'])
@@ -20,3 +21,7 @@ ns.add_resource(CheckAppello, '/v1/students/checkAppello/<cdsId>/<adId>', method
 ns.add_resource(CheckPrenotazione, '/v1/students/checkPrenotazione/<cdsId>/<adId>/<appId>/<stuId>', methods=['GET'])
 ns.add_resource(getReservations, '/v1/students/getReservations/<matId>', methods=['GET'])
 ns.add_resource(ExamsToFreq, '/v1/students/examsToFreq/<stuId>/<pianoId>/<matId>', methods=['GET'])
+ns.add_resource(getProfessors, '/v1/students/getProfessors/<aaId>/<cdsId>', methods=['GET'])
+
+
+ns.add_resource(getCourses, '/v1/professor/getCourses/<aaId>', methods=['GET'])
