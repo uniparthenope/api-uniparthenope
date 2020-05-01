@@ -1,0 +1,14 @@
+PyJWT
+ldap3
+flask==1.1.1
+flask-restplus==0.13.0
+flask-ext==0.1
+flask-sqlalchemy==2.4.1
+flask-pymongo==2.3.0
+pymongo==3.10.1
+wheel==0.34.1
+uwsgi==2.0.18
+requests==2.22.0
+config==0.4.2
+flask-migrate==2.5.2
+Werkzeug==0.16.1
