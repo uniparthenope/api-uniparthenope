@@ -12,3 +12,4 @@ requests==2.22.0
 config==0.4.2
 flask-migrate==2.5.2
 Werkzeug==0.16.1
+bs4==0.0.1
