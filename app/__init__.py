@@ -38,5 +38,5 @@ migrate = Migrate(app, db)
 from app.apis.auth import routes
 from app.apis.uniparthenope import routes
 from app.apis.ga_uniparthenope import routes
-from app.apis.ANM import routes
+from app.apis.bus import routes
 ### </routes> ###

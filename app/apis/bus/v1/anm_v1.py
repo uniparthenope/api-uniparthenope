@@ -2,12 +2,12 @@ from app import api
 from bs4 import BeautifulSoup
 from flask_restplus import Resource
 import urllib.request, urllib.error, urllib.parse
-from app.apis.ANM.bus import glob
+from app.apis.bus.bus import glob
 import requests
 
 ns = api.namespace('uniparthenope')
 
-# ------------- ANM SCHEDULE -------------
+# ------------- bus SCHEDULE -------------
 
 parser = api.parser()
 parser.add_argument('sede', type=str, required=True, help='')
@@ -16,7 +16,7 @@ parser.add_argument('sede', type=str, required=True, help='')
 @ns.doc(parser=parser)
 class ANMSchedule(Resource):
     def get(self, sede):
-        """ANM Schedule"""
+        """bus Schedule"""
 
         url_anm = "http://www.anm.it/infoclick/infoclick.php"
         array = []
@@ -96,7 +96,7 @@ class ANMSchedule(Resource):
             return {'errMsg': 'generic error'}, 500
 
 
-# ------------- ANM BUS -------------
+# ------------- bus BUS -------------
 
 parser = api.parser()
 parser.add_argument('sede', type=str, required=True, help='')
@@ -105,7 +105,7 @@ parser.add_argument('sede', type=str, required=True, help='')
 @ns.doc(parser=parser)
 class ANMBus(Resource):
     def get(self,sede):
-        """ANM Bus"""
+        """bus Bus"""
 
         url_anm = "http://www.anm.it/infoclick/infoclick.php"
         array = []
