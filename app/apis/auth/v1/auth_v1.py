@@ -43,6 +43,7 @@ def ldap_auth(user, passwd):
 
     return c.result
 
+
 def auth(token):
     result = {"status": "fail"}
     code = 401

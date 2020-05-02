@@ -31,6 +31,25 @@ def token_required(f):
     return decorated
 
 
+def token_required_general(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        if 'Authorization' in request.headers:
+            token = request.headers['Authorization']
+
+        if not token:
+            return {'message': 'Token is missing.'}, 401
+
+        g.token = token.split()[1]
+        status = auth(g.token)
+        g.status = status[1]
+
+        return f(*args, **kwargs)
+
+    return decorated
+
+
 def auth_token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
