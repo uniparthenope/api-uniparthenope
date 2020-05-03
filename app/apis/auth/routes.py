@@ -4,7 +4,7 @@ version = "1.0"
 ver = "v1"
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 
-ns = api.namespace('Auth', description='Authorization operations')
+ns = api.namespace('auth', description='Authorization operations')
 
 ##-----------------LOGIN------------------##
 from app.apis.auth.v1.auth_v1 import Login, Logout
