@@ -37,7 +37,6 @@ class CurrentAA(Resource):
         try:
             response = requests.request("GET", url + "calesa-service-v1/sessioni?cdsId=" + cdsId, headers=headers)
             _response = response.json()
-            print(response)
 
             date = datetime.today()
             curr_day = datetime(date.year, date.month, date.day)
@@ -58,10 +57,9 @@ class CurrentAA(Resource):
                         print("Oggi: " + str(curr_day))
 
                         curr_sem = _response[i]['des']
-
                         academic_year = str(_response[i]['aaSesId']) + " - " + str(_response[i]['aaSesId'] + 1)
 
-                        if curr_sem == "Sessione Estiva":
+                        if curr_sem == "Sessione Estiva" or curr_sem == "Sessione Anticipata" or curr_sem == "Sessione Straordinaria" :
                             return {
                                 'curr_sem': _response[i]['des'],
                                 'semestre': "Secondo Semestre",
