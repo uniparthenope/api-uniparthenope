@@ -3,6 +3,7 @@ from flask import g
 from app import api
 from flask_restplus import Resource
 import requests
+from datetime import datetime, timedelta
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
@@ -63,6 +64,49 @@ class getCourses(Resource):
                 return array
             else:
                 return {'errMsg': 'generic error'}, 500
+
+        except requests.exceptions.HTTPError as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.ConnectionError as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.Timeout as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.RequestException as e:
+            return {'errMsg': e}, 500
+        except:
+            return {'errMsg': 'generic error'}, 500
+
+
+# ------------- GET SESSION -------------
+class getSession(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required
+    def get(self):
+        """Get Session"""
+
+        try:
+            response = requests.request("GET", url + "calesa-service-v1/sessioni?order=-aaSesId")
+            today = (datetime.today() + timedelta(1*365/12))
+
+            if response.status_code is 200:
+                _response = response.json()
+
+                for i in range(0, len(_response)):
+
+                    inizio = datetime.strptime(_response[i]['dataInizio'], "%d/%m/%Y %H:%M:%S")
+                    fine = datetime.strptime(_response[i]['dataFine'], "%d/%m/%Y %H:%M:%S")
+                    if inizio <= datetime.today() <= fine:
+                        array = ({
+                            'aa_curr': str(inizio.year) + " - " + str(fine.year),
+                            'semId': _response[i]['sesId'],
+                            'semDes': _response[i]['des'],
+                            'aaId': _response[i]['aaSesId'],
+                        })
+
+                        if i > 0:
+                            break
+
+                return array, 200
 
         except requests.exceptions.HTTPError as e:
             return {'errMsg': e}, 500
