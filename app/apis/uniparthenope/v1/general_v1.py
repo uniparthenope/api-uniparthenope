@@ -35,16 +35,13 @@ class CurrentAA(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "calesa-service-v1/sessioni?cdsId=" + cdsId, headers=headers)
+            response = requests.request("GET", url + "calesa-service-v1/sessioni?cdsId=" + cdsId + "&order=-aaSesId", headers=headers)
             _response = response.json()
 
             date = datetime.today()
             curr_day = datetime(date.year, date.month, date.day)
 
-            max_year = 0
-            for i in range(0, len(_response)):
-                if _response[i]['aaSesId'] > max_year:
-                    max_year = _response[i]['aaSesId']
+            max_year = _response[0]['aaSesId']
 
             for i in range(0, len(_response)):
                 if _response[i]['aaSesId'] == max_year:
