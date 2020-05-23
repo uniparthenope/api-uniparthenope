@@ -214,14 +214,14 @@ class GetExams(Resource):
 
 parser = api.parser()
 parser.add_argument('matId', type=str, required=True, help='User matId')
-parser.add_argument('examId', type=str, required=True, help='User examId')
+parser.add_argument('adsceId', type=str, required=True, help='Exam adsceId')
 
 
 @ns.doc(parser=parser)
 class CheckExam(Resource):
     @ns.doc(security='Basic Auth')
     @token_required
-    def get(self, matId, examId):
+    def get(self, matId, adsceId):
         """Check passed exams"""
 
         headers = {
@@ -230,7 +230,7 @@ class CheckExam(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "libretto-service-v1/libretti/" + matId + "/righe/" + examId,
+            response = requests.request("GET", url + "libretto-service-v1/libretti/" + matId + "/righe/" + adsceId,
                                         headers=headers)
 
             if response.status_code == 500:
