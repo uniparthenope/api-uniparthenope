@@ -96,8 +96,9 @@ class getSession(Resource):
                     inizio = datetime.strptime(_response[i]['dataInizio'], "%d/%m/%Y %H:%M:%S")
                     fine = datetime.strptime(_response[i]['dataFine'], "%d/%m/%Y %H:%M:%S")
                     if inizio <= datetime.today() <= fine:
+
                         array = ({
-                            'aa_curr': str(inizio.year) + " - " + str(fine.year),
+                            'aa_curr': str(_response[i]['aaSesId']) + " - " + str(_response[i]['aaSesId']+1),
                             'semId': _response[i]['sesId'],
                             'semDes': _response[i]['des'],
                             'aaId': _response[i]['aaSesId'],
