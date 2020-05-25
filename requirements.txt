@@ -1,4 +1,3 @@
-PyJWT
 ldap3~=2.7
 flask==1.1.1
 flask-restplus==0.13.0
@@ -14,3 +13,4 @@ flask-migrate==2.5.2
 Werkzeug==0.16.1
 bs4==0.0.1
 beautifulsoup4~=4.9.0
+flask_qrcode==1.14.0
