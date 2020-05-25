@@ -1,12 +1,18 @@
-from bs4 import BeautifulSoup
-
-from app.apis.uniparthenope.v1.login_v1 import token_required
-from flask import g
-from app import api
-from flask_restplus import Resource
-import requests
+import urllib.error
+import urllib.parse
+import urllib.request
 from datetime import datetime
-import urllib.request, urllib.error, urllib.parse
+
+import requests
+from bs4 import BeautifulSoup
+from flask import g, send_file
+from flask_restplus import Resource
+from flask_qrcode import QRcode
+
+from app import api, app
+from app.apis.uniparthenope.v1.login_v1 import token_required
+
+qrcode = QRcode(app)
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
@@ -17,6 +23,23 @@ def extractData(data):
     export_data = datetime.strptime(data_split, '%d/%m/%Y')
 
     return export_data
+
+
+# ------------- QR-CODE -------------
+
+
+parser = api.parser()
+parser.add_argument('userId', type=str, required=True, help='User userId')
+
+
+class QrCode(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required
+    def get(self, userId):
+        """Get qr-code image"""
+
+        data = {'userId': userId}
+        return send_file(qrcode(data, mode="raw"), mimetype="image/png")
 
 
 # ------------- ANNO ACCADEMICO -------------

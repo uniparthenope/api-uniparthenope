@@ -1,5 +1,5 @@
 PyJWT
-ldap3
+ldap3~=2.7
 flask==1.1.1
 flask-restplus==0.13.0
 flask-ext==0.1
@@ -13,3 +13,4 @@ config==0.4.2
 flask-migrate==2.5.2
 Werkzeug==0.16.1
 bs4==0.0.1
+beautifulsoup4~=4.9.0

@@ -6,8 +6,8 @@ from flask_migrate import Migrate
 ### <database> ###
 SQLALCHEMY_DATABASE_URI = 'sqlite:///default.db'
 SQLALCHEMY_BINDS = {
+    'ga': 'sqlite:///apis/ga_uniparthenope/ga.db',
     'uniparthenope': 'sqlite:///apis/uniparthenope/uniparthenope.db',
-    'demo': 'sqlite:///apis/demo/demo.db'
     # Insert here your database
 }
 SQLALCHEMY_TRACK_MODIFICATIONS = False

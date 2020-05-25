@@ -9,7 +9,7 @@ ns = api.namespace('UniparthenopeApp', description='UniParthenope App operations
 from app.apis.uniparthenope.v1.login_v1 import Login, Logout
 from app.apis.uniparthenope.v1.students_v1 import GetPianoId, GetAverage, GetTotalExams, GetExams, CheckExam, CheckAppello, CheckPrenotazione, getReservations, ExamsToFreq, getProfessors
 from app.apis.uniparthenope.v1.professor_v1 import getCourses, getSession
-from app.apis.uniparthenope.v1.general_v1 import CurrentAA, RecentAD, InfoCourse, InfoPersone
+from app.apis.uniparthenope.v1.general_v1 import CurrentAA, RecentAD, InfoCourse, InfoPersone, QrCode
 
 ns.add_resource(Login, '/v1/login', methods=['GET'])
 ns.add_resource(Logout, '/v1/logout', methods=['GET'])
@@ -35,3 +35,4 @@ ns.add_resource(CurrentAA, '/v1/general/current_aa/<cdsId>', methods=['GET'])
 ns.add_resource(RecentAD, '/v1/general/recentAD/<adId>', methods=['GET'])
 ns.add_resource(InfoCourse, '/v1/general/infoCourse/<adLogId>', methods=['GET'])
 ns.add_resource(InfoPersone, '/v1/general/persone/<nome_completo>', methods=['GET'])
+ns.add_resource(QrCode, '/v1/general/qrCode/<userId>', methods=['GET'])
