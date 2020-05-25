@@ -4,6 +4,8 @@ import urllib.request
 from datetime import datetime
 from io import BytesIO
 import qrcode
+from PIL import Image
+import io
 
 import requests
 from bs4 import BeautifulSoup
@@ -23,6 +25,49 @@ def extractData(data):
     export_data = datetime.strptime(data_split, '%d/%m/%Y')
 
     return export_data
+
+
+# ------------- PERSONAL IMAGE -------------
+
+
+parser = api.parser()
+parser.add_argument('personId', type=int, required=True, help='User personId')
+
+
+class PersonalImage(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required
+    @ns.produces(['image/jpg'])
+    def get(self, personId):
+        """Get personale image"""
+
+        headers = {
+            'Content-Type': "application/json",
+            "Authorization": "Basic " + g.token
+        }
+
+        try:
+            res = requests.get(url + "anagrafica-service-v2/persone/" + personId + "/foto", headers=headers, stream=True)
+            if res.status_code == 200:
+                return send_file(
+                    io.BytesIO(res.content),
+                    attachment_filename='image.jpg',
+                    mimetype='image/jpg'
+                )
+            else:
+                _response = res.json()
+                return {'errMsg': _response["retErrMsg"]}, res.status_code
+
+        except requests.exceptions.HTTPError as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.ConnectionError as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.Timeout as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.RequestException as e:
+            return {'errMsg': e}, 500
+        except:
+            return {'errMsg': 'generic error'}, 500
 
 
 # ------------- QR-CODE -------------
