@@ -2,6 +2,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime
+from io import BytesIO
+import qrcode
 
 import requests
 from bs4 import BeautifulSoup
@@ -12,7 +14,6 @@ from flask_qrcode import QRcode
 from app import api, app
 from app.apis.uniparthenope.v1.login_v1 import token_required
 
-qrcode = QRcode(app)
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
@@ -35,11 +36,15 @@ parser.add_argument('userId', type=str, required=True, help='User userId')
 class QrCode(Resource):
     @ns.doc(security='Basic Auth')
     @token_required
+    @ns.produces(['image/png'])
     def get(self, userId):
         """Get qr-code image"""
 
-        data = {'userId': userId}
-        return send_file(qrcode(data, mode="raw"), mimetype="image/png")
+        pil_img = qrcode.make(userId)
+        img_io = BytesIO()
+        pil_img.save(img_io, 'PNG')
+        img_io.seek(0)
+        return send_file(img_io, mimetype='image/png')
 
 
 # ------------- ANNO ACCADEMICO -------------
