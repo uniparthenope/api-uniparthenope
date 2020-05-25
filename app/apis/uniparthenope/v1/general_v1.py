@@ -9,9 +9,8 @@ import requests
 from bs4 import BeautifulSoup
 from flask import g, send_file
 from flask_restplus import Resource
-from flask_qrcode import QRcode
 
-from app import api, app
+from app import api
 from app.apis.uniparthenope.v1.login_v1 import token_required
 
 
