@@ -9,7 +9,7 @@ import io
 
 import requests
 from bs4 import BeautifulSoup
-from flask import g, send_file
+from flask import g, send_file, Response
 from flask_restplus import Resource
 
 from app import api
@@ -80,7 +80,7 @@ parser.add_argument('userId', type=str, required=True, help='User userId')
 class QrCode(Resource):
     @ns.doc(security='Basic Auth')
     @token_required
-    @ns.produces(['image/png'])
+    @ns.produces(['image/jpg'])
     def get(self, userId):
         """Get qr-code image"""
 
@@ -88,7 +88,7 @@ class QrCode(Resource):
         img_io = BytesIO()
         pil_img.save(img_io, 'PNG')
         img_io.seek(0)
-        return send_file(img_io, mimetype='image/png')
+        return send_file(img_io, mimetype='image/jpg')
 
 
 # ------------- ANNO ACCADEMICO -------------
