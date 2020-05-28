@@ -7,6 +7,51 @@ import requests
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
 
+
+# ------------- DEPARTMENT INFO -------------
+parser = api.parser()
+parser.add_argument('stuId', type=str, required=True, help='User stuId')
+
+
+@ns.doc(parser=parser)
+class DepInfo(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required
+    def get(self, stuId):
+        """Get Department Information"""
+
+        headers = {
+            'Content-Type': "application/json",
+            "Authorization": "Basic " + g.token
+        }
+
+        try:
+            response = requests.request("GET", url + "anagrafica-service-v2/carriere/" + stuId, headers=headers)
+            _response = response.json()
+
+            #TODO Add search in GA table 'cdsId' and return GA id
+
+            return {'aaId': _response['aaId'],
+                    'dataIscr': _response['dataIscr'],
+                    'facCod': _response['facCod'],
+                    'facCsaCod': _response['facCsaCod'],
+                    'facDes': _response['facDes'],
+                    'sedeId': _response['sedeId'],
+                    'sediDes': _response['sediDes']
+                    }, 200
+
+        except requests.exceptions.HTTPError as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.ConnectionError as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.Timeout as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.RequestException as e:
+            return {'errMsg': e}, 500
+        except:
+            return {'errMsg': 'generic error'}, 500
+
+
 # ------------- PIANO ID -------------
 parser = api.parser()
 parser.add_argument('stuId', type=str, required=True, help='User stuId')

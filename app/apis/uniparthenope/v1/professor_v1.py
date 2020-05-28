@@ -8,6 +8,49 @@ from datetime import datetime, timedelta
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
 
+# ------------- DEPARTMENT INFO -------------
+parser = api.parser()
+parser.add_argument('docenteId', type=str, required=True, help='User docenteId')
+
+
+@ns.doc(parser=parser)
+class DetInfo(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required
+    def get(self, docenteId):
+        """Get Detailed Prof Information"""
+
+        headers = {
+            'Content-Type': "application/json",
+            "Authorization": "Basic " + g.token
+        }
+
+        try:
+            response = requests.request("GET", url + "anagrafica-service-v2/docenti/" + docenteId, headers=headers)
+            _response = response.json()
+
+            print(_response)
+
+            return {'settCod': _response[0]['settCod'],
+                    'ruoloDocCod': _response[0]['ruoloDocCod'],
+                    'docenteMatricola': _response[0]['docenteMatricola'],
+                    'facCod': _response[0]['facCod'],
+                    'facDes': _response[0]['facDes'],
+                    'facId': _response[0]['facId']
+                    }, 200
+
+        except requests.exceptions.HTTPError as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.ConnectionError as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.Timeout as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.RequestException as e:
+            return {'errMsg': e}, 500
+        except:
+            return {'errMsg': 'generic error'}, 500
+
+
 # ------------- GET COURSES -------------
 parser = api.parser()
 parser.add_argument('aaId', type=str, required=True, help='User aaId')
