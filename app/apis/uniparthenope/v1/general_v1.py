@@ -71,6 +71,48 @@ class PersonalImage(Resource):
             return {'errMsg': 'generic error'}, 500
 
 
+# ------------- PROFESSOR IMAGE -------------
+
+
+parser = api.parser()
+parser.add_argument('idAb', type=int, required=True, help='Professor idAb')
+
+
+class ProfImage(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    @ns.produces(['image/jpg'])
+    def get(self, idAb):
+        """Get personale image"""
+
+        if g.status == 200:
+            try:
+                res = requests.get("https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + idAb + ".jpg", stream=True)
+                if res.status_code == 200:
+                    return send_file(
+                        io.BytesIO(res.content),
+                        attachment_filename='image.jpg',
+                        mimetype='image/jpg',
+                        cache_timeout=-1
+                    )
+                else:
+                    _response = res.json()
+                    return {'errMsg': _response["retErrMsg"]}, res.status_code
+
+            except requests.exceptions.HTTPError as e:
+                return {'errMsg': e}, 500
+            except requests.exceptions.ConnectionError as e:
+                return {'errMsg': e}, 500
+            except requests.exceptions.Timeout as e:
+                return {'errMsg': e}, 500
+            except requests.exceptions.RequestException as e:
+                return {'errMsg': e}, 500
+            except:
+                return {'errMsg': 'generic error'}, 500
+        else:
+            return {'errMsg': 'Wring username/pass'}, g.status
+
+
 # ------------- QR-CODE -------------
 
 
