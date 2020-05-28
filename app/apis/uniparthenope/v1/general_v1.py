@@ -90,7 +90,7 @@ class QrCode(Resource):
                 img_io.seek(0)
                 return send_file(img_io, mimetype='image/png')
             except:
-                return {'errMsg': 'generic error'}, 500
+                return {'errMsg': 'Image creation error'}, 500
         else:
             return {'errMsg': 'generic error'}, g.status
 
