@@ -119,48 +119,51 @@ class ANMBus(Resource):
         url_anm = "http://www.anm.it/infoclick/infoclick.php"
         array = []
 
-        try:
-            page = urllib.request.urlopen(url_anm)
-            soup = BeautifulSoup(page, 'html.parser')
-            key = str(soup.find('script'))
-            start = key.find("'") + 1
-            end = key.find("'", start)
-            key_final = key[start:end]
+        if g.status == 200:
+            try:
+                page = urllib.request.urlopen(url_anm)
+                soup = BeautifulSoup(page, 'html.parser')
+                key = str(soup.find('script'))
+                start = key.find("'") + 1
+                end = key.find("'", start)
+                key_final = key[start:end]
 
-            for i in range(0, len(glob)):
-                if glob[i]['nome'] == sede:
-                    for j in range(0, len(glob[i]["info"])):
-                        array2 = []
-                        for k in range(0, len(glob[i]["info"][j])):
-                            print("PALINA = " + glob[i]["info"][j]["linea"][k]["palina"])
-                            data = {
-                                'linea': glob[i]["info"][j]["linea"][k]["bus"],
-                                'key': key_final
-                            }
+                for i in range(0, len(glob)):
+                    if glob[i]['nome'] == sede:
+                        for j in range(0, len(glob[i]["info"])):
+                            array2 = []
+                            for k in range(0, len(glob[i]["info"][j])):
+                                print("PALINA = " + glob[i]["info"][j]["linea"][k]["palina"])
+                                data = {
+                                    'linea': glob[i]["info"][j]["linea"][k]["bus"],
+                                    'key': key_final
+                                }
 
-                            r = requests.post("http://srv.anm.it/ServiceInfoAnmLinee.asmx/CaricaPosizioneVeicolo", json=data)
-                            response = r.json()
+                                r = requests.post("http://srv.anm.it/ServiceInfoAnmLinee.asmx/CaricaPosizioneVeicolo", json=data)
+                                response = r.json()
 
-                            if response["d"][0]["stato"] is None:
-                                pos_bus = []
-                                for x in range(0, len(response["d"])):
-                                    print(response["d"][x]["linea"])
-                                    item = ({
-                                        'lat': response["d"][x]["lat"],
-                                        'long': response["d"][x]["lon"]
-                                    })
-                                    pos_bus.append(item)
+                                if response["d"][0]["stato"] is None:
+                                    pos_bus = []
+                                    for x in range(0, len(response["d"])):
+                                        print(response["d"][x]["linea"])
+                                        item = ({
+                                            'lat': response["d"][x]["lat"],
+                                            'long': response["d"][x]["lon"]
+                                        })
+                                        pos_bus.append(item)
 
-                                item = ({'linea': glob[i]["info"][j]["linea"][k]["bus"],
-                                         'bus': pos_bus})
-                                array2.append(item)
+                                    item = ({'linea': glob[i]["info"][j]["linea"][k]["bus"],
+                                             'bus': pos_bus})
+                                    array2.append(item)
 
-                        item = ({'name': glob[i]["info"][j]["nome"],
-                                 'linea': array2})
-                        array.append(item)
-                    return array
+                            item = ({'name': glob[i]["info"][j]["nome"],
+                                     'linea': array2})
+                            array.append(item)
+                        return array
 
-                else:
-                    return {'errMsg': 'Impossibile recuperare informazioni Bus'}, 500
-        except:
-            return {'errMsg': 'generic error'}, 500
+                    else:
+                        return {'errMsg': 'Impossibile recuperare informazioni Bus'}, 500
+            except:
+                return {'errMsg': 'generic error'}, 500
+        else:
+            return {'errMsg': 'generic error'}, g.status

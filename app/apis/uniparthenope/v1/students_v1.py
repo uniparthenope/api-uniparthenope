@@ -1,4 +1,4 @@
-from app.apis.uniparthenope.v1.login_v1 import token_required
+from app.apis.uniparthenope.v1.login_v1 import token_required, token_required_general
 from flask import g
 from app import api
 from flask_restplus import Resource
@@ -648,6 +648,8 @@ parser.add_argument('cdsId', type=str, required=True, help='User pianoId')
 
 @ns.doc(parser=parser)
 class getProfessors(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
     def get(self, aaId, cdsId):
         """Get professor's list"""
 
@@ -657,31 +659,34 @@ class getProfessors(Resource):
 
         array = []
 
-        try:
-            response = requests.request("GET", url + "offerta-service-v1/offerte/" + aaId + "/" + cdsId + "/docentiPerUD", headers=headers)
-            _response = response.json()
+        if g.status == 200:
+            try:
+                response = requests.request("GET", url + "offerta-service-v1/offerte/" + aaId + "/" + cdsId + "/docentiPerUD", headers=headers)
+                _response = response.json()
 
-            if response.status_code == 200:
-                for i in range(0, len(_response)):
-                    item = ({
-                        'docenteNome': _response[i]['docenteNome'],
-                        'docenteCognome': _response[i]['docenteCognome'],
-                        'docenteId':_response[i]['docenteId'],
-                        'docenteMat': _response[i]['docenteMatricola'],
-                        'corso': _response[i]['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adDes'],
-                        'adId': _response[i]['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adId']
-                    })
-                    array.append(item)
+                if response.status_code == 200:
+                    for i in range(0, len(_response)):
+                        item = ({
+                            'docenteNome': _response[i]['docenteNome'],
+                            'docenteCognome': _response[i]['docenteCognome'],
+                            'docenteId':_response[i]['docenteId'],
+                            'docenteMat': _response[i]['docenteMatricola'],
+                            'corso': _response[i]['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adDes'],
+                            'adId': _response[i]['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adId']
+                        })
+                        array.append(item)
 
-            return array
+                return array
 
-        except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
-        except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
-        except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
-        except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
-        except:
-            return {'errMsg': 'generic error'}, 500
+            except requests.exceptions.HTTPError as e:
+                return {'errMsg': e}, 500
+            except requests.exceptions.ConnectionError as e:
+                return {'errMsg': e}, 500
+            except requests.exceptions.Timeout as e:
+                return {'errMsg': e}, 500
+            except requests.exceptions.RequestException as e:
+                return {'errMsg': e}, 500
+            except:
+                return {'errMsg': 'generic error'}, 500
+        else:
+            return {'errMsg': 'generic error'}, g.status

@@ -1,4 +1,4 @@
-from app.apis.uniparthenope.v1.login_v1 import token_required
+from app.apis.uniparthenope.v1.login_v1 import token_required, token_required_general
 from flask import g
 from app import api
 from flask_restplus import Resource
@@ -123,42 +123,45 @@ class getCourses(Resource):
 # ------------- GET SESSION -------------
 class getSession(Resource):
     @ns.doc(security='Basic Auth')
-    @token_required
+    @token_required_general
     def get(self):
         """Get Session"""
 
-        try:
-            response = requests.request("GET", url + "calesa-service-v1/sessioni?order=-aaSesId")
-            today = (datetime.today() + timedelta(1*365/12))
+        if g.status == 200:
+            try:
+                response = requests.request("GET", url + "calesa-service-v1/sessioni?order=-aaSesId")
+                today = (datetime.today() + timedelta(1*365/12))
 
-            if response.status_code is 200:
-                _response = response.json()
+                if response.status_code is 200:
+                    _response = response.json()
 
-                for i in range(0, len(_response)):
+                    for i in range(0, len(_response)):
 
-                    inizio = datetime.strptime(_response[i]['dataInizio'], "%d/%m/%Y %H:%M:%S")
-                    fine = datetime.strptime(_response[i]['dataFine'], "%d/%m/%Y %H:%M:%S")
-                    if inizio <= datetime.today() <= fine:
+                        inizio = datetime.strptime(_response[i]['dataInizio'], "%d/%m/%Y %H:%M:%S")
+                        fine = datetime.strptime(_response[i]['dataFine'], "%d/%m/%Y %H:%M:%S")
+                        if inizio <= datetime.today() <= fine:
 
-                        array = ({
-                            'aa_curr': str(_response[i]['aaSesId']) + " - " + str(_response[i]['aaSesId']+1),
-                            'semId': _response[i]['sesId'],
-                            'semDes': _response[i]['des'],
-                            'aaId': _response[i]['aaSesId'],
-                        })
+                            array = ({
+                                'aa_curr': str(_response[i]['aaSesId']) + " - " + str(_response[i]['aaSesId']+1),
+                                'semId': _response[i]['sesId'],
+                                'semDes': _response[i]['des'],
+                                'aaId': _response[i]['aaSesId'],
+                            })
 
-                        if i > 0:
-                            break
+                            if i > 0:
+                                break
 
-                return array, 200
+                    return array, 200
 
-        except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
-        except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
-        except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
-        except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
-        except:
-            return {'errMsg': 'generic error'}, 500
+            except requests.exceptions.HTTPError as e:
+                return {'errMsg': e}, 500
+            except requests.exceptions.ConnectionError as e:
+                return {'errMsg': e}, 500
+            except requests.exceptions.Timeout as e:
+                return {'errMsg': e}, 500
+            except requests.exceptions.RequestException as e:
+                return {'errMsg': e}, 500
+            except:
+                return {'errMsg': 'generic error'}, 500
+        else:
+            return {'errMsg': 'generic error'}, g.status
