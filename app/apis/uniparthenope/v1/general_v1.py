@@ -4,7 +4,6 @@ import urllib.request
 from datetime import datetime
 from io import BytesIO
 import qrcode
-from PIL import Image
 import io
 
 import requests
@@ -13,8 +12,7 @@ from flask import g, send_file, Response
 from flask_restplus import Resource
 
 from app import api
-from app.apis.uniparthenope.v1.login_v1 import token_required
-
+from app.apis.uniparthenope.v1.login_v1 import token_required, token_required_general
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
@@ -79,14 +77,14 @@ parser.add_argument('userId', type=str, required=True, help='User userId')
 
 class QrCode(Resource):
     @ns.doc(security='Basic Auth')
-    @token_required
+    @token_required_general
     @ns.produces(['image/jpg'])
     def get(self, userId):
         """Get qr-code image"""
 
         pil_img = qrcode.make(userId)
         img_io = BytesIO()
-        pil_img.save(img_io, 'PNG')
+        pil_img.save(img_io, 'JPG')
         img_io.seek(0)
         return send_file(img_io, mimetype='image/jpg')
 
@@ -258,7 +256,7 @@ parser.add_argument('nome_completo', type=str, required=True, help='Nome e Cogno
 
 class InfoPersone(Resource):
     @ns.doc(security='Basic Auth')
-    @token_required
+    @token_required_general
     def get(self,nome_completo):
         """Get info person"""
 
