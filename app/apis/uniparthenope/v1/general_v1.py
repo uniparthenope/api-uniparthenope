@@ -1,3 +1,4 @@
+import base64
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -8,7 +9,7 @@ import io
 
 import requests
 from bs4 import BeautifulSoup
-from flask import g, send_file, Response
+from flask import g, send_file, Response, request
 from flask_restplus import Resource
 
 from app import api
@@ -45,12 +46,14 @@ class PersonalImage(Resource):
         }
 
         try:
-            res = requests.get(url + "anagrafica-service-v2/persone/" + personId + "/foto", headers=headers, stream=True)
+            res = requests.get(url + "anagrafica-service-v2/persone/" + personId + "/foto", headers=headers,
+                               stream=True)
             if res.status_code == 200:
                 return send_file(
                     io.BytesIO(res.content),
                     attachment_filename='image.jpg',
-                    mimetype='image/jpg'
+                    mimetype='image/jpg',
+                    cache_timeout=-1
                 )
             else:
                 _response = res.json()
@@ -71,28 +74,30 @@ class PersonalImage(Resource):
 # ------------- QR-CODE -------------
 
 
-parser = api.parser()
-parser.add_argument('userId', type=str, required=True, help='User userId')
-
-
 class QrCode(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
     @ns.produces(['image/png'])
-    def get(self, userId):
+    def get(self):
         """Get qr-code image"""
 
         if g.status == 200:
             try:
+                base64_bytes = g.token.encode('utf-8')
+                message_bytes = base64.b64decode(base64_bytes)
+                token_string = message_bytes.decode('utf-8')
+                userId = token_string.split(':')[0]
+
                 pil_img = qrcode.make(userId)
                 img_io = BytesIO()
                 pil_img.save(img_io, 'PNG')
                 img_io.seek(0)
-                return send_file(img_io, mimetype='image/png')
+                return send_file(img_io, mimetype='image/png', cache_timeout=-1)
             except:
                 return {'errMsg': 'Image creation error'}, 500
+
         else:
-            return {'errMsg': 'generic error'}, g.status
+            return {'errMsg': 'Wring username/pass'}, g.status
 
 
 # ------------- ANNO ACCADEMICO -------------
@@ -114,7 +119,8 @@ class CurrentAA(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "calesa-service-v1/sessioni?cdsId=" + cdsId + "&order=-aaSesId", headers=headers)
+            response = requests.request("GET", url + "calesa-service-v1/sessioni?cdsId=" + cdsId + "&order=-aaSesId",
+                                        headers=headers)
             _response = response.json()
 
             date = datetime.today()
@@ -135,18 +141,18 @@ class CurrentAA(Resource):
                         curr_sem = _response[i]['des']
                         academic_year = str(_response[i]['aaSesId']) + " - " + str(_response[i]['aaSesId'] + 1)
 
-                        if curr_sem == "Sessione Estiva" or curr_sem == "Sessione Anticipata" or curr_sem == "Sessione Straordinaria" :
+                        if curr_sem == "Sessione Estiva" or curr_sem == "Sessione Anticipata" or curr_sem == "Sessione Straordinaria":
                             return {
-                                'curr_sem': _response[i]['des'],
-                                'semestre': "Secondo Semestre",
-                                'aa_accad': academic_year
-                            }, 200
+                                       'curr_sem': _response[i]['des'],
+                                       'semestre': "Secondo Semestre",
+                                       'aa_accad': academic_year
+                                   }, 200
                         else:
                             return {
-                                'curr_sem': _response[i]['des'],
-                                'semestre': "Primo Semestre",
-                                'aa_accad': academic_year
-                            }, 200
+                                       'curr_sem': _response[i]['des'],
+                                       'semestre': "Primo Semestre",
+                                       'aa_accad': academic_year
+                                   }, 200
 
         except requests.exceptions.HTTPError as e:
             return {'errMsg': e}, 500
@@ -190,10 +196,10 @@ class RecentAD(Resource):
                 for i in range(0, len(_response)):
                     if _response[i]['chiaveADFisica']['aaOffId'] == max_year:
                         return {'adLogId': _response[i]['chiavePartizione']['adLogId'],
-                                        'inizio': _response[i]['dataInizio'].split()[0],
-                                        'fine': _response[i]['dataFine'].split()[0],
-                                        'ultMod': _response[i]['dataModLog'].split()[0]
-                                        },200
+                                'inizio': _response[i]['dataInizio'].split()[0],
+                                'fine': _response[i]['dataFine'].split()[0],
+                                'ultMod': _response[i]['dataModLog'].split()[0]
+                                }, 200
             else:
                 return {'stsErr': "N"}, 500
 
@@ -228,18 +234,19 @@ class InfoCourse(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "logistica-service-v1/logistica/" + adLogId + "/adLogConSyllabus", headers=headers)
+            response = requests.request("GET", url + "logistica-service-v1/logistica/" + adLogId + "/adLogConSyllabus",
+                                        headers=headers)
             _response = response.json()
 
             if response.status_code == 200:
                 return {'contenuti': _response[0]['SyllabusAD'][0]['contenuti'],
-                            'metodi': _response[0]['SyllabusAD'][0]['metodiDidattici'],
-                            'verifica': _response[0]['SyllabusAD'][0]['modalitaVerificaApprendimento'],
-                            'obiettivi': _response[0]['SyllabusAD'][0]['obiettiviFormativi'],
-                            'prerequisiti': _response[0]['SyllabusAD'][0]['prerequisiti'],
-                            'testi': _response[0]['SyllabusAD'][0]['testiRiferimento'],
-                            'altro': _response[0]['SyllabusAD'][0]['altreInfo']
-                },200
+                        'metodi': _response[0]['SyllabusAD'][0]['metodiDidattici'],
+                        'verifica': _response[0]['SyllabusAD'][0]['modalitaVerificaApprendimento'],
+                        'obiettivi': _response[0]['SyllabusAD'][0]['obiettiviFormativi'],
+                        'prerequisiti': _response[0]['SyllabusAD'][0]['prerequisiti'],
+                        'testi': _response[0]['SyllabusAD'][0]['testiRiferimento'],
+                        'altro': _response[0]['SyllabusAD'][0]['altreInfo']
+                        }, 200
 
         except requests.exceptions.HTTPError as e:
             return {'errMsg': e}, 500
@@ -263,7 +270,7 @@ parser.add_argument('nome_completo', type=str, required=True, help='Nome e Cogno
 class InfoPersone(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
-    def get(self,nome_completo):
+    def get(self, nome_completo):
         """Get info person"""
 
         nome = nome_completo.replace(" ", "+")
@@ -301,17 +308,16 @@ class InfoPersone(Resource):
                     response = urllib.request.urlopen(link)
                     webContent = response.read()
 
-                    parsed = BeautifulSoup(webContent,'html.parser')
+                    parsed = BeautifulSoup(webContent, 'html.parser')
                     div = parsed.find('div', attrs={'class': 'views-field views-field-field-ugov-foto'})
                     img = div.find('img', attrs={'class': 'img-responsive'})
 
-
                     prof = ({
-                        'telefono' : str(tel_finale),
-                        'email' : str(email_finale.text.rstrip()),
-                        'link' : str(link),
-                        'ugov_id' : link_pers,
-                        'url_pic' : str(img['src'])
+                        'telefono': str(tel_finale),
+                        'email': str(email_finale.text.rstrip()),
+                        'link': str(link),
+                        'ugov_id': link_pers,
+                        'url_pic': str(img['src'])
                     })
                 else:
                     prof = ({
