@@ -2,12 +2,13 @@ from flask import Flask
 from flask_restplus import Api
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+import os
 
 ### <database> ###
-SQLALCHEMY_DATABASE_URI = 'sqlite:///default.db'
+SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'default.db')
 SQLALCHEMY_BINDS = {
-    'ga': 'sqlite:///apis/ga_uniparthenope/ga.db',
-    'uniparthenope': 'sqlite:///apis/uniparthenope/uniparthenope.db',
+    'ga': 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'apis/ga_uniparthenope/ga.db'),
+    'uniparthenope': 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'apis/uniparthenope/uniparthenope.db')
     # Insert here your database
 }
 SQLALCHEMY_TRACK_MODIFICATIONS = False
