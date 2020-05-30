@@ -1,10 +1,7 @@
-import base64
 import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime
-from io import BytesIO
-import qrcode
 import io
 
 import requests
@@ -109,35 +106,6 @@ class ProfImage(Resource):
                 return {'errMsg': e}, 500
             except:
                 return {'errMsg': 'generic error'}, 500
-        else:
-            return {'errMsg': 'Wring username/pass'}, g.status
-
-
-# ------------- QR-CODE -------------
-
-
-class QrCode(Resource):
-    @ns.doc(security='Basic Auth')
-    @token_required_general
-    @ns.produces(['image/png'])
-    def get(self):
-        """Get qr-code image"""
-
-        if g.status == 200:
-            try:
-                base64_bytes = g.token.encode('utf-8')
-                message_bytes = base64.b64decode(base64_bytes)
-                token_string = message_bytes.decode('utf-8')
-                userId = token_string.split(':')[0]
-
-                pil_img = qrcode.make(userId)
-                img_io = BytesIO()
-                pil_img.save(img_io, 'PNG')
-                img_io.seek(0)
-                return send_file(img_io, mimetype='image/png', cache_timeout=-1)
-            except:
-                return {'errMsg': 'Image creation error'}, 500
-
         else:
             return {'errMsg': 'Wring username/pass'}, g.status
 

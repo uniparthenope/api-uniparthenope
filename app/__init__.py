@@ -8,7 +8,8 @@ import os
 SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'default.db')
 SQLALCHEMY_BINDS = {
     'ga': 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'apis/ga_uniparthenope/ga.db'),
-    'uniparthenope': 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'apis/uniparthenope/uniparthenope.db')
+    'uniparthenope': 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'apis/uniparthenope/uniparthenope.db'),
+    'badges': 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'apis/badges/badges.db')
     # Insert here your database
 }
 SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -40,4 +41,5 @@ from app.apis.auth import routes
 from app.apis.uniparthenope import routes
 from app.apis.ga_uniparthenope import routes
 from app.apis.bus import routes
+from app.apis.badges import routes
 ### </routes> ###
