@@ -5,9 +5,9 @@ from datetime import datetime, timedelta
 import random, string
 
 from flask import g, send_file, Response, request
-from flask_restplus import Resource
+from flask_restplus import Resource, fields
 
-from app import api
+from app import api, db
 from app.apis.uniparthenope.v1.login_v1 import token_required_general
 from app.apis.badges.models import Badges
 
@@ -39,11 +39,15 @@ class QrCode(Resource):
 
                 token_qr = userId + ":" + randomword(30)
                 print(token_qr)
-                token_qr_final = base64.b64encode(bytes(str(token_qr).encode("utf-8")))
+                token_qr_final = (base64.b64encode(bytes(str(token_qr).encode("utf-8")))).decode('utf-8')
                 print(token_qr_final)
 
                 expire_data = datetime.now() + timedelta(minutes=1)
                 print(expire_data)
+
+                badge = Badges(token=token_qr_final, expire_time=expire_data)
+                db.session.add(badge)
+                db.session.commit()
 
                 pil_img = qrcode.make(token_qr_final)
                 img_io = BytesIO()
@@ -54,4 +58,37 @@ class QrCode(Resource):
                 return {'errMsg': 'Image creation error'}, 500
 
         else:
-            return {'errMsg': 'Wring username/pass'}, g.status
+            return {'errMsg': 'Wrong username/pass'}, g.status
+
+
+# ------------- QR-CODE CHECK -------------
+
+
+insert_token = ns.model("Token", {"token": fields.String(description="token", required=True)})
+
+class QrCodeCheck(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    @ns.expect(insert_token)
+    def post(self):
+        """Check QrCode"""
+        content = request.json
+
+        if g.status == 200:
+            if 'token' in content:
+                print(content['token'])
+                b = Badges.query.all()
+                print(b)
+                badge = Badges.query.filter_by(token=content['token']).first()
+                print(badge)
+                if badge is not None:
+                    if datetime.now() < badge.expire_time:
+                        return {'status': 'Ok'}, 200
+                    else:
+                        return {'status': 'error', 'errMsg': 'Token expired!'}, 500
+                else:
+                    return {'status': 'error', 'errMsg': 'Token error'}, 500
+            else:
+                return {'errMsg': 'Error payload'}, 500
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
