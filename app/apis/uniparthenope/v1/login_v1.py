@@ -6,8 +6,7 @@ import base64
 from ldap3 import Server, Connection, ALL
 from functools import wraps
 
-# import jwt
-# import datetime
+from app.apis.ga_uniparthenope.models import Building
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
@@ -110,8 +109,26 @@ def auth(token):
             return {'errMsg': "Server down!"}, 503
 
         elif response.status_code == 200:
-            _response = response.json()
-            return _response, 200
+            r = response.json()
+
+            if r['user']['grpDes'] == "Docenti":
+                return r
+
+            else:
+                for i in range(0, len(r['user']['trattiCarriera'])):
+                    id = Building.query.filter_by(id_corso=r['user']['trattiCarriera'][i]['cdsId']).first()
+                    if id is not None:
+                        r["user"]["trattiCarriera"][i]["strutturaDes"] = id.struttura_des
+                        r["user"]["trattiCarriera"][i]["strutturaId"] = id.struttura_id
+                        r["user"]["trattiCarriera"][i]["strutturaGaId"] = id.struttura_ga_id
+                        r["user"]["trattiCarriera"][i]["corsoGaId"] = id.corso_ga_id
+                    else:
+                        r["user"]["trattiCarriera"][i]["strutturaDes"] = ""
+                        r["user"]["trattiCarriera"][i]["strutturaId"] = ""
+                        r["user"]["trattiCarriera"][i]["strutturaGaId"] = ""
+                        r["user"]["trattiCarriera"][i]["corsoGaId"] = ""
+
+                return r, 200
 
     except requests.exceptions.Timeout as e:
         print(e)
