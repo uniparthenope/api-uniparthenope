@@ -476,24 +476,25 @@ class getReservations(Resource):
 
                 for x in range(0, len(_response2['turni'])):
                     if _response2['turni'][x]['appLogId'] == _response[i]['appLogId']:
-                        item = ({
-                            'nome_pres': _response2['presidenteNome'],
-                            'cognome_pres': _response2['presidenteCognome'],
-                            'numIscritti': _response2['numIscritti'],
-                            'note': _response2['note'],
-                            'statoDes': _response2['statoDes'],
-                            'statoEsito': _response2['statoInsEsiti']['value'],
-                            'statoVerb': _response2['statoVerb']['value'],
-                            'statoPubbl': _response2['statoPubblEsiti']['value'],
-                            'tipoApp': _response2['tipoGestAppDes'],
-                            'aulaId': _response2['turni'][x]['aulaId'],
-                            'edificioId': _response2['turni'][x]['edificioCod'],
-                            'edificioDes': _response2['turni'][x]['edificioDes'],
-                            'aulaDes': _response2['turni'][x]['aulaDes'],
-                            'desApp': _response2['turni'][x]['des'],
-                            'dataEsa': _response2['turni'][x]['dataOraEsa']
-                        })
-                        array.append(item)
+                        if _response2['stato'] is not "C":
+                            item = ({
+                                'nome_pres': _response2['presidenteNome'],
+                                'cognome_pres': _response2['presidenteCognome'],
+                                'numIscritti': _response2['numIscritti'],
+                                'note': _response2['note'],
+                                'statoDes': _response2['statoDes'],
+                                'statoEsito': _response2['statoInsEsiti']['value'],
+                                'statoVerb': _response2['statoVerb']['value'],
+                                'statoPubbl': _response2['statoPubblEsiti']['value'],
+                                'tipoApp': _response2['tipoGestAppDes'],
+                                'aulaId': _response2['turni'][x]['aulaId'],
+                                'edificioId': _response2['turni'][x]['edificioCod'],
+                                'edificioDes': _response2['turni'][x]['edificioDes'],
+                                'aulaDes': _response2['turni'][x]['aulaDes'],
+                                'desApp': _response2['turni'][x]['des'],
+                                'dataEsa': _response2['turni'][x]['dataOraEsa']
+                            })
+                            array.append(item)
 
             return array
         except requests.exceptions.HTTPError as e:
