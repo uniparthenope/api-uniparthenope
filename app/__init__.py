@@ -7,6 +7,7 @@ import os
 ### <database> ###
 SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'default.db')
 SQLALCHEMY_BINDS = {
+    'eating': 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'apis/eating/eating.db'),
     'ga': 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'apis/ga_uniparthenope/ga.db'),
     'uniparthenope': 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'apis/uniparthenope/uniparthenope.db'),
     'badges': 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'apis/badges/badges.db')
@@ -42,4 +43,5 @@ from app.apis.uniparthenope import routes
 from app.apis.ga_uniparthenope import routes
 from app.apis.bus import routes
 from app.apis.badges import routes
+from app.apis.eating import routes
 ### </routes> ###

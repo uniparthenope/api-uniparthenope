@@ -2,15 +2,16 @@ from app import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
-'''
-class User(db.Model):
-    __bind_key__ = 'uniparthenope'
+
+class UserFood(db.Model):
+    __bind_key__ = 'eating'
     id = db.Column(db.Integer, primary_key=True)
     token = db.Column(db.String(80), index=True, unique=True)
     username = db.Column(db.String(64), index=True, unique=True)
     email = db.Column(db.String(120), index=True, unique=True)
     password_hash = db.Column(db.String(128))
     nome_bar = db.Column(db.String(120), index=True, unique=True)
+    foods = db.relationship('Food', backref='user')
 
     def __repr__(self):
         return '<User {}>'.format(self.username) + '<Id {}>'.format(self.id) + '<Email {}>'.format(
@@ -24,7 +25,7 @@ class User(db.Model):
 
 
 class Food(db.Model):
-    __bind_key__ = 'uniparthenope'
+    __bind_key__ = 'eating'
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(120))
     image = db.Column(db.BLOB)
@@ -37,4 +38,3 @@ class Food(db.Model):
 
     def __repr__(self):
         return '<Primo piatto {}>'.format(self.nome) + '<Id {}>'.format(self.id)
-'''

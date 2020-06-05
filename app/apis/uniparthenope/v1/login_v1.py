@@ -112,7 +112,7 @@ def auth(token):
             r = response.json()
 
             if r['user']['grpDes'] == "Docenti":
-                return r
+                return r, 200
 
             else:
                 for i in range(0, len(r['user']['trattiCarriera'])):
