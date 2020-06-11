@@ -85,7 +85,7 @@ class getToday(Resource):
     @token_required_general
     def get(self):
         """Get Menu Today"""
-        if g.status == 200:
+        if g.status == 200 or g.status == 202:
             array = []
             today = datetime.today()
 
@@ -151,17 +151,15 @@ class addMenu(Resource):
                 u = UserFood.query.filter_by(username=userId).first()
 
                 try:
-                    '''
                     if content['img'] != "":
-                        image_data = file['file']
+                        image_data = content['img']
                         image_data = bytes(image_data, encoding="ascii")
                     else:
                         image_data = None
-                    '''
 
-                    # u.roles.append(Food(nome=content['nome'], descrizione=content['descrizione'], tipologia=content['tipologia'], prezzo = content['prezzo'], sempre_attivo=content['attivo'], image=image_data))
-                    # db.session.add(u)
-                    # db.session.commit()
+                    u.foods.append(Food(nome=content['nome'], descrizione=content['descrizione'], tipologia=content['tipologia'], prezzo = content['prezzo'], sempre_attivo=content['attivo'], image=image_data))
+                    db.session.add(u)
+                    db.session.commit()
 
                     return {'message': 'Added new menu'}, 200
                 except:
