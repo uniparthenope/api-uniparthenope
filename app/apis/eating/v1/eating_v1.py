@@ -150,20 +150,18 @@ class addMenu(Resource):
 
                 u = UserFood.query.filter_by(username=userId).first()
 
-                try:
-                    if content['img'] != "":
-                        image_data = content['img']
-                        image_data = bytes(image_data, encoding="ascii")
-                    else:
-                        image_data = None
+                if content['img'] != "":
+                    image_data = content['img']
+                    image_data = bytes(image_data, encoding="ascii")
+                else:
+                    image_data = None
 
-                    u.foods.append(Food(nome=content['nome'], descrizione=content['descrizione'], tipologia=content['tipologia'], prezzo = content['prezzo'], sempre_attivo=content['attivo'], image=image_data))
-                    db.session.add(u)
-                    db.session.commit()
+                u.foods.append(Food(nome=content['nome'], descrizione=content['descrizione'], tipologia=content['tipologia'], prezzo = content['prezzo'], sempre_attivo=content['attivo'], image=image_data))
+                db.session.add(u)
+                db.session.commit()
 
-                    return {'message': 'Added new menu'}, 200
-                except:
-                    return {'errMsg': 'Insert error in DB!'}, 500
+                return {'message': 'Added new menu'}, 200
+
 
             else:
                 return {'errMsg': 'Missing values'}, 500
