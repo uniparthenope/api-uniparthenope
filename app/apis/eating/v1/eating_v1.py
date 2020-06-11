@@ -123,7 +123,7 @@ menu = ns.model("user credentials",{
                     "tipologia": fields.String(description="tipologia (Primo, Secondo...)", required=True),
                     "prezzo": fields.Integer(description="prezzo", required=True),
                     "attivo": fields.Boolean(description="se il menu resta più giorni attivo", required=True),
-                    "img" : fields.String(description="image", required=True)
+                    "img": fields.String(description="image", required=True)
                 })
 
 #file_upload.add_argument('file', type=FileStorage, location='files', required=False, help='file')
@@ -142,7 +142,7 @@ class addMenu(Resource):
         content = request.json
 
         if g.status == 202:
-            if 'nome' in content and 'descrizione' in content and 'tipologia' in content and 'prezzo' in content and 'attivo' in content:
+            if 'nome' in content and 'descrizione' in content and 'tipologia' in content and 'prezzo' in content and 'attivo' in content and 'img' in content:
                 base64_bytes = g.token.encode('utf-8')
                 message_bytes = base64.b64decode(base64_bytes)
                 token_string = message_bytes.decode('utf-8')
