@@ -140,7 +140,6 @@ class addMenu(Resource):
         '''
 
         content = request.json
-        print(content)
 
         if g.status == 202:
             if 'nome' in content and 'descrizione' in content and 'tipologia' in content and 'prezzo' in content and 'attivo' in content and 'img' in content:
@@ -148,8 +147,6 @@ class addMenu(Resource):
                 message_bytes = base64.b64decode(base64_bytes)
                 token_string = message_bytes.decode('utf-8')
                 userId = token_string.split(':')[0]
-
-                print("QUI")
 
                 u = UserFood.query.filter_by(username=userId).first()
 
