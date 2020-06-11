@@ -116,32 +116,30 @@ class getToday(Resource):
 
 
 # ------------- ADD NEW MENU -------------
-file_upload = reqparse.RequestParser()
+#file_upload = reqparse.RequestParser()
 menu = ns.model("user credentials",{
                     "nome": fields.String(description="nome menu", required=True),
                     "descrizione": fields.String(description="descrizione menu", required=True),
                     "tipologia": fields.String(description="tipologia (Primo, Secondo...)", required=True),
                     "prezzo": fields.Integer(description="prezzo", required=True),
                     "attivo": fields.Boolean(description="se il menu resta più giorni attivo", required=True),
+                    "img" : fields.String(description="image", required=True)
                 })
 
-file_upload.add_argument('file',
-                         type=FileStorage,
-                         location='files',
-                         required=False,
-                         help='file')
+#file_upload.add_argument('file', type=FileStorage, location='files', required=False, help='file')
 
 class addMenu(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
-    @api.expect(file_upload, menu)
+    @api.expect(menu)
     def post(self):
         """Add new menu"""
+        '''
         content = request.data.decode()
         print(content)
+        '''
 
-        file = file_upload.parse_args()
-        print(file)
+        content = request.json
 
         if g.status == 202:
             if 'nome' in content and 'descrizione' in content and 'tipologia' in content and 'prezzo' in content and 'attivo' in content:
@@ -154,18 +152,12 @@ class addMenu(Resource):
 
                 try:
                     '''
-                    upload_args = file_upload.parse_args()
-                    file = upload_args['file']
-                    print(file)
-                    
                     if content['img'] != "":
-                        image_data = content['img']
+                        image_data = file['file']
                         image_data = bytes(image_data, encoding="ascii")
                     else:
                         image_data = None
                     '''
-
-                    # image_data = None
 
                     # u.roles.append(Food(nome=content['nome'], descrizione=content['descrizione'], tipologia=content['tipologia'], prezzo = content['prezzo'], sempre_attivo=content['attivo'], image=image_data))
                     # db.session.add(u)

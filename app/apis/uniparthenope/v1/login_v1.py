@@ -100,13 +100,11 @@ def auth(token):
         password = token_string.split(':')[1]
 
         user = UserFood.query.filter_by(username=username).first()
-        if user is not None:
-            if user.check_password(password):
-                return {'user': {
-                            "nomeBar": user.nome_bar,
-                            "grpDes": "Ristoranti"}
-                       }, 202
-
+        if user is not None and user.check_password(password):
+            return {'user': {
+                    "nomeBar": user.nome_bar,
+                    "grpDes": "Ristoranti"}
+                    }, 202
         else:
             response = requests.request("GET", url + "login", headers=headers)
             if response.status_code == 401:
