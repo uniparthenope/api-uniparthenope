@@ -116,17 +116,19 @@ class getToday(Resource):
 
 
 # ------------- ADD NEW MENU -------------
-#file_upload = reqparse.RequestParser()
-menu = ns.model("user credentials", {
-                    "nome": fields.String(description="nome menu", required=True),
-                    "descrizione": fields.String(description="descrizione menu", required=True),
-                    "tipologia": fields.String(description="tipologia (Primo, Secondo...)", required=True),
-                    "prezzo": fields.Integer(description="prezzo", required=True),
-                    "attivo": fields.Boolean(description="se il menu resta più giorni attivo", required=True),
-                    "img": fields.String(description="image", required=True)
-                })
 
-#file_upload.add_argument('file', type=FileStorage, location='files', required=False, help='file')
+# file_upload = reqparse.RequestParser()
+menu = ns.model("user credentials", {
+    "nome": fields.String(description="nome menu", required=True),
+    "descrizione": fields.String(description="descrizione menu", required=True),
+    "tipologia": fields.String(description="tipologia (Primo, Secondo...)", required=True),
+    "prezzo": fields.Integer(description="prezzo", required=True),
+    "attivo": fields.Boolean(description="se il menu resta più giorni attivo", required=True),
+    "img": fields.String(description="image", required=True)
+})
+
+
+# file_upload.add_argument('file', type=FileStorage, location='files', required=False, help='file')
 
 class addMenu(Resource):
     @ns.doc(security='Basic Auth')
@@ -156,12 +158,56 @@ class addMenu(Resource):
                 else:
                     image_data = None
 
-                u.foods.append(Food(nome=content['nome'], descrizione=content['descrizione'], tipologia=content['tipologia'], prezzo = content['prezzo'], sempre_attivo=content['attivo'], image=image_data))
+                u.foods.append(
+                    Food(nome=content['nome'], descrizione=content['descrizione'], tipologia=content['tipologia'],
+                         prezzo=content['prezzo'], sempre_attivo=content['attivo'], image=image_data))
                 db.session.add(u)
                 db.session.commit()
 
                 return {'message': 'Added new menu'}, 200
             else:
                 return {'errMsg': 'Missing values'}, 500
+        else:
+            return {'errMsg': 'Unauthorized'}, 403
+
+
+# ------------- GET ALL SPECIFIED USER'S MENU  -------------
+
+class getMenuBar(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    def get(self):
+        """GET ALL SPECIFIED USER'S MENU"""
+
+        array = []
+
+        if g.status == 202:
+            base64_bytes = g.token.encode('utf-8')
+            message_bytes = base64.b64decode(base64_bytes)
+            token_string = message_bytes.decode('utf-8')
+            userId = token_string.split(':')[0]
+
+            foods = UserFood.query.filter_by(username=userId).first().foods
+
+            for f in foods:
+                d = f.data.strftime('%Y-%m-%d %H:%M')
+
+                if f.image is None:
+                    image = ""
+                else:
+                    image = (f.image).decode('ascii')
+
+                menu = ({'data': d,
+                         'nome': f.nome,
+                         'descrizione': f.descrizione,
+                         'tipologia': f.tipologia,
+                         'prezzo': f.prezzo,
+                         'sempre_attivo': f.sempre_attivo,
+                         'id': f.id,
+                         'image': image
+                         })
+                array.append(menu)
+
+            return array, 200
         else:
             return {'errMsg': 'Unauthorized'}, 403
