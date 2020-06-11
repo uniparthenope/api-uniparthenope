@@ -4,8 +4,6 @@ from flask_restplus import Resource
 import urllib.request, urllib.error, urllib.parse
 from app.apis.bus.bus import glob
 import requests
-from flask import g
-from app.apis.uniparthenope.v1.login_v1 import token_required_general
 
 ns = api.namespace('uniparthenope')
 

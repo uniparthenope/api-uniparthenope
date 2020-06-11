@@ -1,10 +1,13 @@
 import base64
 from datetime import datetime
 
+from idna import unicode
+from werkzeug.datastructures import FileStorage
+
 from app.apis.uniparthenope.v1.login_v1 import token_required_general
 from flask import g, request
-from app import api
-from flask_restplus import Resource, fields
+from app import api, db
+from flask_restplus import Resource, fields, reqparse
 
 from app.models import User
 from app.apis.eating.models import UserFood, Food
@@ -14,12 +17,12 @@ ns = api.namespace('uniparthenope')
 
 # ------------- INSERT USER -------------
 
-user = ns.model("user credentials",
-                {
-                    "user": fields.String(description="username", required=True),
-                    "pass": fields.String(description="password", required=True)
-                }
-                )
+user = ns.model("user credentials", {
+    "user": fields.String(description="username", required=True),
+    "pass": fields.String(description="password", required=True),
+    "email": fields.String(description="password", required=True),
+    "nome_bar": fields.String(description="password", required=True)
+})
 
 
 class newUser(Resource):
@@ -31,7 +34,7 @@ class newUser(Resource):
         content = request.json
 
         if g.status == 200:
-            if 'user' in content and 'pass' in content:
+            if 'user' in content and 'pass' in content and 'email' in content and 'nome_bar' in content:
                 base64_bytes = g.token.encode('utf-8')
                 message_bytes = base64.b64decode(base64_bytes)
                 token_string = message_bytes.decode('utf-8')
@@ -41,8 +44,15 @@ class newUser(Resource):
                 if user is not None:
                     for x in user.roles:
                         if x.role == 'admin':
-                            print("admin")
-
+                            try:
+                                u = UserFood(username=content['user'], email=content['email'],
+                                             nome_bar=content['nome_bar'])
+                                u.set_password(content['pass'])
+                                db.session.add(u)
+                                db.session.commit()
+                                return {'message': 'User added'}, 200
+                            except:
+                                return {'errMsg': 'User already exists!'}, 500
                 else:
                     return {'errMsg': 'No admin'}, 403
             else:
@@ -74,7 +84,7 @@ class getToday(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
     def get(self):
-
+        """Get Menu Today"""
         if g.status == 200:
             array = []
             today = datetime.today()
@@ -103,3 +113,69 @@ class getToday(Resource):
             return array, 200
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
+
+
+# ------------- ADD NEW MENU -------------
+file_upload = reqparse.RequestParser()
+menu = ns.model("user credentials",{
+                    "nome": fields.String(description="nome menu", required=True),
+                    "descrizione": fields.String(description="descrizione menu", required=True),
+                    "tipologia": fields.String(description="tipologia (Primo, Secondo...)", required=True),
+                    "prezzo": fields.Integer(description="prezzo", required=True),
+                    "attivo": fields.Boolean(description="se il menu resta più giorni attivo", required=True),
+                })
+
+file_upload.add_argument('file',
+                         type=FileStorage,
+                         location='files',
+                         required=False,
+                         help='file')
+
+class addMenu(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    @api.expect(file_upload, menu)
+    def post(self):
+        """Add new menu"""
+        content = request.data.decode()
+        print(content)
+
+        file = file_upload.parse_args()
+        print(file)
+
+        if g.status == 202:
+            if 'nome' in content and 'descrizione' in content and 'tipologia' in content and 'prezzo' in content and 'attivo' in content:
+                base64_bytes = g.token.encode('utf-8')
+                message_bytes = base64.b64decode(base64_bytes)
+                token_string = message_bytes.decode('utf-8')
+                userId = token_string.split(':')[0]
+
+                u = UserFood.query.filter_by(username=userId).first()
+
+                try:
+                    '''
+                    upload_args = file_upload.parse_args()
+                    file = upload_args['file']
+                    print(file)
+                    
+                    if content['img'] != "":
+                        image_data = content['img']
+                        image_data = bytes(image_data, encoding="ascii")
+                    else:
+                        image_data = None
+                    '''
+
+                    # image_data = None
+
+                    # u.roles.append(Food(nome=content['nome'], descrizione=content['descrizione'], tipologia=content['tipologia'], prezzo = content['prezzo'], sempre_attivo=content['attivo'], image=image_data))
+                    # db.session.add(u)
+                    # db.session.commit()
+
+                    return {'message': 'Added new menu'}, 200
+                except:
+                    return {'errMsg': 'Insert error in DB!'}, 500
+
+            else:
+                return {'errMsg': 'Missing values'}, 500
+        else:
+            return {'errMsg': 'Unauthorized'}, 403
