@@ -118,7 +118,7 @@ class getToday(Resource):
 # ------------- ADD NEW MENU -------------
 
 # file_upload = reqparse.RequestParser()
-menu = ns.model("user credentials", {
+menu = ns.model("menu", {
     "nome": fields.String(description="nome menu", required=True),
     "descrizione": fields.String(description="descrizione menu", required=True),
     "tipologia": fields.String(description="tipologia (Primo, Secondo...)", required=True),
@@ -133,7 +133,7 @@ menu = ns.model("user credentials", {
 class addMenu(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
-    @api.expect(menu)
+    @ns.expect(menu)
     def post(self):
         """Add new menu"""
         '''
