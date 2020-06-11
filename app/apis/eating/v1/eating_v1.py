@@ -140,6 +140,8 @@ class addMenu(Resource):
         '''
 
         content = request.json
+        print(content)
+
 
         if g.status == 202:
             if 'nome' in content and 'descrizione' in content and 'tipologia' in content and 'prezzo' in content and 'attivo' in content and 'img' in content:
@@ -161,8 +163,6 @@ class addMenu(Resource):
                 db.session.commit()
 
                 return {'message': 'Added new menu'}, 200
-
-
             else:
                 return {'errMsg': 'Missing values'}, 500
         else:
