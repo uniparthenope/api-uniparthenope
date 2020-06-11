@@ -150,6 +150,8 @@ class addMenu(Resource):
                 token_string = message_bytes.decode('utf-8')
                 userId = token_string.split(':')[0]
 
+                print("QUI")
+
                 u = UserFood.query.filter_by(username=userId).first()
 
                 if content['img'] != "":
