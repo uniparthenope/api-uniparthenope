@@ -67,7 +67,7 @@ class getUsers(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
     def get(self):
-        if g.status == 200:
+        if g.status == 200 or g.status == 202:
             array = []
 
             users = UserFood.query.all()
