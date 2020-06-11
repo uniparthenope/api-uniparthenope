@@ -140,25 +140,26 @@ class addMenu(Resource):
         '''
 
         content = request.json
+        print(content)
 
         if g.status == 202:
-            if 'nome' in content and 'descrizione' in content and 'tipologia' in content and 'prezzo' in content and 'attivo' in content:
+            if 'nome' in content and 'descrizione' in content and 'tipologia' in content and 'prezzo' in content and 'attivo' in content and 'img' in content:
                 base64_bytes = g.token.encode('utf-8')
                 message_bytes = base64.b64decode(base64_bytes)
                 token_string = message_bytes.decode('utf-8')
                 userId = token_string.split(':')[0]
 
+                print("QUI")
+
                 u = UserFood.query.filter_by(username=userId).first()
 
-                '''
                 if content['img'] != "":
                     image_data = content['img']
                     image_data = bytes(image_data, encoding="ascii")
                 else:
                     image_data = None
-                '''
 
-                u.foods.append(Food(nome=content['nome'], descrizione=content['descrizione'], tipologia=content['tipologia'], prezzo = content['prezzo'], sempre_attivo=content['attivo'], image=None))
+                u.foods.append(Food(nome=content['nome'], descrizione=content['descrizione'], tipologia=content['tipologia'], prezzo = content['prezzo'], sempre_attivo=content['attivo'], image=image_data))
                 db.session.add(u)
                 db.session.commit()
 
