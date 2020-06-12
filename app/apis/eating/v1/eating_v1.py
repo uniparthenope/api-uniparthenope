@@ -145,7 +145,8 @@ class addMenu(Resource):
 
         if g.status == 202:
             if 'nome' in content and 'descrizione' in content and 'tipologia' in content and 'prezzo' in content and 'attivo' in content and 'img' in content:
-                if content['nome'] == "" or content['descrizione'] == "" or content['tipologia'] == "" or content['prezzo'] == "" or content['attivo'] == "":
+                if content['nome'] == "" or content['descrizione'] == "" or content['tipologia'] == "" or content[
+                    'prezzo'] == "" or content['attivo'] == "":
                     return {'errMsg': 'Insert all fields'}, 500
                 else:
                     base64_bytes = g.token.encode('utf-8')
@@ -212,5 +213,39 @@ class getMenuBar(Resource):
                 array.append(menu)
 
             return array, 200
+        else:
+            return {'errMsg': 'Unauthorized'}, 403
+
+
+# ------------- REMOVE MENU BY ID -------------
+parser = api.parser()
+parser.add_argument('id', type=str, required=True, help='Menu Id')
+
+
+@ns.doc(parser=parser)
+class removeMenu(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    def get(self, id):
+        """Remove menu by Id"""
+
+        if g.status == 202:
+            base64_bytes = g.token.encode('utf-8')
+            message_bytes = base64.b64decode(base64_bytes)
+            token_string = message_bytes.decode('utf-8')
+            userId = token_string.split(':')[0]
+
+            food = Food.query.filter_by(id=id).join(UserFood).filter_by(username=userId).first()
+
+            if food is not None:
+                try:
+                    db.session.delete(food)
+                    db.session.commit()
+
+                    return {'message': 'Removed menu'}, 200
+                except:
+                    return {'errMsg': 'Error deleting menu'}, 500
+            else:
+                return {'errMsg': 'No Menu with this ID'}, 500
         else:
             return {'errMsg': 'Unauthorized'}, 403
