@@ -697,7 +697,7 @@ class getProfessors(Resource):
 
 parser = api.parser()
 parser.add_argument('persId', type=str, required=True, help='User persId')
-parser.add_argument('pagatoFlg', type=str, required=True, help='Taxes to pay')
+parser.add_argument('pagatoFlg', type=str, required=True, help='Taxes to pay (0 or 1)')
 
 
 @ns.doc(parser=parser)
@@ -729,7 +729,7 @@ class Taxes(Resource):
                             'scadFattura': _response[i]['scadFattura']
                         })
                         array.append(item)
-                    else:
+                    elif pagatoFlg == '1':
                         item = ({
                             'desc': _response[i]['desMav1'],
                             'fattId': _response[i]['fattId'],
