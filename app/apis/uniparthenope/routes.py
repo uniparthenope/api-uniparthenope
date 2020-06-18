@@ -26,7 +26,7 @@ ns.add_resource(CheckPrenotazione, '/v1/students/checkPrenotazione/<cdsId>/<adId
 ns.add_resource(getReservations, '/v1/students/getReservations/<matId>', methods=['GET'])
 ns.add_resource(ExamsToFreq, '/v1/students/examsToFreq/<stuId>/<pianoId>/<matId>', methods=['GET'])
 ns.add_resource(getProfessors, '/v1/students/getProfessors/<aaId>/<cdsId>', methods=['GET'])
-ns.add_resource(Taxes, '/v1/students/taxes/<persId>/<pagatoFlg>', methods=['GET'])
+ns.add_resource(Taxes, '/v1/students/taxes/<persId>', methods=['GET'])
 
 ns.add_resource(DetInfo, '/v1/professor/detailedInfo/<docenteId>', methods=['GET'])
 ns.add_resource(getCourses, '/v1/professor/getCourses/<aaId>', methods=['GET'])

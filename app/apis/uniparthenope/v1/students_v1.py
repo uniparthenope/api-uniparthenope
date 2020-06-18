@@ -697,17 +697,17 @@ class getProfessors(Resource):
 
 parser = api.parser()
 parser.add_argument('persId', type=str, required=True, help='User persId')
-parser.add_argument('pagatoFlg', type=str, required=True, help='Taxes to pay (0 or 1)')
-
 
 @ns.doc(parser=parser)
 class Taxes(Resource):
     @ns.doc(security='Basic Auth')
     @token_required
-    def get(self, persId, pagatoFlg):
+    def get(self, persId):
         """Taxes situation"""
 
-        array = []
+        array = {}
+        array_payed = []
+        array_to_pay = []
 
         headers = {
             'Content-Type': "application/json",
@@ -715,12 +715,12 @@ class Taxes(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "tasse-service-v1/lista-fatture?persId=" + persId + "&pagatoFlg=" + pagatoFlg, headers=headers)
+            response = requests.request("GET", url + "tasse-service-v1/lista-fatture?persId=" + persId, headers=headers)
             _response = response.json()
 
             if response.status_code == 200:
-                if pagatoFlg == '0':
-                    for i in range(0, len(_response)):
+                for i in range(0, len(_response)):
+                    if _response[i]['pagatoFlg'] == 0:
                         item = ({
                             'desc': _response[i]['desMav1'],
                             'fattId': _response[i]['fattId'],
@@ -728,10 +728,8 @@ class Taxes(Resource):
                             'iuv': _response[i]['iuv'],
                             'scadFattura': _response[i]['scadFattura']
                         })
-                        array.append(item)
-
-                elif pagatoFlg == '1':
-                    for i in range(0, len(_response)):
+                        array_to_pay.append(item)
+                    elif _response[i]['pagatoFlg'] == 1:
                         item = ({
                             'desc': _response[i]['desMav1'],
                             'fattId': _response[i]['fattId'],
@@ -741,7 +739,10 @@ class Taxes(Resource):
                             'iur': _response[i]['iur'],
                             'nBollettino': _response[i]['nBollettino']
                         })
-                        array.append(item)
+                        array_payed.append(item)
+
+                array["payed"] = array_payed
+                array["to_pay"] = array_to_pay
 
                 return array, 200
             else:
