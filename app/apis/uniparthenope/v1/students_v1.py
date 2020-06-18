@@ -677,7 +677,7 @@ class getProfessors(Resource):
                         })
                         array.append(item)
 
-                return array
+                return array, 200
 
             except requests.exceptions.HTTPError as e:
                 return {'errMsg': e}, 500
@@ -691,3 +691,67 @@ class getProfessors(Resource):
                 return {'errMsg': 'generic error'}, 500
         else:
             return {'errMsg': 'generic error'}, g.status
+
+# ------------- TAXES -------------
+
+
+parser = api.parser()
+parser.add_argument('persId', type=str, required=True, help='User persId')
+parser.add_argument('pagatoFlg', type=str, required=True, help='Taxes to pay')
+
+
+@ns.doc(parser=parser)
+class Taxes(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required
+    def get(self, persId, pagatoFlg):
+        """Taxes situation"""
+
+        array = []
+
+        headers = {
+            'Content-Type': "application/json",
+            "Authorization": "Basic " + g.token
+        }
+
+        try:
+            response = requests.request("GET", url + "tasse-service-v1/lista-fatture?persId=" + persId + "&pagatoFlg=" + pagatoFlg, headers=headers)
+            _response = response.json()
+
+            if response.status_code == 200:
+                for i in range(0, len(_response)):
+                    if pagatoFlg == '0':
+                        item = ({
+                            'desc': _response[i]['desMav1'],
+                            'fattId': _response[i]['fattId'],
+                            'importo': _response[i]['importoFattura'],
+                            'iuv': _response[i]['iuv'],
+                            'scadFattura': _response[i]['scadFattura']
+                        })
+                        array.append(item)
+                    else:
+                        item = ({
+                            'desc': _response[i]['desMav1'],
+                            'fattId': _response[i]['fattId'],
+                            'importo': _response[i]['importoFattura'],
+                            'dataPagamento': _response[i]['dataPagamento'],
+                            'scadFattura': _response[i]['scadFattura'],
+                            'iur': _response[i]['iur'],
+                            'nBollettino': _response[i]['nBollettino']
+                        })
+                        array.append(item)
+
+                return array, 200
+            else:
+                return {'errMsg': _response['retErrMsg']}, _response['statusCode']
+
+        except requests.exceptions.HTTPError as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.ConnectionError as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.Timeout as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.RequestException as e:
+            return {'errMsg': e}, 500
+        except:
+            return {'errMsg': 'generic error'}, 500
