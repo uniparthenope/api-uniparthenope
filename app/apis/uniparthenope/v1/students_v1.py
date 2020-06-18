@@ -741,7 +741,7 @@ class Taxes(Resource):
                             'iur': _response[i]['iur'],
                             'nBollettino': _response[i]['nBollettino']
                         })
-                    array.append(item)
+                        array.append(item)
 
                 return array, 200
             else:
