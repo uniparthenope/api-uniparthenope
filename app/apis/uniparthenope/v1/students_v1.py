@@ -719,8 +719,8 @@ class Taxes(Resource):
             _response = response.json()
 
             if response.status_code == 200:
-                for i in range(0, len(_response)):
-                    if pagatoFlg == '0':
+                if pagatoFlg == '0':
+                    for i in range(0, len(_response)):
                         item = ({
                             'desc': _response[i]['desMav1'],
                             'fattId': _response[i]['fattId'],
@@ -729,7 +729,9 @@ class Taxes(Resource):
                             'scadFattura': _response[i]['scadFattura']
                         })
                         array.append(item)
-                    elif pagatoFlg == '1':
+
+                elif pagatoFlg == '1':
+                    for i in range(0, len(_response)):
                         item = ({
                             'desc': _response[i]['desMav1'],
                             'fattId': _response[i]['fattId'],
@@ -739,7 +741,7 @@ class Taxes(Resource):
                             'iur': _response[i]['iur'],
                             'nBollettino': _response[i]['nBollettino']
                         })
-                        array.append(item)
+                    array.append(item)
 
                 return array, 200
             else:
