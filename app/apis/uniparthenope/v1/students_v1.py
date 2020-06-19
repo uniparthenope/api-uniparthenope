@@ -3,6 +3,7 @@ from flask import g
 from app import api
 from flask_restplus import Resource
 import requests
+from datetime import datetime, timedelta
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
@@ -740,6 +741,14 @@ class Taxes(Resource):
                             'nBollettino': _response[i]['nBollettino']
                         })
                         array_payed.append(item)
+
+                format = '%d/%m/%Y'  # The format
+                if len(array_to_pay) >=1 and datetime.now() < datetime.strptime(array_to_pay[0]["scadFattura"], format):
+                    array["semaforo"] = "GIALLO"
+                elif len(array_to_pay) >=1 and datetime.now() > datetime.strptime(array_to_pay[0]["scadFattura"], format):
+                    array["semaforo"] = "ROSSO"
+                elif len(array_to_pay) == 0:
+                    array["semaforo"] = "VERDE"
 
                 array["payed"] = array_payed
                 array["to_pay"] = array_to_pay
