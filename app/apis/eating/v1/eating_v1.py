@@ -64,55 +64,45 @@ class newUser(Resource):
 # ------------- GET USERS NAME BAR -------------
 
 class getUsers(Resource):
-    @ns.doc(security='Basic Auth')
-    @token_required_general
     def get(self):
-        if g.status == 200 or g.status == 202:
-            array = []
+        array = []
 
-            users = UserFood.query.all()
-            for f in users:
-                array.append(f.nome_bar)
-            return array, 200
-        else:
-            return {'errMsg': 'Wrong username/pass'}, g.status
+        users = UserFood.query.all()
+        for f in users:
+            array.append(f.nome_bar)
+        return array, 200
 
 
 # ------------- GET TODAY MENU -------------
 
 class getToday(Resource):
-    @ns.doc(security='Basic Auth')
-    @token_required_general
     def get(self):
         """Get Menu Today"""
-        if g.status == 200 or g.status == 202:
-            array = []
-            today = datetime.today()
+        array = []
+        today = datetime.today()
 
-            foods = Food.query.all()
+        foods = Food.query.all()
 
-            for f in foods:
-                if (f.data.year == today.year \
-                    and f.data.month == today.month \
-                    and f.data.day == today.day) \
-                        or f.sempre_attivo:
-                    if f.image is None:
-                        image = ""
-                    else:
-                        image = (f.image).decode('ascii')
+        for f in foods:
+            if (f.data.year == today.year \
+                and f.data.month == today.month \
+                and f.data.day == today.day) \
+                    or f.sempre_attivo:
+                if f.image is None:
+                    image = ""
+                else:
+                    image = (f.image).decode('ascii')
 
-                    menu = ({'nome': f.nome,
-                             'descrizione': f.descrizione,
-                             'prezzo': f.prezzo,
-                             'tipologia': f.tipologia,
-                             'sempre_attivo': f.sempre_attivo,
-                             'nome_bar': f.user_username,
-                             'image': image})
-                    array.append(menu)
+                menu = ({'nome': f.nome,
+                         'descrizione': f.descrizione,
+                         'prezzo': f.prezzo,
+                         'tipologia': f.tipologia,
+                         'sempre_attivo': f.sempre_attivo,
+                         'nome_bar': f.user_username,
+                         'image': image})
+                array.append(menu)
 
-            return array, 200
-        else:
-            return {'errMsg': 'Wrong username/pass'}, g.status
+        return array, 200
 
 
 # ------------- ADD NEW MENU -------------
@@ -175,7 +165,7 @@ class addMenu(Resource):
             return {'errMsg': 'Unauthorized'}, 403
 
 
-# ------------- GET ALL SPECIFIED USER'S MENU  -------------
+# ------------- get all specified user's menu -------------
 
 class getMenuBar(Resource):
     @ns.doc(security='Basic Auth')
