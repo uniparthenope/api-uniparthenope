@@ -479,6 +479,7 @@ class getReservations(Resource):
                     if _response2['turni'][x]['appLogId'] == _response[i]['appLogId']:
                         if _response2['stato'] is not "C":
                             item = ({
+                                'nomeAppello': _response2['adDes'],
                                 'nome_pres': _response2['presidenteNome'],
                                 'cognome_pres': _response2['presidenteCognome'],
                                 'numIscritti': _response2['numIscritti'],
