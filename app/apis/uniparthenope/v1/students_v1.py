@@ -799,7 +799,7 @@ parser = api.parser()
 parser.add_argument('cdsId', type=str, required=True, help='User cdsId')
 parser.add_argument('adId', type=str, required=True, help='User adId')
 parser.add_argument('appId', type=str, required=True, help='User appId')
-insert_token = ns.model("body", {
+body = ns.model("body", {
     "adsceId": fields.Integer(description="adseId", required=True),
     "notaStu": fields.String(description="note", required=True)
 })
@@ -809,7 +809,7 @@ insert_token = ns.model("body", {
 class BookExam(Resource):
     @ns.doc(security='Basic Auth')
     @token_required
-    @ns.expect(insert_token)
+    @ns.expect(body)
     def post(self, cdsId, adId, appId):
         '''Book an exam'''
 
@@ -832,6 +832,47 @@ class BookExam(Resource):
                     return {'errMsg': r['retErrMsg']}, response.status_code
             else:
                 return {'errMsg': 'Error payload'}, 500
+        except requests.exceptions.HTTPError as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.ConnectionError as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.Timeout as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.RequestException as e:
+            return {'errMsg': e}, 500
+        except:
+            return {'errMsg': 'generic error'}, 500
+
+# ------------- BOOK AN EXAM -------------
+
+
+parser = api.parser()
+parser.add_argument('cdsId', type=str, required=True, help='User cdsId')
+parser.add_argument('adId', type=str, required=True, help='User adId')
+parser.add_argument('appId', type=str, required=True, help='User appId')
+parser.add_argument('stuId', type=str, required=True, help='User stuId')
+
+
+@ns.doc(parser=parser)
+class DeleteReservation(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required
+    def delete(self, cdsId, adId, appId, stuId):
+        '''Delete a reservation'''
+
+        headers = {
+            'Content-Type': "application/json",
+            "Authorization": "Basic " + g.token
+        }
+
+        try:
+            response = requests.request("DELETE", url + "calesa-service-v1/appelli/" + cdsId + "/" + adId + "/" + appId + "/iscritti/" + stuId, headers=headers)
+            print(response.status_code)
+            if response.status_code == 200:
+                return {'message': 'Ok'}, response.status_code
+            else:
+                r = response.json()
+                return {'errMsg': r['retErrMsg']}, response.status_code
         except requests.exceptions.HTTPError as e:
             return {'errMsg': e}, 500
         except requests.exceptions.ConnectionError as e:
