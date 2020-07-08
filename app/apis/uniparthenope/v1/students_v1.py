@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
 
-
 # ------------- DEPARTMENT INFO -------------
 parser = api.parser()
 parser.add_argument('stuId', type=str, required=True, help='User stuId')
@@ -32,7 +31,7 @@ class DepInfo(Resource):
             response = requests.request("GET", url + "anagrafica-service-v2/carriere/" + stuId, headers=headers)
             _response = response.json()
 
-            #TODO Add search in GA table 'cdsId' and return GA id
+            # TODO Add search in GA table 'cdsId' and return GA id
 
             return {'aaId': _response['aaId'],
                     'dataIscr': _response['dataIscr'],
@@ -420,16 +419,18 @@ class CheckPrenotazione(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "calesa-service-v1/appelli/" + cdsId + "/" + adId + "/" + appId + "/iscritti/" + stuId, headers=headers)
+            response = requests.request("GET",
+                                        url + "calesa-service-v1/appelli/" + cdsId + "/" + adId + "/" + appId + "/iscritti/" + stuId,
+                                        headers=headers)
             _response = response.json()
 
             if response.status_code == 200:
                 if _response['esito']['assenteFlg'] != 1:
 
                     return {
-                        'prenotato': True,
-                        'data': _response['dataIns']
-                    }, 200
+                               'prenotato': True,
+                               'data': _response['dataIns']
+                           }, 200
                 else:
                     return {'prenotato': False}, 200
             else:
@@ -474,7 +475,9 @@ class getReservations(Resource):
 
             # print(_response)
             for i in range(0, len(_response)):
-                response2 = requests.request("GET", url + "calesa-service-v1/appelli/" + str(_response[i]['cdsId']) + "/" + str(_response[i]['adId']) + "/" + str(_response[i]['appId']), headers=headers)
+                response2 = requests.request("GET", url + "calesa-service-v1/appelli/" + str(
+                    _response[i]['cdsId']) + "/" + str(_response[i]['adId']) + "/" + str(_response[i]['appId']),
+                                             headers=headers)
                 _response2 = response2.json()
 
                 for x in range(0, len(_response2['turni'])):
@@ -549,7 +552,9 @@ class ExamsToFreq(Resource):
                     adSceId = _response['attivita'][i]['adsceAttId']
 
                     # print("Ads ID: " + str(adSceId))
-                    response_2 = requests.request("GET", url + "libretto-service-v1/libretti/" + matId + "/righe/" + str(adSceId), headers=headers)
+                    response_2 = requests.request("GET",
+                                                  url + "libretto-service-v1/libretti/" + matId + "/righe/" + str(
+                                                      adSceId), headers=headers)
                     # print("JSON (examsToFreq --> 2): " + str(response_2.json()))
 
                     if response_2.status_code == 500 or response_2.status_code == 404:
@@ -561,7 +566,9 @@ class ExamsToFreq(Resource):
                             # print("ADID --> 2=" + adId)
                             # print("ADSCEID --> 2 = " + str(adSceId))
 
-                            response_3 = requests.request("GET", url + "libretto-service-v1/libretti/" + matId + "/righe/" + str(adSceId) + "/partizioni", headers=headers)
+                            response_3 = requests.request("GET",
+                                                          url + "libretto-service-v1/libretti/" + matId + "/righe/" + str(
+                                                              adSceId) + "/partizioni", headers=headers)
                             # print("JSON (examsToFreq --> 3): " + str(response_3.json()))
 
                             if response_3.status_code == 500 or response_3.status_code == 404:
@@ -571,7 +578,9 @@ class ExamsToFreq(Resource):
 
                                 if len(_response3) == 0:
                                     # print("Response3 non idoneo")
-                                    response_4 = requests.request("GET", url + "logistica-service-v1/logistica?adId=" + adId, headers=headers)
+                                    response_4 = requests.request("GET",
+                                                                  url + "logistica-service-v1/logistica?adId=" + adId,
+                                                                  headers=headers)
                                     _response4 = response_4.json()
                                     # print("JSON (examsToFreq --> 4 (IF)): " + str(response_4.json()))
 
@@ -586,7 +595,8 @@ class ExamsToFreq(Resource):
                                                 actual_exam = ({
                                                     'nome': _response['attivita'][i]['adLibDes'],
                                                     'codice': _response['attivita'][i]['adLibCod'],
-                                                    'adId': _response['attivita'][i]['chiaveADContestualizzata']['adId'],
+                                                    'adId': _response['attivita'][i]['chiaveADContestualizzata'][
+                                                        'adId'],
                                                     'adsceID': adSceId,
                                                     'CFU': _response['attivita'][i]['peso'],
                                                     'annoId': _response['attivita'][i]['scePianoId'],
@@ -602,7 +612,9 @@ class ExamsToFreq(Resource):
 
                                 else:
 
-                                    response_4 = requests.request("GET", url + "logistica-service-v1/logistica?adId=" + adId, headers=headers)
+                                    response_4 = requests.request("GET",
+                                                                  url + "logistica-service-v1/logistica?adId=" + adId,
+                                                                  headers=headers)
                                     _response4 = response_4.json()
                                     # print("JSON (examsToFreq --> 4) (ELSE): " + str(response_4.json()))
 
@@ -668,7 +680,9 @@ class getProfessors(Resource):
 
         if g.status == 200:
             try:
-                response = requests.request("GET", url + "offerta-service-v1/offerte/" + aaId + "/" + cdsId + "/docentiPerUD", headers=headers)
+                response = requests.request("GET",
+                                            url + "offerta-service-v1/offerte/" + aaId + "/" + cdsId + "/docentiPerUD",
+                                            headers=headers)
                 _response = response.json()
 
                 if response.status_code == 200:
@@ -676,7 +690,7 @@ class getProfessors(Resource):
                         item = ({
                             'docenteNome': _response[i]['docenteNome'],
                             'docenteCognome': _response[i]['docenteCognome'],
-                            'docenteId':_response[i]['docenteId'],
+                            'docenteId': _response[i]['docenteId'],
                             'docenteMat': _response[i]['docenteMatricola'],
                             'corso': _response[i]['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adDes'],
                             'adId': _response[i]['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adId']
@@ -697,6 +711,7 @@ class getProfessors(Resource):
                 return {'errMsg': 'generic error'}, 500
         else:
             return {'errMsg': 'generic error'}, g.status
+
 
 # ------------- TAXES -------------
 
@@ -749,9 +764,11 @@ class Taxes(Resource):
                         array_payed.append(item)
 
                 format = '%d/%m/%Y'  # The format
-                if len(array_to_pay) >=1 and datetime.now() < datetime.strptime(array_to_pay[0]["scadFattura"], format):
+                if len(array_to_pay) >= 1 and datetime.now() < datetime.strptime(array_to_pay[0]["scadFattura"],
+                                                                                 format):
                     array["semaforo"] = "GIALLO"
-                elif len(array_to_pay) >=1 and datetime.now() > datetime.strptime(array_to_pay[0]["scadFattura"], format):
+                elif len(array_to_pay) >= 1 and datetime.now() > datetime.strptime(array_to_pay[0]["scadFattura"],
+                                                                                   format):
                     array["semaforo"] = "ROSSO"
                 elif len(array_to_pay) == 0:
                     array["semaforo"] = "VERDE"
@@ -783,7 +800,7 @@ parser.add_argument('cdsId', type=str, required=True, help='User cdsId')
 parser.add_argument('adId', type=str, required=True, help='User adId')
 parser.add_argument('appId', type=str, required=True, help='User appId')
 insert_token = ns.model("body", {
-    "adsceId": fields.String(description="adseId", required=True),
+    "adsceId": fields.Integer(description="adseId", required=True),
     "notaStu": fields.String(description="note", required=True)
 })
 
@@ -796,23 +813,25 @@ class BookExam(Resource):
     def post(self, cdsId, adId, appId):
         '''Book an exam'''
 
-        content = json.loads(request.get_data().decode('utf-8'))
-        print(content['adsceId'])
+        data = request.json
 
         headers = {
             'Content-Type': "application/json",
             "Authorization": "Basic " + g.token
         }
 
-        response = requests.request("POST", url + "calesa-service-v1/appelli/" + cdsId + "/" + adId + "/" + appId + "/iscritti", headers=headers, json=content)
-        _response = response.json()
-
-        print(_response)
-
-'''
         try:
-           
-
+            if "adsceId" in data and data['adsceId'] is not None:
+                response = requests.request("POST",
+                                            url + "calesa-service-v1/appelli/" + cdsId + "/" + adId + "/" + appId + "/iscritti",
+                                            headers=headers, json=data)
+                if response.status_code == 201:
+                    return {'message': 'Ok'}, response.status_code
+                else:
+                    r = response.json()
+                    return {'errMsg': r['retErrMsg']}, response.status_code
+            else:
+                return {'errMsg': 'Error payload'}, 500
         except requests.exceptions.HTTPError as e:
             return {'errMsg': e}, 500
         except requests.exceptions.ConnectionError as e:
@@ -823,4 +842,3 @@ class BookExam(Resource):
             return {'errMsg': e}, 500
         except:
             return {'errMsg': 'generic error'}, 500
-'''
