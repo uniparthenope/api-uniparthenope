@@ -585,6 +585,7 @@ class ExamsToFreq(Resource):
                                                     'nome': _response['attivita'][i]['adLibDes'],
                                                     'codice': _response['attivita'][i]['adLibCod'],
                                                     'adId': _response['attivita'][i]['chiaveADContestualizzata']['adId'],
+                                                    'adsceID': adSceId,
                                                     'CFU': _response['attivita'][i]['peso'],
                                                     'annoId': _response['attivita'][i]['scePianoId'],
                                                     'docente': "N/A",
@@ -616,6 +617,7 @@ class ExamsToFreq(Resource):
                                                     'codice': _response['attivita'][i]['adLibCod'],
                                                     'adId': _response['attivita'][i]['chiaveADContestualizzata'][
                                                         'adId'],
+                                                    'adsceID': adSceId,
                                                     'CFU': _response['attivita'][i]['peso'],
                                                     'annoId': _response['attivita'][i]['scePianoId'],
                                                     'docente': _response3[0]['cognomeDocTit'].capitalize() + " " +

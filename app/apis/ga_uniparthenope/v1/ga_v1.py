@@ -102,7 +102,7 @@ class SearchCourse(Resource):
             return {'errMsg': 'generic error'}, g.status
 
 
-# ------------- SEARCH COURSE -------------
+# ------------- SEARCH OTHER COURSE -------------
 
 parser = api.parser()
 parser.add_argument('periodo', type=str, required=True, help='')
@@ -133,6 +133,68 @@ class OtherCourses(Resource):
                 array = []
                 next(csvfile)
                 for row in csvfile:
+                    lower = row[6].lower()
+                    if lower.find("manutenzione") != -1:
+                        id = "M"
+                    else:
+                        id = row[7]
+                    item = ({
+                        'titolo': row[0],
+                        'aula': row[2],
+                        'start_time': createDate(row[3]),
+                        'end_time': createDate(row[4]),
+                        'durata': row[5],
+                        'descrizione': row[6],
+                        'id': id,
+                        'confermato': row[9]
+                    })
+                    array.append(item)
+
+                return array, 200
+            except:
+                return {'errMsg': 'generic error'}, 500
+        else:
+            return {'errMsg': 'generic error'}, g.status
+
+
+# ------------- SEARCH BY NAME AND SURNAME -------------
+
+
+parser = api.parser()
+parser.add_argument('periodo', type=str, required=True, help='')
+parser.add_argument('cognome', type=str, required=True, help='')
+
+
+@ns.doc(parser=parser)
+class ProfessorCourse(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    def get(self, periodo, cognome):
+        """Other Courses"""
+
+        end_date = datetime.now() + timedelta(days=int(periodo) * 365 / 12)
+        cognome = cognome.replace(" ", "+")
+
+        if g.status == 200:
+            try:
+                url_n = 'http://ga.uniparthenope.it/report.php?from_day=' + str(datetime.now().day) + \
+                        '&from_month=' + str(datetime.now().month) + \
+                        '&from_year=' + str(datetime.now().year) + \
+                        '&to_day=' + str(end_date.day) + \
+                        '&to_month=' + str(end_date.month) + \
+                        '&to_year=' + str(end_date.year) + \
+                        '&areamatch=&roommatch=' + \
+                        '&namematch=&descrmatch=' + cognome + \
+                        '&creatormatch=&match_private=0&match_confirmed=2&match_referente=&match_unita_interne=&match_ore_unita_interne=&match_unita_vigilanza=&match_ore_unita_vigilanza=&match_unita_pulizie=&match_ore_unita_pulizie=&match_audio_video=&match_catering=&match_Acconto=&match_Saldo=&match_Fattura=' + \
+                        '&output=0&output_format=1&sortby=s&sumby=d&phase=2&datatable=1'
+                url_open = urllib.request.urlopen(url_n)
+                csvfile = csv.reader(io.StringIO(url_open.read().decode('utf-16')), delimiter=',')
+
+                array = []
+                next(csvfile)
+                for row in csvfile:
+
+
                     lower = row[6].lower()
                     if lower.find("manutenzione") != -1:
                         id = "M"
