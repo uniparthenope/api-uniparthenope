@@ -480,10 +480,15 @@ class getReservations(Resource):
                                              headers=headers)
                 _response2 = response2.json()
 
+                adId = _response[i]['adId']
+                adsceId = _response[i]['adsceId']
+
                 for x in range(0, len(_response2['turni'])):
                     if _response2['turni'][x]['appLogId'] == _response[i]['appLogId']:
                         if _response2['stato'] is not "C":
                             item = ({
+                                'adId': adId,
+                                'adsceId': adsceId,
                                 'nomeAppello': _response2['adDes'],
                                 'nome_pres': _response2['presidenteNome'],
                                 'cognome_pres': _response2['presidenteCognome'],
