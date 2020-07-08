@@ -1,7 +1,9 @@
+import json
+
 from app.apis.uniparthenope.v1.login_v1 import token_required, token_required_general
-from flask import g
+from flask import g, request
 from app import api
-from flask_restplus import Resource
+from flask_restplus import Resource, fields
 import requests
 from datetime import datetime, timedelta
 
@@ -702,6 +704,7 @@ class getProfessors(Resource):
 parser = api.parser()
 parser.add_argument('persId', type=str, required=True, help='User persId')
 
+
 @ns.doc(parser=parser)
 class Taxes(Resource):
     @ns.doc(security='Basic Auth')
@@ -770,3 +773,54 @@ class Taxes(Resource):
             return {'errMsg': e}, 500
         except:
             return {'errMsg': 'generic error'}, 500
+
+
+# ------------- BOOK AN EXAM -------------
+
+
+parser = api.parser()
+parser.add_argument('cdsId', type=str, required=True, help='User cdsId')
+parser.add_argument('adId', type=str, required=True, help='User adId')
+parser.add_argument('appId', type=str, required=True, help='User appId')
+insert_token = ns.model("body", {
+    "adsceId": fields.String(description="adseId", required=True),
+    "notaStu": fields.String(description="note", required=True)
+})
+
+
+@ns.doc(parser=parser)
+class BookExam(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required
+    @ns.expect(insert_token)
+    def post(self, cdsId, adId, appId):
+        '''Book an exam'''
+
+        content = json.loads(request.get_data().decode('utf-8'))
+        print(content['adsceId'])
+
+        headers = {
+            'Content-Type': "application/json",
+            "Authorization": "Basic " + g.token
+        }
+
+        response = requests.request("POST", url + "calesa-service-v1/appelli/" + cdsId + "/" + adId + "/" + appId + "/iscritti", headers=headers, json=content)
+        _response = response.json()
+
+        print(_response)
+
+'''
+        try:
+           
+
+        except requests.exceptions.HTTPError as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.ConnectionError as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.Timeout as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.RequestException as e:
+            return {'errMsg': e}, 500
+        except:
+            return {'errMsg': 'generic error'}, 500
+'''
