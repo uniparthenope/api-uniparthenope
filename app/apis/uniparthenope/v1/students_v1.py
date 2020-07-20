@@ -361,7 +361,8 @@ class CheckAppello(Resource):
             _response = response.json()
 
             for i in range(0, len(_response)):
-                if _response[i]['stato'] == "I" or _response[i]['stato'] == "P":
+                #if _response[i]['stato'] == "I" or _response[i]['stato'] == "P":
+                if _response[i]['stato'] is not "C":
                     actual_exam = {}
                     actual_exam.update({
                         'esame': _response[i]['adDes'],
