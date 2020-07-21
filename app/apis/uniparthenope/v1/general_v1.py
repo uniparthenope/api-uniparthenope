@@ -354,46 +354,51 @@ class InfoPersone(Resource):
 class RSSNews(Resource):
     def get(self):
         """Get news"""
-        feed = feedparser.parse("https://www.uniparthenope.it/rss.xml")
-        h = html2text.HTML2Text()
-        h.ignore_links = True
-        h.ignore_images = True
 
-        start = '<a href="'
-        end = '" type='
+        try:
+            feed = feedparser.parse("https://www.uniparthenope.it/rss.xml")
+            h = html2text.HTML2Text()
+            h.ignore_links = True
+            h.ignore_images = True
 
-        news = []
+            start = '<a href="'
+            end = '" type='
 
-        for i in range(0, len(feed['entries'])):
-            img = ""
-            if "Foto/Video" in feed['entries'][i]['summary']:
-                text = feed['entries'][i]['summary']
+            news = []
 
-                while start in text and end in text:
-                    s_index = text.find(start)
-                    e_index = text.find(end) + len(end)
-
-                    img = text[s_index:e_index]
-                    title = h.handle(img).strip()
-                    text = text.replace(img, title)
-
-                img = img.replace(start, "")
-                img = img.replace(end, "")
-
-            text_string = (BeautifulSoup(feed['entries'][i]['summary'], features="html.parser")).get_text()
-            if "Testo:" in text_string:
-                text_string = text_string.split("Testo:")[1]
-            if "Foto/Video" in text_string:
+            for i in range(0, len(feed['entries'])):
+                img = ""
+                text_string = (BeautifulSoup(feed['entries'][i]['summary'], features="html.parser")).get_text()
                 text_string = text_string.split("Foto/Video:")[0]
 
-            article = {}
-            article.update({
-                'titolo': feed['entries'][i]['title'],
-                'link': feed['entries'][i]['link'],
-                'image': img,
-                'HTML': feed['entries'][i]['summary'],
-                'TEXT': text_string
-            })
-            news.append(article)
+                if "Foto/Video" in feed['entries'][i]['summary']:
+                    text = feed['entries'][i]['summary']
 
-        return news, 200
+                    while start in text and end in text:
+                        s_index = text.find(start)
+                        e_index = text.find(end) + len(end)
+
+                        img = text[s_index:e_index]
+                        title = h.handle(img).strip()
+                        text = text.replace(img, title)
+
+                    img = img.replace(start, "")
+                    img = img.replace(end, "")
+
+                if "Testo:" in text_string:
+                    text_string = text_string.split("Testo:")[1]
+
+                article = {}
+                article.update({
+                    'titolo': feed['entries'][i]['title'],
+                    'link': feed['entries'][i]['link'],
+                    'image': img,
+                    'HTML': feed['entries'][i]['summary'],
+                    'TEXT': text_string
+                })
+                news.append(article)
+
+            return news, 200
+
+        except:
+            return {'errMsg': 'generic error'}, 500
