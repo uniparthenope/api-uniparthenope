@@ -363,7 +363,7 @@ class RSSNews(Resource):
         end = '" type='
 
         news = []
-        #print(feed['entries'][2])
+
         for i in range(0, len(feed['entries'])):
             img = ""
             if "Foto/Video" in feed['entries'][i]['summary']:
@@ -380,15 +380,19 @@ class RSSNews(Resource):
                 img = img.replace(start, "")
                 img = img.replace(end, "")
 
+            text_string = (BeautifulSoup(feed['entries'][i]['summary'], features="html.parser")).get_text()
+            if "Testo:" in text_string:
+                text_string = text_string.split("Testo:")[1]
+            if "Foto/Video" in text_string:
+                text_string = text_string.split("Foto/Video:")[0]
+
             article = {}
             article.update({
-
                 'titolo': feed['entries'][i]['title'],
                 'link': feed['entries'][i]['link'],
                 'image': img,
                 'HTML': feed['entries'][i]['summary'],
-                'TEXT': h.handle(feed['entries'][i]['summary']),
-
+                'TEXT': text_string
             })
             news.append(article)
 
