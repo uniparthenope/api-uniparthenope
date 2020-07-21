@@ -4,6 +4,7 @@ import urllib.request
 from datetime import datetime
 import io
 import feedparser
+import html2text
 
 import requests
 from bs4 import BeautifulSoup
@@ -354,7 +355,41 @@ class RSSNews(Resource):
     def get(self):
         """Get news"""
         feed = feedparser.parse("https://www.uniparthenope.it/rss.xml")
+        h = html2text.HTML2Text()
+        h.ignore_links = True
+        h.ignore_images = True
 
+        start = '<a href="'
+        end = '" type='
+
+        news = []
+        #print(feed['entries'][2])
         for i in range(0, len(feed['entries'])):
-            print(feed['entries'][i]['title'])
-            print(feed['entries'][i]['description'])
+            img = ""
+            if "Foto/Video" in feed['entries'][i]['summary']:
+                text = feed['entries'][i]['summary']
+
+                while start in text and end in text:
+                    s_index = text.find(start)
+                    e_index = text.find(end) + len(end)
+
+                    img = text[s_index:e_index]
+                    title = h.handle(img).strip()
+                    text = text.replace(img, title)
+
+                img = img.replace(start, "")
+                img = img.replace(end, "")
+
+            article = {}
+            article.update({
+
+                'titolo': feed['entries'][i]['title'],
+                'link': feed['entries'][i]['link'],
+                'image': img,
+                'HTML': feed['entries'][i]['summary'],
+                'TEXT': h.handle(feed['entries'][i]['summary']),
+
+            })
+            news.append(article)
+
+        return news, 200
