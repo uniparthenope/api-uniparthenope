@@ -3,6 +3,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime
 import io
+import feedparser
 
 import requests
 from bs4 import BeautifulSoup
@@ -344,3 +345,16 @@ class InfoPersone(Resource):
                 return {'errMsg': 'generic error'}, 500
         else:
             return {'errMsg': 'generic error'}, g.status
+
+
+# ------------- NEWS RSS -------------
+
+
+class RSSNews(Resource):
+    def get(self):
+        """Get news"""
+        feed = feedparser.parse("https://www.uniparthenope.it/rss.xml")
+
+        for i in range(0, len(feed['entries'])):
+            print(feed['entries'][i]['title'])
+            print(feed['entries'][i]['description'])

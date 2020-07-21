@@ -360,6 +360,7 @@ class CheckAppello(Resource):
         try:
             response = requests.request("GET", url + "calesa-service-v1/appelli/" + cdsId + "/" + adId, headers=headers)
             _response = response.json()
+            print(_response)
 
             for i in range(0, len(_response)):
                 #if _response[i]['stato'] == "I" or _response[i]['stato'] == "P":
