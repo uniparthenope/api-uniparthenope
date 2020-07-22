@@ -357,25 +357,23 @@ class CheckAppello(Resource):
             'Content-Type': "application/json",
             "Authorization": "Basic " + g.token
         }
+
         try:
             response = requests.request("GET", url + "calesa-service-v1/appelli/" + cdsId + "/" + adId, headers=headers)
             _response = response.json()
-            print(_response)
 
             for i in range(0, len(_response)):
+                print(_response[i]['stato'])
                 #if _response[i]['stato'] == "I" or _response[i]['stato'] == "P":
                 if _response[i]['stato'] not in bad_status:
                     #I = Esami futuri non ancora prenotabili
                     #P = Esami prenotabili
-                    if _response[i]['stato'] == "I":
-                        stato = "I"
-                    else:
-                        stato = "P"
+
                     actual_exam = {}
                     actual_exam.update({
                         'esame': _response[i]['adDes'],
                         'appId': _response[i]['appId'],
-                        'stato': stato,
+                        'stato': _response[i]['stato'],
                         'statoDes': _response[i]['statoDes'],
                         'docente': _response[i]['presidenteCognome'].capitalize(),
                         'docente_completo': _response[i]['presidenteCognome'].capitalize() + " " + _response[i][
