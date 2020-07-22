@@ -392,6 +392,7 @@ class RSSNews(Resource):
                 article.update({
                     'titolo': feed['entries'][i]['title'],
                     'link': feed['entries'][i]['link'],
+                    'data': feed['entries'][i]['published'],
                     'image': img,
                     'HTML': feed['entries'][i]['summary'],
                     'TEXT': text_string
