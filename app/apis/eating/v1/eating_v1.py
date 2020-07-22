@@ -78,31 +78,37 @@ class getUsers(Resource):
 class getToday(Resource):
     def get(self):
         """Get Menu Today"""
-        array = []
+        all_menu = []
         today = datetime.today()
 
-        foods = Food.query.all()
+        users = UserFood.query.all()
+        for u in users:
+            foods = UserFood.query.filter_by(username=u.username).first().foods
 
-        for f in foods:
-            if (f.data.year == today.year \
-                and f.data.month == today.month \
-                and f.data.day == today.day) \
-                    or f.sempre_attivo:
-                if f.image is None:
-                    image = ""
-                else:
-                    image = (f.image).decode('ascii')
+            array = []
+            for f in foods:
+                if (f.data.year == today.year and f.data.month == today.month and f.data.day == today.day) or f.sempre_attivo:
+                    if f.image is None:
+                        image = ""
+                    else:
+                        image = (f.image).decode('ascii')
 
-                menu = ({'nome': f.nome,
-                         'descrizione': f.descrizione,
-                         'prezzo': f.prezzo,
-                         'tipologia': f.tipologia,
-                         'sempre_attivo': f.sempre_attivo,
-                         'nome_bar': f.user_username,
-                         'image': image})
-                array.append(menu)
+                    menu = ({'nome': f.nome,
+                             'descrizione': f.descrizione,
+                             'prezzo': f.prezzo,
+                             'tipologia': f.tipologia,
+                             'sempre_attivo': f.sempre_attivo,
+                             'nome_bar': f.user_username,
+                             'image': image})
 
-        return array, 200
+                    array.append(menu)
+
+            all_menu.append({
+                "bar": u.nome_bar,
+                "menu": array
+            })
+
+        return all_menu, 200
 
 
 # ------------- ADD NEW MENU -------------
@@ -135,8 +141,7 @@ class addMenu(Resource):
 
         if g.status == 202:
             if 'nome' in content and 'descrizione' in content and 'tipologia' in content and 'prezzo' in content and 'attivo' in content and 'img' in content:
-                if content['nome'] == "" or content['descrizione'] == "" or content['tipologia'] == "" or content[
-                    'prezzo'] == "" or content['attivo'] == "":
+                if content['nome'] == "" or content['descrizione'] == "" or content['tipologia'] == "" or content['prezzo'] == "" or content['attivo'] == "":
                     return {'errMsg': 'Insert all fields'}, 500
                 else:
                     base64_bytes = g.token.encode('utf-8')
@@ -208,6 +213,7 @@ class getMenuBar(Resource):
 
 
 # ------------- REMOVE MENU BY ID -------------
+
 parser = api.parser()
 parser.add_argument('id', type=str, required=True, help='Menu Id')
 
