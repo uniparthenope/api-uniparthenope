@@ -83,6 +83,8 @@ def ldap_auth(user, passwd):
 
     if c.result['result'] == 0:
         print("LDAP people!")
+
+        c.result["user"] = {"grpDes": "PTA"}
         return c.result
     else:
         # define the server
@@ -99,7 +101,7 @@ def ldap_auth(user, passwd):
 
         print("LDAP studenti!")
 
-        c.result["grpDes"] = "StudentiNonImm"
+        c.result["user"] = {"grpDes" : "StudentiNonImm"}
 
         return c.result
 
