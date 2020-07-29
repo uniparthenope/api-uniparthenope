@@ -41,7 +41,25 @@ def ldap_auth(user, passwd):
     # perform the Bind operation
     c.bind()
 
-    return c.result
+    if c.result['result'] == 0:
+        print("LDAP people!")
+        return c.result
+    else:
+        # define the server
+        s = Server('ldap-studenti.uniparthenope.it', get_info=ALL)  # define an unsecure LDAP server, requesting info on DSE and schema
+
+        # the following is the user_dn format provided by the ldap server
+        user_dn = "uid=" + user + ",ou=studenti,dc=uniparthenope,dc=it"
+
+        # define the connection
+        c = Connection(s, user=user_dn, password=passwd)
+
+        # perform the Bind operation
+        c.bind()
+
+        print("LDAP studenti!")
+        return c.result
+
 
 
 def auth(token):
@@ -85,6 +103,7 @@ def auth(token):
             # _response = response.json()
             # _response.update({"token":token})
             # return _response, 200
+            print("ESSE3 success!")
             result["status"] = "success"
             code = 200
 
@@ -107,6 +126,7 @@ def auth(token):
         code = 500
 
     return result, code
+
 
 parser = api.parser()
 @ns.doc(parser=parser)
