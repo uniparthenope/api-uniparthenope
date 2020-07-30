@@ -56,6 +56,8 @@ def ldap_auth(user, passwd):
 
         # perform the Bind operation
         c.bind()
+        #entry = c.entries
+        #print(entry[0].entry_to_json())
 
         print("LDAP studenti!")
         return c.result

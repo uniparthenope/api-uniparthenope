@@ -17,7 +17,7 @@ SQLALCHEMY_BINDS = {
     # Insert here your database
 }
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-SECRET_KEY = 'fPALYbDsVo119ifBO5Mk9Fwyd3mIdzzSqI3sPfQuzPlfco22LqpvHtOHMzKhZQ4'
+SECRET_KEY = '---'
 ### </database> ###
 
 
