@@ -14,7 +14,7 @@ ns = api.namespace('uniparthenope')
 # ------------- CLASSROOM -------------
 
 access = ns.model("access", {
-    "accessType": fields.String(description="presence|distance", required=True)
+    "accessType": fields.String(description="undefined|presence|distance", required=True)
 })
 
 
@@ -38,7 +38,7 @@ class Access(Resource):
 
                 if 'accessType' in content:
                     print(content['accessType'])
-                    if content['accessType'] == 'presence' or content['accessType'] == 'distance':
+                    if content['accessType'] == 'presence' or content['accessType'] == 'distance' or content['accessType'] == 'undefined':
                        # print("OK")
                         user = UserAccess.query.filter_by(username=userId).first()
 
