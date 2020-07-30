@@ -39,10 +39,10 @@ class Access(Resource):
                 if 'accessType' in content:
                     print(content['accessType'])
                     if content['accessType'] == 'presence' or content['accessType'] == 'distance':
-                        print("OK")
+                       # print("OK")
                         user = UserAccess.query.filter_by(username=userId).first()
 
-                        print(user)
+                       # print(user)
                         if user is None:
                             try:
                                 u = UserAccess(username=userId, classroom=content['accessType'])
@@ -56,6 +56,8 @@ class Access(Resource):
                         else:
                             try:
                                 user.classroom = content['accessType']
+                                print(user.classroom)
+                                db.session.commit()
                                 return {'message': 'Classroom modified'}, 200
                             except:
                                 return {'errMsg': 'Generic error!'}, 500
