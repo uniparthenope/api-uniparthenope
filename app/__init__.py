@@ -2,6 +2,8 @@ from flask import Flask
 from flask_restplus import Api
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_cors import CORS, cross_origin
+
 import os
 
 ### <database> ###
@@ -20,6 +22,8 @@ SECRET_KEY = 'fPALYbDsVo119ifBO5Mk9Fwyd3mIdzzSqI3sPfQuzPlfco22LqpvHtOHMzKhZQ4'
 
 
 app = Flask(__name__, static_url_path='/')
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 authorizations = {
     'Basic Auth': {

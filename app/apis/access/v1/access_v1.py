@@ -86,7 +86,7 @@ class Access(Resource):
                 if user is not None:
                     return {"accessType": user.classroom}, 200
                 else:
-                    return {'errMsg': 'Set your preference (presence|distance)'}, 500
+                    return {"accessType": "undefined"}, 200
             except:
                 return {'errMsg': 'Image creation error'}, 500
         else:
