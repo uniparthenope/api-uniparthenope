@@ -5,6 +5,8 @@ from datetime import datetime
 import io
 import feedparser
 import html2text
+import random, string
+
 
 import os, ssl
 if (not os.environ.get('PYTHONHTTPSVERIFY', '') and
@@ -22,6 +24,9 @@ from app.apis.uniparthenope.v1.login_v1 import token_required, token_required_ge
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
 
+def randomword(length):
+   letters = string.ascii_lowercase+string.digits+string.ascii_uppercase
+   return ''.join(random.choice(letters) for i in range(length))
 
 def extractData(data):
     data_split = data.split()[0]
@@ -91,7 +96,8 @@ class ProfImage(Resource):
 
         if g.status == 200:
             try:
-                res = requests.get("https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + idAb + ".jpg", stream=True)
+                random_seq = randomword(8)
+                res = requests.get("https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + idAb + ".jpg?itok=" + random_seq, stream=True)
                 if res.status_code == 200:
                     return send_file(
                         io.BytesIO(res.content),
