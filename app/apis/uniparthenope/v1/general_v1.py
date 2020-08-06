@@ -107,7 +107,7 @@ class ProfImage(Resource):
                     )
                 else:
                     #_response = res.json()
-                    return {'errMsg': "Picture Error"}, res.status_code
+                    return {'errMsg': "Picture Error"}
 
             except requests.exceptions.HTTPError as e:
                 return {'errMsg': e}, 500
