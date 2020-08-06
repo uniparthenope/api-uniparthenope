@@ -102,7 +102,6 @@ class ProfImage(Resource):
                 res = requests.request("GET", img_url, verify=False)
 
                 if res.status_code == 200:
-                    print("Ok")
                     return send_file(
                         io.BytesIO(res.content),
                         attachment_filename='image.jpg',
