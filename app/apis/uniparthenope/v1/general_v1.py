@@ -99,6 +99,7 @@ class ProfImage(Resource):
                 random_seq = randomword(8)
                 res = requests.get("https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + idAb + ".jpg?itok=" + random_seq, stream=True)
                 if res.status_code == 200:
+                    print("Ok")
                     return send_file(
                         io.BytesIO(res.content),
                         attachment_filename='image.jpg',
@@ -106,8 +107,9 @@ class ProfImage(Resource):
                         cache_timeout=-1
                     )
                 else:
+                    print("Wrong")
                     #_response = res.json()
-                    return {'errMsg': "Picture Error"}
+                    #return {'errMsg': "Picture Error"}
 
             except requests.exceptions.HTTPError as e:
                 return {'errMsg': e}, 500
