@@ -98,7 +98,8 @@ class ProfImage(Resource):
             try:
                 random_seq = randomword(8)
                 #res = requests.get("https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + idAb + ".jpg?itok=" + random_seq, stream=True)
-                res = requests.request("GET", "https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + idAb + ".jpg?itok=" + random_seq)
+                res = requests.request("GET", "https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + str(idAb) + ".jpg?itok=" + random_seq)
+                '''
                 print("HERE")
                 print(res)
                 if res.status_code == 200:
@@ -113,7 +114,7 @@ class ProfImage(Resource):
                     print("Wrong")
                     #_response = res.json()
                     #return {'errMsg': "Picture Error"}
-
+'''
             except requests.exceptions.HTTPError as e:
                 return {'errMsg': e}, 500
             except requests.exceptions.ConnectionError as e:
