@@ -99,7 +99,7 @@ class ProfImage(Resource):
             random_seq = randomword(8)
             #res = requests.get("https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + idAb + ".jpg?itok=" + random_seq, stream=True)
             img_url = "https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + str(idAb) + ".jpg?itok=" + random_seq
-            res = requests.request("GET", img_url)
+            res = requests.request("GET", img_url, verify=False)
             '''
                 print("HERE")
                 print(res)
