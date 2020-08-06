@@ -95,14 +95,12 @@ class ProfImage(Resource):
         """Get personale image"""
 
         if g.status == 200:
-            #try:
-            random_seq = randomword(8)
-            #res = requests.get("https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + idAb + ".jpg?itok=" + random_seq, stream=True)
-            img_url = "https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + str(idAb) + ".jpg?itok=" + random_seq
-            res = requests.request("GET", img_url, verify=False)
-            '''
-                print("HERE")
-                print(res)
+            try:
+                #random_seq = randomword(8)
+                #res = requests.get("https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + idAb + ".jpg?itok=" + random_seq, stream=True)
+                img_url = "https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + str(idAb) + ".jpg?itok=" + random_seq
+                res = requests.request("GET", img_url, verify=False)
+
                 if res.status_code == 200:
                     print("Ok")
                     return send_file(
@@ -112,9 +110,9 @@ class ProfImage(Resource):
                         cache_timeout=-1
                     )
                 else:
-                    print("Wrong")
-                    #_response = res.json()
-                    #return {'errMsg': "Picture Error"}
+                    _response = res.json()
+                    return {'errMsg': _response["retErrMsg"]}, res.status_code
+
 
             except requests.exceptions.HTTPError as e:
                 return {'errMsg': e}, 500
@@ -126,7 +124,6 @@ class ProfImage(Resource):
                 return {'errMsg': e}, 500
             except:
                 return {'errMsg': 'generic error'}, 500
-            '''
         else:
             return {'errMsg': 'Wring username/pass'}, g.status
 
