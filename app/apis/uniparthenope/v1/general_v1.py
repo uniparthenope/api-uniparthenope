@@ -95,12 +95,12 @@ class ProfImage(Resource):
         """Get personale image"""
 
         if g.status == 200:
-            try:
-                random_seq = randomword(8)
-                #res = requests.get("https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + idAb + ".jpg?itok=" + random_seq, stream=True)
-                img_url = "https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + str(idAb) + ".jpg?itok=" + random_seq
-                res = requests.request("GET", img_url)
-                '''
+            #try:
+            random_seq = randomword(8)
+            #res = requests.get("https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + idAb + ".jpg?itok=" + random_seq, stream=True)
+            img_url = "https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + str(idAb) + ".jpg?itok=" + random_seq
+            res = requests.request("GET", img_url)
+            '''
                 print("HERE")
                 print(res)
                 if res.status_code == 200:
@@ -115,7 +115,7 @@ class ProfImage(Resource):
                     print("Wrong")
                     #_response = res.json()
                     #return {'errMsg': "Picture Error"}
-'''
+
             except requests.exceptions.HTTPError as e:
                 return {'errMsg': e}, 500
             except requests.exceptions.ConnectionError as e:
@@ -126,6 +126,7 @@ class ProfImage(Resource):
                 return {'errMsg': e}, 500
             except:
                 return {'errMsg': 'generic error'}, 500
+            '''
         else:
             return {'errMsg': 'Wring username/pass'}, g.status
 
