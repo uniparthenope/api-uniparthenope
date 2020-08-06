@@ -106,8 +106,8 @@ class ProfImage(Resource):
                         cache_timeout=-1
                     )
                 else:
-                    _response = res.json()
-                    return {'errMsg': _response["retErrMsg"]}, res.status_code
+                    #_response = res.json()
+                    return {'errMsg': "Picture Error"}, res.status_code
 
             except requests.exceptions.HTTPError as e:
                 return {'errMsg': e}, 500
