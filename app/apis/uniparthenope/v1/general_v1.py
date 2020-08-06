@@ -96,6 +96,7 @@ class ProfImage(Resource):
 
         if g.status == 200:
             try:
+                print("HERE")
                 random_seq = randomword(8)
                 res = requests.get("https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + idAb + ".jpg?itok=" + random_seq, stream=True)
                 if res.status_code == 200:
