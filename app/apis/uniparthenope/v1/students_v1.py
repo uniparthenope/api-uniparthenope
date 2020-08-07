@@ -1,5 +1,7 @@
+import base64
 import json
 
+from app.apis.uniparthenope.v1.general_v1 import InfoPersone
 from app.apis.uniparthenope.v1.login_v1 import token_required, token_required_general
 from flask import g, request
 from app import api
@@ -690,36 +692,47 @@ class getProfessors(Resource):
         array = []
 
         if g.status == 200:
-            try:
-                response = requests.request("GET",
-                                            url + "offerta-service-v1/offerte/" + aaId + "/" + cdsId + "/docentiPerUD",
-                                            headers=headers)
-                _response = response.json()
+            #try:
+            response = requests.request("GET",
+                                        url + "offerta-service-v1/offerte/" + aaId + "/" + cdsId + "/docentiPerUD",
+                                        headers=headers)
+            _response = response.json()
 
-                if response.status_code == 200:
-                    for i in range(0, len(_response)):
-                        item = ({
-                            'docenteNome': _response[i]['docenteNome'],
-                            'docenteCognome': _response[i]['docenteCognome'],
-                            'docenteId': _response[i]['docenteId'],
-                            'docenteMat': _response[i]['docenteMatricola'],
-                            'corso': _response[i]['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adDes'],
-                            'adId': _response[i]['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adId']
-                        })
-                        array.append(item)
+            if response.status_code == 200:
+                for i in range(0, len(_response)):
+                    info = InfoPersone(Resource).get(_response[i]['docenteCognome'] + "%20" + _response[i]['docenteNome'])
+                    info_json = json.loads(json.dumps(info))[0]
+                    info_img = info_json['url_pic']
+                    img = base64.b64encode(requests.get(info_img, verify=False).content)
+                    #print(img)
 
-                return array, 200
+                    item = ({
+                        'docenteNome': _response[i]['docenteNome'],
+                        'docenteCognome': _response[i]['docenteCognome'],
+                        'docenteId': _response[i]['docenteId'],
+                        'docenteMat': _response[i]['docenteMatricola'],
+                        'corso': _response[i]['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adDes'],
+                        'adId': _response[i]['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adId'],
+                        'telefono': info_json['telefono'],
+                        'email': info_json['email'],
+                        'link': info_json['link'],
+                        'ugov_id': info_json['ugov_id'],
+                        'url_pic': str(img)
+                    })
+                    array.append(item)
 
-            except requests.exceptions.HTTPError as e:
-                return {'errMsg': e}, 500
-            except requests.exceptions.ConnectionError as e:
-                return {'errMsg': e}, 500
-            except requests.exceptions.Timeout as e:
-                return {'errMsg': e}, 500
-            except requests.exceptions.RequestException as e:
-                return {'errMsg': e}, 500
-            except:
-                return {'errMsg': 'generic error'}, 500
+            return array, 200
+
+            #except requests.exceptions.HTTPError as e:
+            #    return {'errMsg': e}, 500
+            #except requests.exceptions.ConnectionError as e:
+            #    return {'errMsg': e}, 500
+            #except requests.exceptions.Timeout as e:
+            #    return {'errMsg': e}, 500
+            #except requests.exceptions.RequestException as e:
+            #    return {'errMsg': e}, 500
+            #except:
+            #    return {'errMsg': 'generic error'}, 500
         else:
             return {'errMsg': 'generic error'}, g.status
 

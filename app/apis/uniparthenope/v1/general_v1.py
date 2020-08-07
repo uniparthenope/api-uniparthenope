@@ -304,61 +304,61 @@ class InfoPersone(Resource):
         url = 'https://www.uniparthenope.it/rubrica?nome_esteso_1=' + nome
 
         if g.status == 200:
-            #try:
-            response = urllib.request.urlopen(url)
-            webContent = response.read()
-
-            parsed = BeautifulSoup(webContent, 'html.parser')
-
-            div = parsed.find('div', attrs={'class': 'region region-content'})
-
-            ul = div.find('ul', attrs={'class': 'rubrica-list'})
-            if ul is not None:
-                tel = ul.find('div', attrs={'class': 'views-field views-field-contatto-tfu'})
-                if tel is not None:
-                    tel_f = tel.find('span', attrs={'class': 'field-content'})
-                    tel_finale = tel_f.text
-                else:
-                    tel_finale = "N/A"
-
-                email = ul.find('div', attrs={'class': 'views-field views-field-contatto-email'})
-                email_finale = email.find('span', attrs={'class': 'field-content'})
-
-                scheda = ul.find('div', attrs={'class': 'views-field views-field-view-uelement'})
-                scheda_finale = scheda.find('span', attrs={'class': 'field-content'})
-
-                for a in scheda_finale.find_all('a', href=True):
-                    link = a['href']
-
-                link_pers = str(link).split("/")[-1]
-
-                response = urllib.request.urlopen(link)
+            try:
+                response = urllib.request.urlopen(url)
                 webContent = response.read()
 
                 parsed = BeautifulSoup(webContent, 'html.parser')
-                div = parsed.find('div', attrs={'class': 'views-field views-field-field-ugov-foto'})
-                img = div.find('img', attrs={'class': 'img-responsive'})
 
-                prof = ({
-                    'telefono': str(tel_finale),
-                    'email': str(email_finale.text.rstrip()),
-                    'link': str(link),
-                    'ugov_id': link_pers,
-                    'url_pic': str(img['src'])
-                })
-            else:
-                prof = ({
-                    'telefono': "",
-                    'email': "",
-                    'link': "",
-                    'ugov_id': "",
-                    'url_pic': "https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/default_images/ugov_fotopersona.jpg"
-                })
+                div = parsed.find('div', attrs={'class': 'region region-content'})
 
-            return prof, 200
+                ul = div.find('ul', attrs={'class': 'rubrica-list'})
+                if ul is not None:
+                    tel = ul.find('div', attrs={'class': 'views-field views-field-contatto-tfu'})
+                    if tel is not None:
+                        tel_f = tel.find('span', attrs={'class': 'field-content'})
+                        tel_finale = tel_f.text
+                    else:
+                        tel_finale = "N/A"
 
-            #except:
-            #    return {'errMsg': 'generic error'}, 500
+                    email = ul.find('div', attrs={'class': 'views-field views-field-contatto-email'})
+                    email_finale = email.find('span', attrs={'class': 'field-content'})
+
+                    scheda = ul.find('div', attrs={'class': 'views-field views-field-view-uelement'})
+                    scheda_finale = scheda.find('span', attrs={'class': 'field-content'})
+
+                    for a in scheda_finale.find_all('a', href=True):
+                        link = a['href']
+
+                    link_pers = str(link).split("/")[-1]
+
+                    response = urllib.request.urlopen(link)
+                    webContent = response.read()
+
+                    parsed = BeautifulSoup(webContent, 'html.parser')
+                    div = parsed.find('div', attrs={'class': 'views-field views-field-field-ugov-foto'})
+                    img = div.find('img', attrs={'class': 'img-responsive'})
+
+                    prof = ({
+                        'telefono': str(tel_finale),
+                        'email': str(email_finale.text.rstrip()),
+                        'link': str(link),
+                        'ugov_id': link_pers,
+                        'url_pic': str(img['src'])
+                    })
+                else:
+                    prof = ({
+                        'telefono': "",
+                        'email': "",
+                        'link': "",
+                        'ugov_id': "",
+                        'url_pic': "https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/default_images/ugov_fotopersona.jpg"
+                    })
+
+                return prof, 200
+
+            except:
+                return {'errMsg': 'generic error'}, 500
         else:
             return {'errMsg': 'generic error'}, g.status
 
