@@ -717,7 +717,7 @@ class getProfessors(Resource):
                             'email': info_json['email'],
                             'link': info_json['link'],
                             'ugov_id': info_json['ugov_id'],
-                            'url_pic': str(img)
+                            'url_pic': img.decode('utf-8')
                         })
                         array.append(item)
 
