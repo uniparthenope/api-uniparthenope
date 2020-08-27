@@ -9,6 +9,8 @@ from functools import wraps
 from app.apis.ga_uniparthenope.models import Building
 from app.apis.eating.models import UserFood
 
+from app.apis.uniparthenope.demo import users_demo
+
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
 
@@ -24,7 +26,12 @@ def token_required(f):
         if not token:
             return {'message': 'Token is missing.'}, 401
 
-        g.token = token.split()[1]
+        _token = token.split()[1]
+
+        if _token in users_demo:
+            g.token = users_demo[_token]
+        else:
+            g.token = _token
 
         return f(*args, **kwargs)
 
@@ -41,7 +48,13 @@ def token_required_general(f):
         if not token:
             return {'message': 'Token is missing.'}, 401
 
-        g.token = token.split()[1]
+        _token = token.split()[1]
+
+        if _token in users_demo:
+            g.token = users_demo[_token]
+        else:
+            g.token = _token
+
         status = auth(g.token)
         g.status = status[1]
 
