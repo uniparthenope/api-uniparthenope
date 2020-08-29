@@ -37,6 +37,56 @@ def extractData(data):
     return export_data
 
 
+# ------------- ANAGRAFICA -------------
+
+
+parser = api.parser()
+parser.add_argument('personId', type=int, required=True, help='User personId')
+
+
+class Anagrafica(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required
+    def get(self, personId):
+        """Get personal info"""
+
+        headers = {
+            'Content-Type': "application/json",
+            "Authorization": "Basic " + g.token
+        }
+
+        try:
+            res = requests.request("GET", url + "anagrafica-service-v2/persone/" + personId, headers=headers)
+            _response = res.json()
+            print(_response)
+
+            if res.status_code == 200:
+                return {
+                    'codFis': _response['codFis'],
+                    'cognome': _response['cognome'],
+                    'nome': _response['nome'],
+                    'dataNascita': _response['dataNascita'],
+                    'desCittadinanza': _response['desCittadinanza'],
+                    'email': _response['email'],
+                    'emailAte': _response['emailAte'],
+                    'persId': _response['persId'],
+                    'telRes': _response['telRes'],
+                    'userId': _response['userId']
+                }, 200
+            else:
+                return {'errMsg': _response["retErrMsg"]}, res.status_code
+        except requests.exceptions.HTTPError as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.ConnectionError as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.Timeout as e:
+            return {'errMsg': e}, 500
+        except requests.exceptions.RequestException as e:
+            return {'errMsg': e}, 500
+        except:
+            return {'errMsg': 'generic error'}, 500
+
+
 # ------------- PERSONAL IMAGE -------------
 
 
