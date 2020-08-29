@@ -69,44 +69,109 @@ class getCourses(Resource):
         }
 
         array = []
+        adId_new =""
+        cdsId = ""
+        adDefAppCod = ""
+        adDes = ""
+        cdsDes = ""
+        cfu = ""
+        durata = ""
+        obbligatoria = ""
+        libera = ""
+        tipo = ""
+        settCod = ""
+        semCod = ""
+        semDes = ""
+        inizio = ""
+        fine = ""
+        ultMod = ""
+        sede = ""
 
         try:
-            response = requests.request("GET", url + "calesa-service-v1/abilitazioni", headers=headers)
+            response = requests.request("GET", url + "calesa-service-v1/abilitazioni?aaOffAbilId=" + aaId, headers=headers)
 
             if response.status_code is 200:
                 _response = response.json()
                 for x in range(0, len(_response)):
                     if _response[x]['aaAbilDocId'] == int(aaId):
+                        adId_new = _response[x]['adId']
+                        cdsId = _response[x]['cdsId']
+                        adDefAppCod = _response[x]['adDefAppCod']
+
                         response2 = requests.request("GET", url + "offerta-service-v1/offerte/" + aaId + "/" + str(_response[x]['cdsId']) + "/segmenti?adId=" + str(_response[x]['adId']) + "&order=-aaOrdId", headers=headers)
                         if response2.status_code is 200:
                             _response2 = response2.json()
-                            response3 = requests.request("GET", url + "logistica-service-v1/logistica?aaOffId=" + aaId + "&adId=" + str(_response[x]['adId']), headers=headers)
-                            if response3.status_code is 200:
-                                _response3 = response3.json()
+                            if len(_response2) is not 0:
 
-                                item = ({
-                                    'adDes': _response3[0]['chiaveADFisica']['adDes'],
-                                    'adId': _response[x]['adId'],
-                                    'cdsDes': _response3[0]['chiaveADFisica']['cdsDes'],
-                                    'cdsId': _response[x]['cdsId'],
-                                    'adDefAppCod': _response[x]['adDefAppCod'],
-                                    'cfu': _response2[0]['peso'],
-                                    'durata': _response2[0]['durUniVal'],
-                                    'obbligatoria': _response2[0]['freqObbligFlg'],
-                                    'libera': _response2[0]['liberaOdFlg'],
-                                    'tipo': _response2[0]['tipoAfCod']['value'],
-                                    'settCod': _response2[0]['settCod'],
-                                    'semCod': _response3[0]['chiavePartizione']['partCod'],
-                                    'semDes': _response3[0]['chiavePartizione']['partDes'],
-                                    'inizio': _response3[0]['dataInizio'].split()[0],
-                                    'fine': _response3[0]['dataFine'].split()[0],
-                                    'ultMod': _response3[0]['dataModLog'].split()[0],
-                                    'sede': _response3[0]['sedeDes']
-                                })
-                                array.append(item)
+                                cfu =_response2[0]['peso']
+                                durata =_response2[0]['durUniVal']
+                                obbligatoria = _response2[0]['freqObbligFlg']
+                                libera = _response2[0]['liberaOdFlg']
+                                tipo = _response2[0]['tipoAfCod']['value']
+                                settCod = _response2[0]['settCod']
+
+                                response3 = requests.request("GET", url + "logistica-service-v1/logistica?aaOffId=" + aaId + "&adId=" + str(_response[x]['adId']), headers=headers)
+
+                                if response3.status_code is 200:
+                                    _response3 = response3.json()
+
+                                    if len(_response3) is not 0:
+
+                                        adDes = _response3[0]['chiaveADFisica']['adDes']
+                                        cdsDes = _response3[0]['chiaveADFisica']['cdsDes']
+                                        semCod = _response3[0]['chiavePartizione']['partCod']
+                                        semDes =_response3[0]['chiavePartizione']['partDes']
+                                        inizio = _response3[0]['dataInizio'].split()[0]
+                                        fine = _response3[0]['dataFine'].split()[0]
+                                        ultMod = _response3[0]['dataModLog'].split()[0]
+                                        sede = _response3[0]['sedeDes']
+
+                                    else:
+                                        adDes = ""
+                                        cdsDes = ""
+                                        semCod = ""
+                                        semDes = ""
+                                        inizio = ""
+                                        fine = ""
+                                        ultMod = ""
+                                        sede = ""
+
+                            else:
+                                cfu = ""
+                                durata = ""
+                                obbligatoria = ""
+                                libera = ""
+                                tipo = ""
+                                settCod = ""
+
+                    else:
+                        return {'errMsg': 'generic error 1'}, 500
+
+                    print("HERE")
+                    item = ({
+                        'adDes': adDes,
+                        'adId': adId_new,
+                        'cdsDes': cdsDes,
+                        'cdsId': cdsId,
+                        'adDefAppCod': adDefAppCod,
+                        'cfu': cfu,
+                        'durata': durata,
+                        'obbligatoria': obbligatoria,
+                        'libera': libera,
+                        'tipo': tipo,
+                        'settCod': settCod,
+                        'semCod': semCod,
+                        'semDes': semDes,
+                        'inizio': inizio,
+                        'fine': fine,
+                        'ultMod': ultMod,
+                        'sede': sede
+                    })
+                    array.append(item)
+
                 return array
             else:
-                return {'errMsg': 'generic error'}, 500
+                return {'errMsg': 'generic error 1'}, 500
 
         except requests.exceptions.HTTPError as e:
             return {'errMsg': e}, 500
@@ -117,7 +182,7 @@ class getCourses(Resource):
         except requests.exceptions.RequestException as e:
             return {'errMsg': e}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            return {'errMsg': 'generic error 2'}, 500
 
 
 # ------------- GET SESSION -------------
