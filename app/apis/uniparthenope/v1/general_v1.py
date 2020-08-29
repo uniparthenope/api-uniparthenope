@@ -61,25 +61,19 @@ class Anagrafica(Resource):
 
             if res.status_code == 200:
                 return {
-                    'codFis': _response['codFis'],
-                    'cognome': _response['cognome'],
-                    'nome': _response['nome'],
                     'dataNascita': _response['dataNascita'],
                     'desCittadinanza': _response['desCittadinanza'],
                     'email': _response['email'],
                     'emailAte': _response['emailAte'],
                     'sesso': _response['sesso'],
                     'telRes': _response['telRes']
-                    }, 200
+                }, 200
             elif res.status_code == 403:
                 res = requests.request("GET", url + "anagrafica-service-v2/docenti/" + Id, headers=headers)
                 _response = res.json()
 
                 if res.status_code == 200:
                     return {
-                        'codFis': _response[0]['codFis'],
-                        'cognome': _response[0]['docenteCognome'],
-                        'nome': _response[0]['docenteNome'],
                         'dataNascita': _response[0]['dataNascita'],
                         'emailAte': _response[0]['eMail'],
                         'sesso': _response[0]['sesso'],
