@@ -147,27 +147,27 @@ class getCourses(Resource):
                     else:
                         return {'errMsg': 'generic error 1'}, 500
 
-                    print("HERE")
-                    item = ({
-                        'adDes': adDes,
-                        'adId': adId_new,
-                        'cdsDes': cdsDes,
-                        'cdsId': cdsId,
-                        'adDefAppCod': adDefAppCod,
-                        'cfu': cfu,
-                        'durata': durata,
-                        'obbligatoria': obbligatoria,
-                        'libera': libera,
-                        'tipo': tipo,
-                        'settCod': settCod,
-                        'semCod': semCod,
-                        'semDes': semDes,
-                        'inizio': inizio,
-                        'fine': fine,
-                        'ultMod': ultMod,
-                        'sede': sede
-                    })
-                    array.append(item)
+                    if adDes is not "":
+                        item = ({
+                            'adDes': adDes,
+                            'adId': adId_new,
+                            'cdsDes': cdsDes,
+                            'cdsId': cdsId,
+                            'adDefAppCod': adDefAppCod,
+                            'cfu': cfu,
+                            'durata': durata,
+                            'obbligatoria': obbligatoria,
+                            'libera': libera,
+                            'tipo': tipo,
+                            'settCod': settCod,
+                            'semCod': semCod,
+                            'semDes': semDes,
+                            'inizio': inizio,
+                            'fine': fine,
+                            'ultMod': ultMod,
+                            'sede': sede
+                        })
+                        array.append(item)
 
                 return array
             else:
