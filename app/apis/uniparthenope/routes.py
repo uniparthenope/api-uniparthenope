@@ -9,7 +9,7 @@ ns = api.namespace('UniparthenopeApp', description='UniParthenope App operations
 from app.apis.uniparthenope.v1.login_v1 import Login, Logout
 from app.apis.uniparthenope.v1.students_v1 import DepInfo, GetPianoId, GetAverage, GetTotalExams, GetExams, CheckExam, CheckAppello, CheckPrenotazione, getReservations, ExamsToFreq, getProfessors, Taxes, BookExam, DeleteReservation
 from app.apis.uniparthenope.v1.professor_v1 import getCourses, getSession, DetInfo
-from app.apis.uniparthenope.v1.general_v1 import CurrentAA, RecentAD, InfoCourse, InfoPersone, PersonalImage, ProfImage, RSSNews, Privacy
+from app.apis.uniparthenope.v1.general_v1 import CurrentAA, RecentAD, InfoCourse, InfoPersone, PersonalImage, ProfImage, RSSNews, RSSAvvisi, Privacy
 
 ns.add_resource(Login, '/v1/login', methods=['GET'])
 ns.add_resource(Logout, '/v1/logout', methods=['GET'])
@@ -42,4 +42,5 @@ ns.add_resource(InfoPersone, '/v1/general/persone/<nome_completo>', methods=['GE
 ns.add_resource(PersonalImage, '/v1/general/image/<personId>', methods=['GET'])
 ns.add_resource(ProfImage, '/v1/general/image_prof/<idAb>', methods=['GET'])
 ns.add_resource(RSSNews, '/v1/general/news', methods=['GET'])
+ns.add_resource(RSSAvvisi, '/v1/general/avvisi', methods=['GET'])
 ns.add_resource(Privacy, '/v1/general/privacy', methods=['GET'])

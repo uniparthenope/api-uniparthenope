@@ -423,6 +423,33 @@ class RSSNews(Resource):
             return {'errMsg': 'generic error'}, 500
 
 
+# ------------- AVVISI RSS -------------
+
+
+class RSSAvvisi(Resource):
+    def get(self):
+        """Get news"""
+
+        try:
+            feed = feedparser.parse("https://www.uniparthenope.it/rss.xml")
+
+            avvisi = []
+
+            for i in range(0, len(feed['entries'])):
+                avviso = {}
+                avviso.update({
+                    'titolo': feed['entries'][i]['title'],
+                    'link': feed['entries'][i]['link'],
+                    'data': feed['entries'][i]['published'],
+                    'HTML': feed['entries'][i]['summary'],
+                })
+                avvisi.append(avviso)
+            return avvisi, 200
+
+        except:
+            return {'errMsg': 'generic error'}, 500
+
+
 # ------------- PRIVACY -------------
 
 
