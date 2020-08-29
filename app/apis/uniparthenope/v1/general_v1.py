@@ -41,13 +41,13 @@ def extractData(data):
 
 
 parser = api.parser()
-parser.add_argument('personId', type=int, required=True, help='User personId')
+parser.add_argument('Id', type=int, required=True, help='User personId/docenteId')
 
 
 class Anagrafica(Resource):
     @ns.doc(security='Basic Auth')
     @token_required
-    def get(self, personId):
+    def get(self, Id):
         """Get personal info"""
 
         headers = {
@@ -56,9 +56,8 @@ class Anagrafica(Resource):
         }
 
         try:
-            res = requests.request("GET", url + "anagrafica-service-v2/persone/" + personId, headers=headers)
+            res = requests.request("GET", url + "anagrafica-service-v2/persone/" + Id, headers=headers)
             _response = res.json()
-            print(_response)
 
             if res.status_code == 200:
                 return {
@@ -69,10 +68,27 @@ class Anagrafica(Resource):
                     'desCittadinanza': _response['desCittadinanza'],
                     'email': _response['email'],
                     'emailAte': _response['emailAte'],
-                    'persId': _response['persId'],
-                    'telRes': _response['telRes'],
-                    'userId': _response['userId']
-                }, 200
+                    'sesso': _response['sesso'],
+                    'telRes': _response['telRes']
+                    }, 200
+            elif res.status_code == 403:
+                res = requests.request("GET", url + "anagrafica-service-v2/docenti/" + Id, headers=headers)
+                _response = res.json()
+                print(_response)
+                if res.status_code == 200:
+                    return {
+                        'codFis': _response[0]['codFis'],
+                        'cognome': _response[0]['docenteCognome'],
+                        'nome': _response[0]['docenteNome'],
+                        'dataNascita': _response[0]['dataNascita'],
+                        'emailAte': _response[0]['eMail'],
+                        'sesso': _response[0]['sesso'],
+                        'telRes': _response[0]['cellulare'],
+                        'ruolo': _response[0]['ruoloDocDes'],
+                        'settore': _response[0]['settDes']
+                    }, 200
+                else:
+                    return {'errMsg': _response["retErrMsg"]}, res.status_code
             else:
                 return {'errMsg': _response["retErrMsg"]}, res.status_code
         except requests.exceptions.HTTPError as e:
