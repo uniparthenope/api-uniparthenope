@@ -74,7 +74,7 @@ class Anagrafica(Resource):
             elif res.status_code == 403:
                 res = requests.request("GET", url + "anagrafica-service-v2/docenti/" + Id, headers=headers)
                 _response = res.json()
-                print(_response)
+
                 if res.status_code == 200:
                     return {
                         'codFis': _response[0]['codFis'],
