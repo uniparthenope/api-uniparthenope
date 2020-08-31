@@ -1,4 +1,6 @@
 import base64
+import sys
+import traceback
 from datetime import datetime
 
 from idna import unicode
@@ -67,10 +69,19 @@ class getUsers(Resource):
     def get(self):
         array = []
 
-        users = UserFood.query.all()
-        for f in users:
-            array.append(f.nome_bar)
-        return array, 200
+        try:
+            users = UserFood.query.all()
+            for f in users:
+                array.append(f.nome_bar)
+            return array, 200
+        except:
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
 # ------------- GET TODAY MENU -------------
@@ -78,37 +89,46 @@ class getUsers(Resource):
 class getToday(Resource):
     def get(self):
         """Get Menu Today"""
-        all_menu = []
-        today = datetime.today()
+        try:
+            all_menu = []
+            today = datetime.today()
 
-        users = UserFood.query.all()
-        for u in users:
-            foods = UserFood.query.filter_by(username=u.username).first().foods
+            users = UserFood.query.all()
+            for u in users:
+                foods = UserFood.query.filter_by(username=u.username).first().foods
 
-            array = []
-            for f in foods:
-                if (f.data.year == today.year and f.data.month == today.month and f.data.day == today.day) or f.sempre_attivo:
-                    if f.image is None:
-                        image = ""
-                    else:
-                        image = (f.image).decode('ascii')
+                array = []
+                for f in foods:
+                    if (f.data.year == today.year and f.data.month == today.month and f.data.day == today.day) or f.sempre_attivo:
+                        if f.image is None:
+                            image = ""
+                        else:
+                            image = (f.image).decode('ascii')
 
-                    menu = ({'nome': f.nome,
-                             'descrizione': f.descrizione,
-                             'prezzo': f.prezzo,
-                             'tipologia': f.tipologia,
-                             'sempre_attivo': f.sempre_attivo,
-                             'nome_bar': f.user_username,
-                             'image': image})
+                        menu = ({'nome': f.nome,
+                                 'descrizione': f.descrizione,
+                                 'prezzo': f.prezzo,
+                                 'tipologia': f.tipologia,
+                                 'sempre_attivo': f.sempre_attivo,
+                                 'nome_bar': f.user_username,
+                                 'image': image})
 
-                    array.append(menu)
+                        array.append(menu)
 
-            all_menu.append({
-                "bar": u.nome_bar,
-                "menu": array
-            })
+                all_menu.append({
+                    "bar": u.nome_bar,
+                    "menu": array
+                })
 
-        return all_menu, 200
+            return all_menu, 200
+        except:
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
 # ------------- ADD NEW MENU -------------
@@ -140,32 +160,41 @@ class addMenu(Resource):
         content = request.json
 
         if g.status == 202:
-            if 'nome' in content and 'descrizione' in content and 'tipologia' in content and 'prezzo' in content and 'attivo' in content and 'img' in content:
-                if content['nome'] == "" or content['descrizione'] == "" or content['tipologia'] == "" or content['prezzo'] == "" or content['attivo'] == "":
-                    return {'errMsg': 'Insert all fields'}, 500
-                else:
-                    base64_bytes = g.token.encode('utf-8')
-                    message_bytes = base64.b64decode(base64_bytes)
-                    token_string = message_bytes.decode('utf-8')
-                    userId = token_string.split(':')[0]
-
-                    u = UserFood.query.filter_by(username=userId).first()
-
-                    if content['img'] != "":
-                        image_data = content['img']
-                        image_data = bytes(image_data, encoding="ascii")
+            try:
+                if 'nome' in content and 'descrizione' in content and 'tipologia' in content and 'prezzo' in content and 'attivo' in content and 'img' in content:
+                    if content['nome'] == "" or content['descrizione'] == "" or content['tipologia'] == "" or content['prezzo'] == "" or content['attivo'] == "":
+                        return {'errMsg': 'Insert all fields'}, 500
                     else:
-                        image_data = None
+                        base64_bytes = g.token.encode('utf-8')
+                        message_bytes = base64.b64decode(base64_bytes)
+                        token_string = message_bytes.decode('utf-8')
+                        userId = token_string.split(':')[0]
 
-                    u.foods.append(
-                        Food(nome=content['nome'], descrizione=content['descrizione'], tipologia=content['tipologia'],
-                             prezzo=content['prezzo'], sempre_attivo=content['attivo'], image=image_data))
-                    db.session.add(u)
-                    db.session.commit()
+                        u = UserFood.query.filter_by(username=userId).first()
 
-                    return {'message': 'Added new menu'}, 200
-            else:
-                return {'errMsg': 'Missing values'}, 500
+                        if content['img'] != "":
+                            image_data = content['img']
+                            image_data = bytes(image_data, encoding="ascii")
+                        else:
+                            image_data = None
+
+                        u.foods.append(
+                            Food(nome=content['nome'], descrizione=content['descrizione'], tipologia=content['tipologia'],
+                                 prezzo=content['prezzo'], sempre_attivo=content['attivo'], image=image_data))
+                        db.session.add(u)
+                        db.session.commit()
+
+                        return {'message': 'Added new menu'}, 200
+                else:
+                    return {'errMsg': 'Missing values'}, 500
+            except:
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
+                return {
+                           'errMsgTitle': sys.exc_info()[0].__name__,
+                           'errMsg': traceback.format_exc()
+                       }, 500
         else:
             return {'errMsg': 'Unauthorized'}, 403
 
@@ -181,33 +210,42 @@ class getMenuBar(Resource):
         array = []
 
         if g.status == 202:
-            base64_bytes = g.token.encode('utf-8')
-            message_bytes = base64.b64decode(base64_bytes)
-            token_string = message_bytes.decode('utf-8')
-            userId = token_string.split(':')[0]
+            try:
+                base64_bytes = g.token.encode('utf-8')
+                message_bytes = base64.b64decode(base64_bytes)
+                token_string = message_bytes.decode('utf-8')
+                userId = token_string.split(':')[0]
 
-            foods = UserFood.query.filter_by(username=userId).first().foods
+                foods = UserFood.query.filter_by(username=userId).first().foods
 
-            for f in foods:
-                d = f.data.strftime('%Y-%m-%d %H:%M')
+                for f in foods:
+                    d = f.data.strftime('%Y-%m-%d %H:%M')
 
-                if f.image is None:
-                    image = ""
-                else:
-                    image = (f.image).decode('ascii')
+                    if f.image is None:
+                        image = ""
+                    else:
+                        image = (f.image).decode('ascii')
 
-                menu = ({'data': d,
-                         'nome': f.nome,
-                         'descrizione': f.descrizione,
-                         'tipologia': f.tipologia,
-                         'prezzo': f.prezzo,
-                         'sempre_attivo': f.sempre_attivo,
-                         'id': f.id,
-                         'image': image
-                         })
-                array.append(menu)
+                    menu = ({'data': d,
+                             'nome': f.nome,
+                             'descrizione': f.descrizione,
+                             'tipologia': f.tipologia,
+                             'prezzo': f.prezzo,
+                             'sempre_attivo': f.sempre_attivo,
+                             'id': f.id,
+                             'image': image
+                             })
+                    array.append(menu)
 
-            return array, 200
+                return array, 200
+            except:
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
+                return {
+                           'errMsgTitle': sys.exc_info()[0].__name__,
+                           'errMsg': traceback.format_exc()
+                       }, 500
         else:
             return {'errMsg': 'Unauthorized'}, 403
 
@@ -226,22 +264,31 @@ class removeMenu(Resource):
         """Remove menu by Id"""
 
         if g.status == 202:
-            base64_bytes = g.token.encode('utf-8')
-            message_bytes = base64.b64decode(base64_bytes)
-            token_string = message_bytes.decode('utf-8')
-            userId = token_string.split(':')[0]
+            try:
+                base64_bytes = g.token.encode('utf-8')
+                message_bytes = base64.b64decode(base64_bytes)
+                token_string = message_bytes.decode('utf-8')
+                userId = token_string.split(':')[0]
 
-            food = Food.query.filter_by(id=id).join(UserFood).filter_by(username=userId).first()
+                food = Food.query.filter_by(id=id).join(UserFood).filter_by(username=userId).first()
 
-            if food is not None:
-                try:
-                    db.session.delete(food)
-                    db.session.commit()
+                if food is not None:
+                    try:
+                        db.session.delete(food)
+                        db.session.commit()
 
-                    return {'message': 'Removed menu'}, 200
-                except:
-                    return {'errMsg': 'Error deleting menu'}, 500
-            else:
-                return {'errMsg': 'No Menu with this ID'}, 500
+                        return {'message': 'Removed menu'}, 200
+                    except:
+                        return {'errMsg': 'Error deleting menu'}, 500
+                else:
+                    return {'errMsg': 'No Menu with this ID'}, 500
+            except:
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
+                return {
+                           'errMsgTitle': sys.exc_info()[0].__name__,
+                           'errMsg': traceback.format_exc()
+                       }, 500
         else:
             return {'errMsg': 'Unauthorized'}, 403

@@ -1,4 +1,6 @@
 import base64
+import sys
+import traceback
 from io import BytesIO
 import qrcode
 from datetime import datetime, timedelta
@@ -16,8 +18,8 @@ ns = api.namespace('uniparthenope')
 
 
 def randomword(length):
-   letters = string.ascii_lowercase+string.digits
-   return ''.join(random.choice(letters) for i in range(length))
+    letters = string.ascii_lowercase + string.digits
+    return ''.join(random.choice(letters) for i in range(length))
 
 
 # ------------- QR-CODE -------------
@@ -55,6 +57,9 @@ class QrCode(Resource):
                 img_io.seek(0)
                 return send_file(img_io, mimetype='image/png', cache_timeout=-1)
             except:
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
                 return {'errMsg': 'Image creation error'}, 500
 
         else:
@@ -66,6 +71,7 @@ class QrCode(Resource):
 
 insert_token = ns.model("Token", {"token": fields.String(description="token", required=True)})
 
+
 class QrCodeCheck(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
@@ -76,18 +82,23 @@ class QrCodeCheck(Resource):
 
         if g.status == 200:
             if 'token' in content:
-                print(content['token'])
-                b = Badges.query.all()
-                print(b)
-                badge = Badges.query.filter_by(token=content['token']).first()
-                print(badge)
-                if badge is not None:
-                    if datetime.now() < badge.expire_time:
-                        return {'status': 'Ok'}, 200
+                try:
+                    badge = Badges.query.filter_by(token=content['token']).first()
+                    if badge is not None:
+                        if datetime.now() < badge.expire_time:
+                            return {'status': 'Ok'}, 200
+                        else:
+                            return {'status': 'error', 'errMsg': 'Token expired!'}, 500
                     else:
-                        return {'status': 'error', 'errMsg': 'Token expired!'}, 500
-                else:
-                    return {'status': 'error', 'errMsg': 'Token error'}, 500
+                        return {'status': 'error', 'errMsg': 'Token error'}, 500
+                except:
+                    print("Unexpected error:")
+                    print("Title: " + sys.exc_info()[0].__name__)
+                    print("Description: " + traceback.format_exc())
+                    return {
+                               'errMsgTitle': sys.exc_info()[0].__name__,
+                               'errMsg': traceback.format_exc()
+                           }, 500
             else:
                 return {'errMsg': 'Error payload'}, 500
         else:

@@ -1,4 +1,6 @@
 import base64
+import sys
+import traceback
 
 from app import api, db
 from app.apis.uniparthenope.v1.login_v1 import token_required_general
@@ -34,15 +36,10 @@ class Access(Resource):
                 token_string = message_bytes.decode('utf-8')
                 userId = token_string.split(':')[0]
 
-                print(userId)
-
                 if 'accessType' in content:
                     print(content['accessType'])
                     if content['accessType'] == 'presence' or content['accessType'] == 'distance' or content['accessType'] == 'undefined':
-                       # print("OK")
                         user = UserAccess.query.filter_by(username=userId).first()
-
-                       # print(user)
                         if user is None:
                             try:
                                 u = UserAccess(username=userId, classroom=content['accessType'])
@@ -56,7 +53,6 @@ class Access(Resource):
                         else:
                             try:
                                 user.classroom = content['accessType']
-                                print(user.classroom)
                                 db.session.commit()
                                 return {'message': 'Classroom modified'}, 200
                             except:
@@ -64,7 +60,13 @@ class Access(Resource):
                     else:
                         return {'errMsg': 'Wrong body!'}, 500
             except:
-                return {'errMsg': 'Image creation error'}, 500
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
+                return {
+                           'errMsgTitle': sys.exc_info()[0].__name__,
+                           'errMsg': traceback.format_exc()
+                       }, 500
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
 
@@ -80,14 +82,18 @@ class Access(Resource):
                 token_string = message_bytes.decode('utf-8')
                 userId = token_string.split(':')[0]
 
-                print(userId)
-
                 user = UserAccess.query.filter_by(username=userId).first()
                 if user is not None:
                     return {"accessType": user.classroom}, 200
                 else:
                     return {"accessType": "undefined"}, 200
             except:
-                return {'errMsg': 'Image creation error'}, 500
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
+                return {
+                           'errMsgTitle': sys.exc_info()[0].__name__,
+                           'errMsg': traceback.format_exc()
+                       }, 500
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status

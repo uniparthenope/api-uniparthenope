@@ -175,6 +175,8 @@ def auth(token):
                             r["user"]["trattiCarriera"][i]["strutturaGaId"] = ""
                             r["user"]["trattiCarriera"][i]["corsoGaId"] = ""
 
+                    g.department = r['user']['trattiCarriera'][0]['cdsDes']
+
                     return r, 200
 
     except requests.exceptions.Timeout as e:

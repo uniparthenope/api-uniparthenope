@@ -1,4 +1,6 @@
 import csv
+import sys
+import traceback
 import urllib.request
 import io
 from app import api
@@ -97,9 +99,15 @@ class SearchCourse(Resource):
                     print(array)
                     return array, 200
             except:
-                return {'errMsg': 'generic error'}, 500
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
+                return {
+                           'errMsgTitle': sys.exc_info()[0].__name__,
+                           'errMsg': traceback.format_exc()
+                       }, 500
         else:
-            return {'errMsg': 'generic error'}, g.status
+            return {'errMsg': 'Autenticazione fallita'}, g.status
 
 
 # ------------- SEARCH OTHER COURSE -------------
@@ -115,10 +123,10 @@ class OtherCourses(Resource):
     def get(self, periodo):
         """Other Courses"""
 
-        end_date = datetime.now() + timedelta(days=int(periodo) * 365 / 12)
-
         if g.status == 200:
             try:
+                end_date = datetime.now() + timedelta(days=int(periodo) * 365 / 12)
+
                 url_n = 'http://ga.uniparthenope.it/report.php?from_day=' + str(datetime.now().day) + \
                         '&from_month=' + str(datetime.now().month) + \
                         '&from_year=' + str(datetime.now().year) + \
@@ -152,9 +160,15 @@ class OtherCourses(Resource):
 
                 return array, 200
             except:
-                return {'errMsg': 'generic error'}, 500
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
+                return {
+                           'errMsgTitle': sys.exc_info()[0].__name__,
+                           'errMsg': traceback.format_exc()
+                       }, 500
         else:
-            return {'errMsg': 'generic error'}, g.status
+            return {'errMsg': 'Autenticazione fallita!'}, g.status
 
 
 # ------------- SEARCH BY NAME AND SURNAME -------------
@@ -193,8 +207,6 @@ class ProfessorCourse(Resource):
                 array = []
                 next(csvfile)
                 for row in csvfile:
-
-
                     lower = row[6].lower()
                     if lower.find("manutenzione") != -1:
                         id = "M"
@@ -214,6 +226,12 @@ class ProfessorCourse(Resource):
 
                 return array, 200
             except:
-                return {'errMsg': 'generic error'}, 500
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
+                return {
+                           'errMsgTitle': sys.exc_info()[0].__name__,
+                           'errMsg': traceback.format_exc()
+                       }, 500
         else:
-            return {'errMsg': 'generic error'}, g.status
+            return {'errMsg': 'Autenticazione fallita!'}, g.status

@@ -1,3 +1,6 @@
+import sys
+import traceback
+
 from app import api
 from bs4 import BeautifulSoup
 from flask_restplus import Resource
@@ -7,7 +10,7 @@ import requests
 
 ns = api.namespace('uniparthenope')
 
-# ------------- Bus SCHEDULE -------------
+# ------------- BUS SCHEDULE -------------
 
 parser = api.parser()
 parser.add_argument('sede', type=str, required=True, help='')
@@ -93,10 +96,16 @@ class ANMSchedule(Resource):
                 else:
                     return {'errMsg': 'Impossibile recuperare informazioni Orari Bus'}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
-# ------------- Anm BUS -------------
+# ------------- ANM BUS -------------
 
 parser = api.parser()
 parser.add_argument('sede', type=str, required=True, help='')
@@ -154,4 +163,10 @@ class ANMBus(Resource):
                 else:
                     return {'errMsg': 'Impossibile recuperare informazioni Bus'}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500

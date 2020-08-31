@@ -1,5 +1,7 @@
 import base64
 import json
+import sys
+import traceback
 
 from app.apis.uniparthenope.v1.general_v1 import InfoPersone
 from app.apis.uniparthenope.v1.login_v1 import token_required, token_required_general
@@ -33,16 +35,19 @@ class DepInfo(Resource):
             response = requests.request("GET", url + "anagrafica-service-v2/carriere/" + stuId, headers=headers)
             _response = response.json()
 
-            # TODO Add search in GA table 'cdsId' and return GA id
+            if response.status_code == 200:
+                # TODO Add search in GA table 'cdsId' and return GA id
 
-            return {'aaId': _response['aaId'],
-                    'dataIscr': _response['dataIscr'],
-                    'facCod': _response['facCod'],
-                    'facCsaCod': _response['facCsaCod'],
-                    'facDes': _response['facDes'],
-                    'sedeId': _response['sedeId'],
-                    'sediDes': _response['sediDes']
-                    }, 200
+                return {'aaId': _response['aaId'],
+                        'dataIscr': _response['dataIscr'],
+                        'facCod': _response['facCod'],
+                        'facCsaCod': _response['facCsaCod'],
+                        'facDes': _response['facDes'],
+                        'sedeId': _response['sedeId'],
+                        'sediDes': _response['sediDes']
+                        }, 200
+            else:
+                return {'errMsg': _response['retErrMsg']}, response.status_code
 
         except requests.exceptions.HTTPError as e:
             return {'errMsg': e}, 500
@@ -53,7 +58,13 @@ class DepInfo(Resource):
         except requests.exceptions.RequestException as e:
             return {'errMsg': e}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                'errMsgTitle': sys.exc_info()[0].__name__,
+                'errMsg': traceback.format_exc()
+            }, 500
 
 
 # ------------- PIANO ID -------------
@@ -77,12 +88,15 @@ class GetPianoId(Resource):
             response = requests.request("GET", url + "piani-service-v1/piani/" + stuId, headers=headers)
             _response = response.json()
 
-            if len(_response) is not 0:
-                pianoId = _response[0]['pianoId']
-            else:
-                pianoId = None
+            if response.status_code == 200:
+                if len(_response) is not 0:
+                    pianoId = _response[0]['pianoId']
+                else:
+                    pianoId = None
 
-            return {'pianoId': pianoId}, 200
+                return {'pianoId': pianoId}, 200
+            else:
+                return {'errMsg': _response['retErrMsg']}, response.status_code
 
         except requests.exceptions.HTTPError as e:
             return {'errMsg': e}, 500
@@ -93,7 +107,13 @@ class GetPianoId(Resource):
         except requests.exceptions.RequestException as e:
             return {'errMsg': e}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
 # ------------- AVERAGE EXAMS -------------
@@ -124,28 +144,31 @@ class GetAverage(Resource):
                                         headers=headers)
             _response = response.json()
 
-            # TODO Da semplificare il return
-            for i in range(0, len(_response)):
-                if _response[i]['tipoMediaCod']['value'] is value:
-                    if _response[i]['base'] == 30:
-                        base_trenta = 30
-                        media_trenta = _response[i]['media']
-                    if _response[i]['base'] == 110:
-                        base_centodieci = 110
-                        media_centodieci = _response[i]['media']
+            if response.status_code == 200:
+                # TODO Da semplificare il return
+                for i in range(0, len(_response)):
+                    if _response[i]['tipoMediaCod']['value'] is value:
+                        if _response[i]['base'] == 30:
+                            base_trenta = 30
+                            media_trenta = _response[i]['media']
+                        if _response[i]['base'] == 110:
+                            base_centodieci = 110
+                            media_centodieci = _response[i]['media']
 
-            if media_trenta is None:
-                media_trenta = "0"
+                if media_trenta is None:
+                    media_trenta = "0"
 
-            if media_centodieci is None:
-                media_centodieci = "0"
+                if media_centodieci is None:
+                    media_centodieci = "0"
 
-            return {
-                       'trenta': media_trenta,
-                       'base_trenta': base_trenta,
-                       'base_centodieci': base_centodieci,
-                       'centodieci': media_centodieci
-                   }, 200
+                return {
+                           'trenta': media_trenta,
+                           'base_trenta': base_trenta,
+                           'base_centodieci': base_centodieci,
+                           'centodieci': media_centodieci
+                       }, 200
+            else:
+                return {'errMsg': _response['retErrMsg']}, response.status_code
 
         except requests.exceptions.HTTPError as e:
             return {'errMsg': e}, 500
@@ -156,7 +179,13 @@ class GetAverage(Resource):
         except requests.exceptions.RequestException as e:
             return {'errMsg': e}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
 # ------------- TOTAL NUMBER EXAMS -------------
@@ -181,23 +210,26 @@ class GetTotalExams(Resource):
                                         headers=headers)
             _response = response.json()
 
-            if len(_response) != 0:
-                totAdSuperate = _response['numAdSuperate'] + _response['numAdFrequentate']
-                output = {
-                    'totAdSuperate': totAdSuperate,
-                    'numAdSuperate': _response['numAdSuperate'],
-                    'cfuPar': _response['umPesoSuperato'],
-                    'cfuTot': _response['umPesoPiano']
-                }
-            else:
-                output = {
-                    'totAdSuperate': "N/A",
-                    'numAdSuperate': "N/A",
-                    'cfuPar': "N/A",
-                    'cfuTot': "N/A"
-                }
+            if response.status_code == 200:
+                if len(_response) != 0:
+                    totAdSuperate = _response['numAdSuperate'] + _response['numAdFrequentate']
+                    output = {
+                        'totAdSuperate': totAdSuperate,
+                        'numAdSuperate': _response['numAdSuperate'],
+                        'cfuPar': _response['umPesoSuperato'],
+                        'cfuTot': _response['umPesoPiano']
+                    }
+                else:
+                    output = {
+                        'totAdSuperate': "N/A",
+                        'numAdSuperate': "N/A",
+                        'cfuPar': "N/A",
+                        'cfuTot': "N/A"
+                    }
 
-            return output, 200
+                return output, 200
+            else:
+                return {'errMsg': _response['retErrMsg']}, response.status_code
 
         except requests.exceptions.HTTPError as e:
             return {'errMsg': e}, 500
@@ -208,7 +240,13 @@ class GetTotalExams(Resource):
         except requests.exceptions.RequestException as e:
             return {'errMsg': e}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
 # ------------- EXAMS -------------
@@ -235,21 +273,24 @@ class GetExams(Resource):
             response = requests.request("GET", url + "piani-service-v1/piani/" + stuId + "/" + pianoId, headers=headers)
             _response = response.json()
 
-            for i in range(0, len(_response['attivita'])):
-                if _response['attivita'][i]['sceltaFlg'] == 1:
-                    actual_exam = {}
-                    actual_exam.update({
-                        'nome': _response['attivita'][i]['adLibDes'],
-                        'codice': _response['attivita'][i]['adLibCod'],
-                        'adId': _response['attivita'][i]['chiaveADContestualizzata']['adId'],
-                        'CFU': _response['attivita'][i]['peso'],
-                        'annoId': _response['attivita'][i]['scePianoId'],
-                        'adsceId': _response['attivita'][i]['adsceAttId']
-                    })
+            if response.status_code == 200:
+                for i in range(0, len(_response['attivita'])):
+                    if _response['attivita'][i]['sceltaFlg'] == 1:
+                        actual_exam = {}
+                        actual_exam.update({
+                            'nome': _response['attivita'][i]['adLibDes'],
+                            'codice': _response['attivita'][i]['adLibCod'],
+                            'adId': _response['attivita'][i]['chiaveADContestualizzata']['adId'],
+                            'CFU': _response['attivita'][i]['peso'],
+                            'annoId': _response['attivita'][i]['scePianoId'],
+                            'adsceId': _response['attivita'][i]['adsceAttId']
+                        })
 
-                    my_exams.append(actual_exam)
+                        my_exams.append(actual_exam)
 
-            return my_exams, 200
+                return my_exams, 200
+            else:
+                return {'errMsg': _response['retErrMsg']}, response.status_code
 
         except requests.exceptions.HTTPError as e:
             return {'errMsg': e}, 500
@@ -260,7 +301,13 @@ class GetExams(Resource):
         except requests.exceptions.RequestException as e:
             return {'errMsg': e}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
 # ------------- CHECK EXAMS -------------
@@ -340,7 +387,13 @@ class CheckExam(Resource):
         except requests.exceptions.RequestException as e:
             return {'errMsg': e}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
 # ------------- CHECK APPELLO -------------
@@ -368,33 +421,36 @@ class CheckAppello(Resource):
             response = requests.request("GET", url + "calesa-service-v1/appelli/" + cdsId + "/" + adId, headers=headers)
             _response = response.json()
 
-            for i in range(0, len(_response)):
-                print(_response[i]['stato'])
-                #if _response[i]['stato'] == "I" or _response[i]['stato'] == "P":
-                if _response[i]['stato'] not in bad_status:
-                    #I = Esami futuri non ancora prenotabili
-                    #P = Esami prenotabili
+            if response.status_code == 200:
+                for i in range(0, len(_response)):
+                    print(_response[i]['stato'])
+                    #if _response[i]['stato'] == "I" or _response[i]['stato'] == "P":
+                    if _response[i]['stato'] not in bad_status:
+                        #I = Esami futuri non ancora prenotabili
+                        #P = Esami prenotabili
 
-                    actual_exam = {}
-                    actual_exam.update({
-                        'esame': _response[i]['adDes'],
-                        'appId': _response[i]['appId'],
-                        'stato': _response[i]['stato'],
-                        'statoDes': _response[i]['statoDes'],
-                        'docente': _response[i]['presidenteCognome'].capitalize(),
-                        'docente_completo': _response[i]['presidenteCognome'].capitalize() + " " + _response[i][
-                            'presidenteNome'].capitalize(),
-                        'numIscritti': _response[i]['numIscritti'],
-                        'note': _response[i]['note'],
-                        'descrizione': _response[i]['desApp'],
-                        'dataFine': _response[i]['dataFineIscr'].split()[0],
-                        'dataInizio': _response[i]['dataInizioIscr'].split()[0],
-                        'dataEsame': _response[i]['dataInizioApp'].split()[0],
-                    })
+                        actual_exam = {}
+                        actual_exam.update({
+                            'esame': _response[i]['adDes'],
+                            'appId': _response[i]['appId'],
+                            'stato': _response[i]['stato'],
+                            'statoDes': _response[i]['statoDes'],
+                            'docente': _response[i]['presidenteCognome'].capitalize(),
+                            'docente_completo': _response[i]['presidenteCognome'].capitalize() + " " + _response[i][
+                                'presidenteNome'].capitalize(),
+                            'numIscritti': _response[i]['numIscritti'],
+                            'note': _response[i]['note'],
+                            'descrizione': _response[i]['desApp'],
+                            'dataFine': _response[i]['dataFineIscr'].split()[0],
+                            'dataInizio': _response[i]['dataInizioIscr'].split()[0],
+                            'dataEsame': _response[i]['dataInizioApp'].split()[0],
+                        })
 
-                    my_exams.append(actual_exam)
+                        my_exams.append(actual_exam)
 
-            return my_exams, 200
+                return my_exams, 200
+            else:
+                return {'errMsg': _response['retErrMsg']}, response.status_code
 
         except requests.exceptions.HTTPError as e:
             return {'errMsg': e}, 500
@@ -405,7 +461,13 @@ class CheckAppello(Resource):
         except requests.exceptions.RequestException as e:
             return {'errMsg': e}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
 # ------------- CHECK PRENOTAZIONI -------------
@@ -457,7 +519,13 @@ class CheckPrenotazione(Resource):
         except requests.exceptions.RequestException as e:
             return {'errMsg': e}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
 # ------------- TOTAL RESERVATIONS -------------
@@ -485,42 +553,44 @@ class getReservations(Resource):
             response = requests.request("GET", url + "calesa-service-v1/prenotazioni/" + matId, headers=headers)
             _response = response.json()
 
-            # print(_response)
-            for i in range(0, len(_response)):
-                response2 = requests.request("GET", url + "calesa-service-v1/appelli/" + str(
-                    _response[i]['cdsId']) + "/" + str(_response[i]['adId']) + "/" + str(_response[i]['appId']),
-                                             headers=headers)
-                _response2 = response2.json()
+            if response.status_code == 200:
+                for i in range(0, len(_response)):
+                    response2 = requests.request("GET", url + "calesa-service-v1/appelli/" + str(
+                        _response[i]['cdsId']) + "/" + str(_response[i]['adId']) + "/" + str(_response[i]['appId']),
+                                                 headers=headers)
+                    _response2 = response2.json()
 
-                adId = _response[i]['adId']
-                appId = _response[i]['appId']
+                    adId = _response[i]['adId']
+                    appId = _response[i]['appId']
 
-                for x in range(0, len(_response2['turni'])):
-                    if _response2['turni'][x]['appLogId'] == _response[i]['appLogId']:
-                        if _response2['stato'] is not "C":
-                            item = ({
-                                'adId': adId,
-                                'appId': appId,
-                                'nomeAppello': _response2['adDes'],
-                                'nome_pres': _response2['presidenteNome'],
-                                'cognome_pres': _response2['presidenteCognome'],
-                                'numIscritti': _response2['numIscritti'],
-                                'note': _response2['note'],
-                                'statoDes': _response2['statoDes'],
-                                'statoEsito': _response2['statoInsEsiti']['value'],
-                                'statoVerb': _response2['statoVerb']['value'],
-                                'statoPubbl': _response2['statoPubblEsiti']['value'],
-                                'tipoApp': _response2['tipoGestAppDes'],
-                                'aulaId': _response2['turni'][x]['aulaId'],
-                                'edificioId': _response2['turni'][x]['edificioCod'],
-                                'edificioDes': _response2['turni'][x]['edificioDes'],
-                                'aulaDes': _response2['turni'][x]['aulaDes'],
-                                'desApp': _response2['turni'][x]['des'],
-                                'dataEsa': _response2['turni'][x]['dataOraEsa']
-                            })
-                            array.append(item)
+                    for x in range(0, len(_response2['turni'])):
+                        if _response2['turni'][x]['appLogId'] == _response[i]['appLogId']:
+                            if _response2['stato'] is not "C":
+                                item = ({
+                                    'adId': adId,
+                                    'appId': appId,
+                                    'nomeAppello': _response2['adDes'],
+                                    'nome_pres': _response2['presidenteNome'],
+                                    'cognome_pres': _response2['presidenteCognome'],
+                                    'numIscritti': _response2['numIscritti'],
+                                    'note': _response2['note'],
+                                    'statoDes': _response2['statoDes'],
+                                    'statoEsito': _response2['statoInsEsiti']['value'],
+                                    'statoVerb': _response2['statoVerb']['value'],
+                                    'statoPubbl': _response2['statoPubblEsiti']['value'],
+                                    'tipoApp': _response2['tipoGestAppDes'],
+                                    'aulaId': _response2['turni'][x]['aulaId'],
+                                    'edificioId': _response2['turni'][x]['edificioCod'],
+                                    'edificioDes': _response2['turni'][x]['edificioDes'],
+                                    'aulaDes': _response2['turni'][x]['aulaDes'],
+                                    'desApp': _response2['turni'][x]['des'],
+                                    'dataEsa': _response2['turni'][x]['dataOraEsa']
+                                })
+                                array.append(item)
 
-            return array
+                return array
+            else:
+                return {'errMsg': _response['retErrMsg']}, response.status_code
         except requests.exceptions.HTTPError as e:
             return {'errMsg': e}, 500
         except requests.exceptions.ConnectionError as e:
@@ -530,7 +600,13 @@ class getReservations(Resource):
         except requests.exceptions.RequestException as e:
             return {'errMsg': e}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
 # ------------- EXAMS TO FREQ -------------
@@ -560,108 +636,99 @@ class ExamsToFreq(Resource):
             response = requests.request("GET", url + "piani-service-v1/piani/" + stuId + "/" + pianoId, headers=headers)
             _response = response.json()
 
-            # print("JSON (examsToFreq --> 1): " + str(_response))
-            # print("JSON (Lunghezza --> 1)" + str(len(_response['attivita'])))
+            if response.status_code == 200:
+                for i in range(0, len(_response['attivita'])):
+                    if _response['attivita'][i]['sceltaFlg'] == 1:
+                        adId = str(_response['attivita'][i]['chiaveADContestualizzata']['adId'])
+                        adSceId = _response['attivita'][i]['adsceAttId']
 
-            for i in range(0, len(_response['attivita'])):
-                if _response['attivita'][i]['sceltaFlg'] == 1:
-                    adId = str(_response['attivita'][i]['chiaveADContestualizzata']['adId'])
-                    adSceId = _response['attivita'][i]['adsceAttId']
+                        response_2 = requests.request("GET",
+                                                      url + "libretto-service-v1/libretti/" + matId + "/righe/" + str(
+                                                          adSceId), headers=headers)
 
-                    # print("Ads ID: " + str(adSceId))
-                    response_2 = requests.request("GET",
-                                                  url + "libretto-service-v1/libretti/" + matId + "/righe/" + str(
-                                                      adSceId), headers=headers)
-                    # print("JSON (examsToFreq --> 2): " + str(response_2.json()))
+                        if response_2.status_code == 500 or response_2.status_code == 404:
+                            print('ERRORE --> 2')
+                        else:
+                            _response2 = response_2.json()
 
-                    if response_2.status_code == 500 or response_2.status_code == 404:
-                        print('ERRORE --> 2')
-                    else:
-                        _response2 = response_2.json()
+                            if _response2['statoDes'] != "Superata" and len(_response2) != 0:
+                                response_3 = requests.request("GET",
+                                                              url + "libretto-service-v1/libretti/" + matId + "/righe/" + str(
+                                                                  adSceId) + "/partizioni", headers=headers)
 
-                        if _response2['statoDes'] != "Superata" and len(_response2) != 0:
-                            # print("ADID --> 2=" + adId)
-                            # print("ADSCEID --> 2 = " + str(adSceId))
-
-                            response_3 = requests.request("GET",
-                                                          url + "libretto-service-v1/libretti/" + matId + "/righe/" + str(
-                                                              adSceId) + "/partizioni", headers=headers)
-                            # print("JSON (examsToFreq --> 3): " + str(response_3.json()))
-
-                            if response_3.status_code == 500 or response_3.status_code == 404:
-                                print('Response 3 non idoneo!skip')
-                            else:
-                                _response3 = response_3.json()
-
-                                if len(_response3) == 0:
-                                    # print("Response3 non idoneo")
-                                    response_4 = requests.request("GET",
-                                                                  url + "logistica-service-v1/logistica?adId=" + adId,
-                                                                  headers=headers)
-                                    _response4 = response_4.json()
-                                    # print("JSON (examsToFreq --> 4 (IF)): " + str(response_4.json()))
-
-                                    max_year = 0
-                                    if response_4.status_code == 200:
-                                        for x in range(0, len(_response4)):
-                                            if _response4[x]['chiaveADFisica']['aaOffId'] > max_year:
-                                                max_year = _response4[x]['chiaveADFisica']['aaOffId']
-
-                                        for x in range(0, len(_response4)):
-                                            if _response4[x]['chiaveADFisica']['aaOffId'] == max_year:
-                                                actual_exam = ({
-                                                    'nome': _response['attivita'][i]['adLibDes'],
-                                                    'codice': _response['attivita'][i]['adLibCod'],
-                                                    'adId': _response['attivita'][i]['chiaveADContestualizzata'][
-                                                        'adId'],
-                                                    'adsceID': adSceId,
-                                                    'CFU': _response['attivita'][i]['peso'],
-                                                    'annoId': _response['attivita'][i]['scePianoId'],
-                                                    'docente': "N/A",
-                                                    'docenteID': "N/A",
-                                                    'semestre': "N/A",
-                                                    'adLogId': _response4[x]['chiavePartizione']['adLogId'],
-                                                    'inizio': _response4[x]['dataInizio'].split()[0],
-                                                    'fine': _response4[x]['dataFine'].split()[0],
-                                                    'ultMod': _response4[x]['dataModLog'].split()[0]
-                                                })
-                                                my_exams.append(actual_exam)
-
+                                if response_3.status_code == 500 or response_3.status_code == 404:
+                                    print('Response 3 non idoneo!skip')
                                 else:
+                                    _response3 = response_3.json()
 
-                                    response_4 = requests.request("GET",
-                                                                  url + "logistica-service-v1/logistica?adId=" + adId,
-                                                                  headers=headers)
-                                    _response4 = response_4.json()
-                                    # print("JSON (examsToFreq --> 4) (ELSE): " + str(response_4.json()))
+                                    if len(_response3) == 0:
+                                        response_4 = requests.request("GET",
+                                                                      url + "logistica-service-v1/logistica?adId=" + adId,
+                                                                      headers=headers)
+                                        _response4 = response_4.json()
 
-                                    max_year = 0
-                                    if response_4.status_code == 200:
-                                        for x in range(0, len(_response4)):
-                                            if _response4[x]['chiaveADFisica']['aaOffId'] > max_year:
-                                                max_year = _response4[x]['chiaveADFisica']['aaOffId']
+                                        max_year = 0
+                                        if response_4.status_code == 200:
+                                            for x in range(0, len(_response4)):
+                                                if _response4[x]['chiaveADFisica']['aaOffId'] > max_year:
+                                                    max_year = _response4[x]['chiaveADFisica']['aaOffId']
 
-                                        for x in range(0, len(_response4)):
-                                            if _response4[x]['chiaveADFisica']['aaOffId'] == max_year:
-                                                actual_exam = ({
-                                                    'nome': _response['attivita'][i]['adLibDes'],
-                                                    'codice': _response['attivita'][i]['adLibCod'],
-                                                    'adId': _response['attivita'][i]['chiaveADContestualizzata'][
-                                                        'adId'],
-                                                    'adsceID': adSceId,
-                                                    'CFU': _response['attivita'][i]['peso'],
-                                                    'annoId': _response['attivita'][i]['scePianoId'],
-                                                    'docente': _response3[0]['cognomeDocTit'].capitalize() + " " +
-                                                               _response3[0]['nomeDoctit'].capitalize(),
-                                                    'docenteID': _response3[0]['docenteId'],
-                                                    'semestre': _response3[0]['partEffCod'],
-                                                    'adLogId': _response4[x]['chiavePartizione']['adLogId'],
-                                                    'inizio': _response4[x]['dataInizio'].split()[0],
-                                                    'fine': _response4[x]['dataFine'].split()[0],
-                                                    'ultMod': _response4[x]['dataModLog'].split()[0]
-                                                })
-                                                my_exams.append(actual_exam)
-            return my_exams, 200
+                                            for x in range(0, len(_response4)):
+                                                if _response4[x]['chiaveADFisica']['aaOffId'] == max_year:
+                                                    actual_exam = ({
+                                                        'nome': _response['attivita'][i]['adLibDes'],
+                                                        'codice': _response['attivita'][i]['adLibCod'],
+                                                        'adId': _response['attivita'][i]['chiaveADContestualizzata'][
+                                                            'adId'],
+                                                        'adsceID': adSceId,
+                                                        'CFU': _response['attivita'][i]['peso'],
+                                                        'annoId': _response['attivita'][i]['scePianoId'],
+                                                        'docente': "N/A",
+                                                        'docenteID': "N/A",
+                                                        'semestre': "N/A",
+                                                        'adLogId': _response4[x]['chiavePartizione']['adLogId'],
+                                                        'inizio': _response4[x]['dataInizio'].split()[0],
+                                                        'fine': _response4[x]['dataFine'].split()[0],
+                                                        'ultMod': _response4[x]['dataModLog'].split()[0]
+                                                    })
+                                                    my_exams.append(actual_exam)
+
+                                    else:
+                                        response_4 = requests.request("GET",
+                                                                      url + "logistica-service-v1/logistica?adId=" + adId,
+                                                                      headers=headers)
+                                        _response4 = response_4.json()
+                                        # print("JSON (examsToFreq --> 4) (ELSE): " + str(response_4.json()))
+
+                                        max_year = 0
+                                        if response_4.status_code == 200:
+                                            for x in range(0, len(_response4)):
+                                                if _response4[x]['chiaveADFisica']['aaOffId'] > max_year:
+                                                    max_year = _response4[x]['chiaveADFisica']['aaOffId']
+
+                                            for x in range(0, len(_response4)):
+                                                if _response4[x]['chiaveADFisica']['aaOffId'] == max_year:
+                                                    actual_exam = ({
+                                                        'nome': _response['attivita'][i]['adLibDes'],
+                                                        'codice': _response['attivita'][i]['adLibCod'],
+                                                        'adId': _response['attivita'][i]['chiaveADContestualizzata'][
+                                                            'adId'],
+                                                        'adsceID': adSceId,
+                                                        'CFU': _response['attivita'][i]['peso'],
+                                                        'annoId': _response['attivita'][i]['scePianoId'],
+                                                        'docente': _response3[0]['cognomeDocTit'].capitalize() + " " +
+                                                                   _response3[0]['nomeDoctit'].capitalize(),
+                                                        'docenteID': _response3[0]['docenteId'],
+                                                        'semestre': _response3[0]['partEffCod'],
+                                                        'adLogId': _response4[x]['chiavePartizione']['adLogId'],
+                                                        'inizio': _response4[x]['dataInizio'].split()[0],
+                                                        'fine': _response4[x]['dataFine'].split()[0],
+                                                        'ultMod': _response4[x]['dataModLog'].split()[0]
+                                                    })
+                                                    my_exams.append(actual_exam)
+                return my_exams, 200
+            else:
+                return {'errMsg': _response['retErrMsg']}, response.status_code
         except requests.exceptions.HTTPError as e:
             return {'errMsg': e}, 500
         except requests.exceptions.ConnectionError as e:
@@ -671,7 +738,13 @@ class ExamsToFreq(Resource):
         except requests.exceptions.RequestException as e:
             return {'errMsg': e}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
 # ------------- GET PROFESSORS -------------
@@ -708,7 +781,6 @@ class getProfessors(Resource):
                         info_json = json.loads(json.dumps(info))[0]
                         info_img = info_json['url_pic']
                         img = base64.b64encode(requests.get(info_img, verify=False).content)
-                        #print(img)
 
                         item = ({
                             'docenteNome': _response[i]['docenteNome'],
@@ -724,6 +796,8 @@ class getProfessors(Resource):
                             'url_pic': img.decode('utf-8')
                         })
                         array.append(item)
+                else:
+                    return {'errMsg': _response['retErrMsg']}, response.status_code
 
                 return array, 200
 
@@ -738,7 +812,13 @@ class getProfessors(Resource):
             except:
                 return {'errMsg': 'generic error'}, 500
         else:
-            return {'errMsg': 'generic error'}, g.status
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
 # ------------- TAXES -------------
@@ -817,7 +897,13 @@ class Taxes(Resource):
         except requests.exceptions.RequestException as e:
             return {'errMsg': e}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
 # ------------- BOOK AN EXAM -------------
@@ -869,9 +955,15 @@ class BookExam(Resource):
         except requests.exceptions.RequestException as e:
             return {'errMsg': e}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
-# ------------- BOOK AN EXAM -------------
+# ------------- DELETE A BOOKING -------------
 
 
 parser = api.parser()
@@ -910,4 +1002,10 @@ class DeleteReservation(Resource):
         except requests.exceptions.RequestException as e:
             return {'errMsg': e}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500

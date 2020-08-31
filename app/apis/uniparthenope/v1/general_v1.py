@@ -1,13 +1,17 @@
+import io
+import os
+import random
+import ssl
+import string
+import sys
+import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime
-import io
+
 import feedparser
 import html2text
-import random, string
-
-import os, ssl
 
 if (not os.environ.get('PYTHONHTTPSVERIFY', '') and
         getattr(ssl, '_create_unverified_context', None)):
@@ -15,7 +19,7 @@ if (not os.environ.get('PYTHONHTTPSVERIFY', '') and
 
 import requests
 from bs4 import BeautifulSoup
-from flask import g, send_file, Response, request
+from flask import g, send_file
 from flask_restplus import Resource
 
 from app import api
@@ -94,7 +98,13 @@ class Anagrafica(Resource):
         except requests.exceptions.RequestException as e:
             return {'errMsg': e}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
 # ------------- PERSONAL IMAGE -------------
@@ -139,7 +149,13 @@ class PersonalImage(Resource):
         except requests.exceptions.RequestException as e:
             return {'errMsg': e}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
 # ------------- PROFESSOR IMAGE -------------
@@ -175,7 +191,6 @@ class ProfImage(Resource):
                     _response = res.json()
                     return {'errMsg': _response["retErrMsg"]}, res.status_code
 
-
             except requests.exceptions.HTTPError as e:
                 return {'errMsg': e}, 500
             except requests.exceptions.ConnectionError as e:
@@ -185,12 +200,18 @@ class ProfImage(Resource):
             except requests.exceptions.RequestException as e:
                 return {'errMsg': e}, 500
             except:
-                return {'errMsg': 'generic error'}, 500
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
+                return {
+                           'errMsgTitle': sys.exc_info()[0].__name__,
+                           'errMsg': traceback.format_exc()
+                       }, 500
         else:
             return {'errMsg': 'Wring username/pass'}, g.status
 
 
-# ------------- ANNO ACCADEMICO -------------
+# ------------- ANNO ACCADEMICO CORRENTE -------------
 
 
 parser = api.parser()
@@ -213,36 +234,39 @@ class CurrentAA(Resource):
                                         headers=headers)
             _response = response.json()
 
-            date = datetime.today()
-            curr_day = datetime(date.year, date.month, date.day)
+            if response.status_code == 200:
+                date = datetime.today()
+                curr_day = datetime(date.year, date.month, date.day)
 
-            max_year = _response[0]['aaSesId']
+                max_year = _response[0]['aaSesId']
 
-            for i in range(0, len(_response)):
-                if _response[i]['aaSesId'] == max_year:
-                    startDate = extractData(_response[i]['dataInizio'])
-                    endDate = extractData(_response[i]['dataFine'])
+                for i in range(0, len(_response)):
+                    if _response[i]['aaSesId'] == max_year:
+                        startDate = extractData(_response[i]['dataInizio'])
+                        endDate = extractData(_response[i]['dataFine'])
 
-                    if (curr_day >= startDate and curr_day <= endDate):
-                        print("Inizio: " + str(startDate))
-                        print("Fine: " + str(endDate))
-                        print("Oggi: " + str(curr_day))
+                        if (curr_day >= startDate and curr_day <= endDate):
+                            print("Inizio: " + str(startDate))
+                            print("Fine: " + str(endDate))
+                            print("Oggi: " + str(curr_day))
 
-                        curr_sem = _response[i]['des']
-                        academic_year = str(_response[i]['aaSesId']) + " - " + str(_response[i]['aaSesId'] + 1)
+                            curr_sem = _response[i]['des']
+                            academic_year = str(_response[i]['aaSesId']) + " - " + str(_response[i]['aaSesId'] + 1)
 
-                        if curr_sem == "Sessione Estiva" or curr_sem == "Sessione Anticipata" or curr_sem == "Sessione Straordinaria":
-                            return {
-                                       'curr_sem': _response[i]['des'],
-                                       'semestre': "Secondo Semestre",
-                                       'aa_accad': academic_year
-                                   }, 200
-                        else:
-                            return {
-                                       'curr_sem': _response[i]['des'],
-                                       'semestre': "Primo Semestre",
-                                       'aa_accad': academic_year
-                                   }, 200
+                            if curr_sem == "Sessione Estiva" or curr_sem == "Sessione Anticipata" or curr_sem == "Sessione Straordinaria":
+                                return {
+                                           'curr_sem': _response[i]['des'],
+                                           'semestre': "Secondo Semestre",
+                                           'aa_accad': academic_year
+                                       }, 200
+                            else:
+                                return {
+                                           'curr_sem': _response[i]['des'],
+                                           'semestre': "Primo Semestre",
+                                           'aa_accad': academic_year
+                                       }, 200
+            else:
+                return {'errMsg': _response['retErrMsg']}, response.status_code
 
         except requests.exceptions.HTTPError as e:
             return {'errMsg': e}, 500
@@ -253,10 +277,16 @@ class CurrentAA(Resource):
         except requests.exceptions.RequestException as e:
             return {'errMsg': e}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
-# ------------- ANNO ACCADEMICO -------------
+# ------------- AD RECENTE -------------
 
 
 parser = api.parser()
@@ -302,10 +332,16 @@ class RecentAD(Resource):
         except requests.exceptions.RequestException as e:
             return {'errMsg': e}, 500
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
-# ------------- ANNO ACCADEMICO -------------
+# ------------- INFO CORSI -------------
 
 
 parser = api.parser()
@@ -337,6 +373,8 @@ class InfoCourse(Resource):
                         'testi': _response[0]['SyllabusAD'][0]['testiRiferimento'],
                         'altro': _response[0]['SyllabusAD'][0]['altreInfo']
                         }, 200
+            else:
+                return {'errMsg': _response['retErrMsg']}, response.status_code
 
         except requests.exceptions.HTTPError as e:
             return {'errMsg': e}, 500
@@ -421,9 +459,15 @@ class InfoPersone(Resource):
                 return prof, 200
 
             except:
-                return {'errMsg': 'generic error'}, 500
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
+                return {
+                           'errMsgTitle': sys.exc_info()[0].__name__,
+                           'errMsg': traceback.format_exc()
+                       }, 500
         else:
-            return {'errMsg': 'generic error'}, g.status
+            return {'errMsg': 'Autenticazione fallita!'}, g.status
 
 
 # ------------- NEWS RSS -------------
@@ -480,7 +524,13 @@ class RSSNews(Resource):
             return news, 200
 
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
 # ------------- AVVISI RSS -------------
@@ -507,7 +557,13 @@ class RSSAvvisi(Resource):
             return avvisi, 200
 
         except:
-            return {'errMsg': 'generic error'}, 500
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
 
 
 # ------------- PRIVACY -------------
