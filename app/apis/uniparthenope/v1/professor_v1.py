@@ -86,6 +86,7 @@ class getCourses(Resource):
         fine = ""
         ultMod = ""
         sede = ""
+        adLogId = ""
 
         try:
             response = requests.request("GET", url + "calesa-service-v1/abilitazioni?aaOffAbilId=" + aaId, headers=headers)
@@ -125,6 +126,7 @@ class getCourses(Resource):
                                         fine = _response3[0]['dataFine'].split()[0]
                                         ultMod = _response3[0]['dataModLog'].split()[0]
                                         sede = _response3[0]['sedeDes']
+                                        adLogId = _response3[0]['chiavePartizione']['adLogId']
 
                                     else:
                                         adDes = ""
@@ -135,6 +137,7 @@ class getCourses(Resource):
                                         fine = ""
                                         ultMod = ""
                                         sede = ""
+                                        adLogId = ""
 
                             else:
                                 cfu = ""
@@ -165,7 +168,8 @@ class getCourses(Resource):
                             'inizio': inizio,
                             'fine': fine,
                             'ultMod': ultMod,
-                            'sede': sede
+                            'sede': sede,
+                            'adLogId': adLogId
                         })
                         array.append(item)
 
