@@ -76,7 +76,11 @@ class GetPianoId(Resource):
         try:
             response = requests.request("GET", url + "piani-service-v1/piani/" + stuId, headers=headers)
             _response = response.json()
-            pianoId = _response[0]['pianoId']
+
+            if len(_response) is not 0:
+                pianoId = _response[0]['pianoId']
+            else:
+                pianoId = None
 
             return {'pianoId': pianoId}, 200
 
