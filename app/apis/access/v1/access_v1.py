@@ -13,7 +13,6 @@ from flask_restplus import Resource, fields
 from werkzeug import Response
 
 from app.models import User, Role
-from app.apis.access.models import UserAccess
 from app.apis.access.models2 import UserAccessFull
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
@@ -109,7 +108,7 @@ class Access(Resource):
                 token_string = message_bytes.decode('utf-8')
                 userId = token_string.split(':')[0]
 
-                user = UserAccess.query.filter_by(username=userId).first() or UserAccessFull.query.filter_by(username=userId).first()
+                user = UserAccessFull.query.filter_by(username=userId).first()
                 if user is not None:
                     return {"accessType": user.classroom}, 200
                 else:
