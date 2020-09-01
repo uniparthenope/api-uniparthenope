@@ -3,9 +3,6 @@ import sys
 import traceback
 from datetime import datetime
 
-from idna import unicode
-from werkzeug.datastructures import FileStorage
-
 from app.apis.uniparthenope.v1.login_v1 import token_required_general
 from flask import g, request
 from app import api, db
