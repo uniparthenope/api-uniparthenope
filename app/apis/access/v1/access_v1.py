@@ -108,9 +108,26 @@ class Access(Resource):
                 token_string = message_bytes.decode('utf-8')
                 userId = token_string.split(':')[0]
 
+                r = g.response
+
                 user = UserAccessFull.query.filter_by(username=userId).first()
                 if user is not None:
-                    return {"accessType": user.classroom}, 200
+                    if user.persId is "":
+                        if r['user']['grpId'] == 6:
+                            user.grpId = r['user']['grpId']
+                            user.persId = r['user']['persId']
+                            user.stuId = r['user']['trattiCarriera'][0]['stuId']
+                            user.matId = r['user']['trattiCarriera'][0]['matId']
+                            user.matricola = r['user']['trattiCarriera'][0]['matricola']
+                            user.cdsId = r['user']['trattiCarriera'][0]['cdsId']
+                            db.session.commit()
+                        elif r['user']['grpId'] == 7:
+                            user.grpId = r['user']['grpId']
+                            user.persId = r['user']['persId']
+                            db.session.commit()
+                        return {"accessType": user.classroom}, 200
+                    else:
+                        return {"accessType": user.classroom}, 200
                 else:
                     return {"accessType": "undefined"}, 200
             except:
@@ -149,7 +166,7 @@ class getCompleteCSV(Resource):
                         data = StringIO()
                         writer = csv.writer(data)
 
-                        writer.writerow(("username", "scelta"))
+                        writer.writerow(("username", "grpId", "persId/docenteId", "stuId", "matId", "matricola", "scelta"))
                         yield data.getvalue()
                         data.seek(0)
                         data.truncate(0)
@@ -158,7 +175,7 @@ class getCompleteCSV(Resource):
                             row.username = re.sub('|', '', row.username)
                             row.username = re.sub(' ', '', row.username)
 
-                            writer.writerow((row.username, row.classroom))
+                            writer.writerow((row.username, row.grpId, row.persId, row.stuId, row.matId, row.matricola, row.classroom))
                             yield data.getvalue()
                             data.seek(0)
                             data.truncate(0)
