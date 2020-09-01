@@ -14,6 +14,7 @@ from werkzeug import Response
 
 from app.models import User, Role
 from app.apis.access.models import UserAccess
+from app.apis.access.models2 import UserAccessFull
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
@@ -41,29 +42,48 @@ class Access(Resource):
                 token_string = message_bytes.decode('utf-8')
                 userId = token_string.split(':')[0]
 
-                print(g.response)
+                r = g.response
 
                 if 'accessType' in content:
                     print(content['accessType'])
                     if content['accessType'] == 'presence' or content['accessType'] == 'distance' or content['accessType'] == 'undefined':
-                        user = UserAccess.query.filter_by(username=userId).first()
+                        user = UserAccessFull.query.filter_by(username=userId).first()
                         if user is None:
                             try:
-                                u = UserAccess(username=userId, classroom=content['accessType'])
+                                if r['user']['grpId'] == 6:
+                                    u = UserAccessFull(username=userId, classroom=content['accessType'], grpId=r['user']['grpId'], persId=r['user']['persId'], stuId=r['user']['trattiCarriera'][0]['stuId'], matId=r['user']['trattiCarriera'][0]['matId'],matricola=r['user']['trattiCarriera'][0]['matricola'],cdsId=r['user']['trattiCarriera'][0]['cdsId'])
+                                elif r['user']['grpId'] == 7:
+                                    u = UserAccessFull(username=userId, classroom=content['accessType'], grpId=r['user']['grpId'], persId=r['user']['docenteId'], stuId="", matId="",matricola="",cdsId="")
+                                else:
+                                    u = UserAccessFull(username=userId, classroom=content['accessType'],
+                                                       grpId="", persId="",
+                                                       stuId="", matId="", matricola="", cdsId="")
                                 db.session.add(u)
                                 db.session.commit()
 
                                 return {'message': 'Classroom modified'}, 200
 
                             except:
-                                return {'errMsg': 'Generic error!'}, 500
+                                print("Unexpected error:")
+                                print("Title: " + sys.exc_info()[0].__name__)
+                                print("Description: " + traceback.format_exc())
+                                return {
+                                           'errMsgTitle': sys.exc_info()[0].__name__,
+                                           'errMsg': traceback.format_exc()
+                                       }, 500
                         else:
                             try:
                                 user.classroom = content['accessType']
                                 db.session.commit()
                                 return {'message': 'Classroom modified'}, 200
                             except:
-                                return {'errMsg': 'Generic error!'}, 500
+                                print("Unexpected error:")
+                                print("Title: " + sys.exc_info()[0].__name__)
+                                print("Description: " + traceback.format_exc())
+                                return {
+                                           'errMsgTitle': sys.exc_info()[0].__name__,
+                                           'errMsg': traceback.format_exc()
+                                       }, 500
                     else:
                         return {'errMsg': 'Wrong body!'}, 500
             except:
@@ -89,7 +109,7 @@ class Access(Resource):
                 token_string = message_bytes.decode('utf-8')
                 userId = token_string.split(':')[0]
 
-                user = UserAccess.query.filter_by(username=userId).first()
+                user = UserAccess.query.filter_by(username=userId).first() or UserAccessFull.query.filter_by(username=userId).first()
                 if user is not None:
                     return {"accessType": user.classroom}, 200
                 else:
