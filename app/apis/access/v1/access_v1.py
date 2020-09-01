@@ -1,13 +1,18 @@
 import base64
 import sys
 import traceback
+import csv
+from io import StringIO
+import re
 
 from app import api, db
 from app.apis.uniparthenope.v1.login_v1 import token_required_general
 
 from flask import g, request
 from flask_restplus import Resource, fields
+from werkzeug import Response
 
+from app.models import User, Role
 from app.apis.access.models import UserAccess
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
@@ -95,5 +100,60 @@ class Access(Resource):
                            'errMsgTitle': sys.exc_info()[0].__name__,
                            'errMsg': traceback.format_exc()
                        }, 500
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
+
+
+# ------------- CSV -------------
+
+
+class getCompleteCSV(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    @ns.produces(['text/csv'])
+    def get(self):
+        """Get CSV access"""
+        if g.status == 200:
+            base64_bytes = g.token.encode('utf-8')
+            message_bytes = base64.b64decode(base64_bytes)
+            token_string = message_bytes.decode('utf-8')
+            userId = token_string.split(':')[0]
+
+            user = User.query.filter_by(username=userId).join(Role).filter_by(role='admin').first() or User.query.filter_by(username=userId).join(Role).filter_by(role='pta').first()
+            if user is not None:
+                def generate():
+                    try:
+                        users = UserAccess.query.all()
+
+                        data = StringIO()
+                        writer = csv.writer(data)
+
+                        writer.writerow(("username", "scelta"))
+                        yield data.getvalue()
+                        data.seek(0)
+                        data.truncate(0)
+                        for row in users:
+                            row.username = re.sub(',', '', row.username)
+                            row.username = re.sub('|', '', row.username)
+                            row.username = re.sub(' ', '', row.username)
+
+                            writer.writerow((row.username, row.classroom))
+                            yield data.getvalue()
+                            data.seek(0)
+                            data.truncate(0)
+                    except:
+                        print("Unexpected error:")
+                        print("Title: " + sys.exc_info()[0].__name__)
+                        print("Description: " + traceback.format_exc())
+                        return {
+                                   'errMsgTitle': sys.exc_info()[0].__name__,
+                                   'errMsg': traceback.format_exc()
+                               }, 500
+
+                response = Response(generate(), mimetype='text/csv')
+                response.headers.set("Content-Disposition", "attachment", filename="access.csv")
+                return response
+            else:
+                return {'errMsg': 'Not Authorized!'}, 403
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
