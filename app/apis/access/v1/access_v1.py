@@ -124,9 +124,6 @@ class Access(Resource):
                 if user is not None:
                     if user.persId is "":
                         if r['user']['grpId'] == 6:
-                            '''if r['user']['userId'] != userId:
-                                user.userId = r['user']['userId']
-'                               '''
                             user.grpId = r['user']['grpId']
                             user.persId = r['user']['persId']
                             user.stuId = r['user']['trattiCarriera'][0]['stuId']
