@@ -47,6 +47,11 @@ class Access(Resource):
                     print(content['accessType'])
                     if content['accessType'] == 'presence' or content['accessType'] == 'distance' or content['accessType'] == 'undefined':
                         user = UserAccessFull.query.filter_by(username=userId).first()
+
+                        if r['user']['grpId'] == 6:
+                            if r['user']['userId'] != userId:
+                                user = UserAccessFull.query.filter_by(username=r['user']['userId']).first()
+
                         if user is None:
                             try:
                                 if r['user']['grpId'] == 6:
@@ -111,9 +116,17 @@ class Access(Resource):
                 r = g.response
 
                 user = UserAccessFull.query.filter_by(username=userId).first()
+
+                if r['user']['grpId'] == 6:
+                    if r['user']['userId'] != userId:
+                        user = UserAccessFull.query.filter_by(username=r['user']['userId']).first()
+
                 if user is not None:
                     if user.persId is "":
                         if r['user']['grpId'] == 6:
+                            '''if r['user']['userId'] != userId:
+                                user.userId = r['user']['userId']
+'                               '''
                             user.grpId = r['user']['grpId']
                             user.persId = r['user']['persId']
                             user.stuId = r['user']['trattiCarriera'][0]['stuId']
