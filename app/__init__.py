@@ -7,6 +7,8 @@ from flask_cors import CORS, cross_origin
 import os
 
 ### <database> ###
+from sqlalchemy import MetaData
+
 SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'default.db')
 SQLALCHEMY_BINDS = {
     'access': 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'apis/access/access.db'),
@@ -37,8 +39,8 @@ api = Api(app, version='1.0', title='University of Naples "Parthenope" API',
           description='A simply and affordanble path to accelerate STEM knowledge via a smarter and smarter University',
           authorizations=authorizations)
 
-# app.config.from_object(Config)
 app.config.from_object(__name__)
+
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 

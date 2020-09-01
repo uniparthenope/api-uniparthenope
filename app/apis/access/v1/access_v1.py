@@ -41,6 +41,8 @@ class Access(Resource):
                 token_string = message_bytes.decode('utf-8')
                 userId = token_string.split(':')[0]
 
+                print(g.response)
+
                 if 'accessType' in content:
                     print(content['accessType'])
                     if content['accessType'] == 'presence' or content['accessType'] == 'distance' or content['accessType'] == 'undefined':

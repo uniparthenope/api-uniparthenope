@@ -158,6 +158,8 @@ def auth(token):
                 print("ESSE3 success!")
                 r = response.json()
 
+                g.response = r
+
                 if r['user']['grpDes'] == "Docenti":
                     return r, 200
 
