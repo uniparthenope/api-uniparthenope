@@ -144,7 +144,7 @@ class getCompleteCSV(Resource):
             if user is not None:
                 def generate():
                     try:
-                        users = UserAccess.query.all()
+                        users = UserAccessFull.query.all()
 
                         data = StringIO()
                         writer = csv.writer(data)
