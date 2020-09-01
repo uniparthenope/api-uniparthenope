@@ -50,7 +50,7 @@ class Access(Resource):
                         if user is None:
                             try:
                                 if r['user']['grpId'] == 6:
-                                    u = UserAccessFull(username=userId, classroom=content['accessType'], grpId=r['user']['grpId'], persId=r['user']['persId'], stuId=r['user']['trattiCarriera'][0]['stuId'], matId=r['user']['trattiCarriera'][0]['matId'],matricola=r['user']['trattiCarriera'][0]['matricola'],cdsId=r['user']['trattiCarriera'][0]['cdsId'])
+                                    u = UserAccessFull(username=r['user']['userId'], classroom=content['accessType'], grpId=r['user']['grpId'], persId=r['user']['persId'], stuId=r['user']['trattiCarriera'][0]['stuId'], matId=r['user']['trattiCarriera'][0]['matId'],matricola=r['user']['trattiCarriera'][0]['matricola'],cdsId=r['user']['trattiCarriera'][0]['cdsId'])
                                 elif r['user']['grpId'] == 7:
                                     u = UserAccessFull(username=userId, classroom=content['accessType'], grpId=r['user']['grpId'], persId=r['user']['docenteId'], stuId="", matId="",matricola="",cdsId="")
                                 else:
