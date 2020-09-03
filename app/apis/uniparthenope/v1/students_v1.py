@@ -729,6 +729,7 @@ class ExamsToFreq(Resource):
                                                     max_year_ordId = temp_arr[k]['chiaveADFisica']['aaOrdId']
 
                                             for x in range(0, len(temp_arr)):
+                                                print(temp_arr[x])
                                                 if temp_arr[x]['chiaveADFisica']['aaOrdId'] == max_year_ordId:
                                                     actual_exam = ({
                                                         'nome': _response['attivita'][i]['adLibDes'],
@@ -742,10 +743,10 @@ class ExamsToFreq(Resource):
                                                                    _response3[0]['nomeDoctit'].capitalize(),
                                                         'docenteID': _response3[0]['docenteId'],
                                                         'semestre': _response3[0]['partEffCod'],
-                                                        'adLogId': _response4[x]['chiavePartizione']['adLogId'],
-                                                        'inizio': _response4[x]['dataInizio'].split()[0],
-                                                        'fine': _response4[x]['dataFine'].split()[0],
-                                                        'ultMod': _response4[x]['dataModLog'].split()[0],
+                                                        'adLogId': temp_arr[x]['chiavePartizione']['adLogId'],
+                                                        'inizio': temp_arr[x]['dataInizio'].split()[0],
+                                                        'fine': temp_arr[x]['dataFine'].split()[0],
+                                                        'ultMod': temp_arr[x]['dataModLog'].split()[0],
                                                         'domPartCod': temp_arr[x]['chiavePartizione']['domPartCod']
                                                     })
                                                     my_exams.append(actual_exam)
