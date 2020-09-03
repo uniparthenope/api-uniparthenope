@@ -114,7 +114,7 @@ def ldap_auth(user, passwd):
 
         print("LDAP studenti!")
 
-        c.result["user"] = {"grpDes" : "StudentiNonImm"}
+        c.result["user"] = {"grpDes": "StudentiNonImm"}
 
         return c.result
 
@@ -162,6 +162,7 @@ def auth(token):
                 r = response.json()
 
                 g.response = r
+                print(g.response)
 
                 if r['user']['grpDes'] == "Docenti":
                     return r, 200

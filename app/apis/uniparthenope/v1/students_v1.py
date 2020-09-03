@@ -2,6 +2,7 @@ import base64
 import json
 import sys
 import traceback
+import string
 
 from app.apis.uniparthenope.v1.general_v1 import InfoPersone
 from app.apis.uniparthenope.v1.login_v1 import token_required, token_required_general
@@ -667,14 +668,24 @@ class ExamsToFreq(Resource):
                                                                       headers=headers)
                                         _response4 = response_4.json()
 
-                                        max_year = 0
+                                        max_year_offId = 0
+                                        max_year_ordId = 0
                                         if response_4.status_code == 200:
                                             for x in range(0, len(_response4)):
-                                                if _response4[x]['chiaveADFisica']['aaOffId'] > max_year:
-                                                    max_year = _response4[x]['chiaveADFisica']['aaOffId']
+                                                if _response4[x]['chiaveADFisica']['aaOffId'] > max_year_offId:
+                                                    max_year_offId = _response4[x]['chiaveADFisica']['aaOffId']
 
+                                            temp_arr = []
                                             for x in range(0, len(_response4)):
-                                                if _response4[x]['chiaveADFisica']['aaOffId'] == max_year:
+                                                if _response4[x]['chiaveADFisica']['aaOffId'] == max_year_offId:
+                                                    temp_arr.append(_response4[x])
+
+                                            for k in range(0, len(temp_arr)):
+                                                if temp_arr[k]['chiaveADFisica']['aaOrdId'] > max_year_ordId:
+                                                    max_year_ordId = temp_arr[k]['chiaveADFisica']['aaOrdId']
+
+                                            for x in range(0, len(temp_arr)):
+                                                if temp_arr[x]['chiaveADFisica']['aaOrdId'] == max_year_ordId:
                                                     actual_exam = ({
                                                         'nome': _response['attivita'][i]['adLibDes'],
                                                         'codice': _response['attivita'][i]['adLibCod'],
@@ -689,7 +700,8 @@ class ExamsToFreq(Resource):
                                                         'adLogId': _response4[x]['chiavePartizione']['adLogId'],
                                                         'inizio': _response4[x]['dataInizio'].split()[0],
                                                         'fine': _response4[x]['dataFine'].split()[0],
-                                                        'ultMod': _response4[x]['dataModLog'].split()[0]
+                                                        'ultMod': _response4[x]['dataModLog'].split()[0],
+                                                        'domPartCod': temp_arr[x]['chiavePartizione']['domPartCod']
                                                     })
                                                     my_exams.append(actual_exam)
 
@@ -700,14 +712,24 @@ class ExamsToFreq(Resource):
                                         _response4 = response_4.json()
                                         # print("JSON (examsToFreq --> 4) (ELSE): " + str(response_4.json()))
 
-                                        max_year = 0
+                                        max_year_offId = 0
+                                        max_year_ordId = 0
                                         if response_4.status_code == 200:
                                             for x in range(0, len(_response4)):
-                                                if _response4[x]['chiaveADFisica']['aaOffId'] > max_year:
-                                                    max_year = _response4[x]['chiaveADFisica']['aaOffId']
+                                                if _response4[x]['chiaveADFisica']['aaOffId'] > max_year_offId:
+                                                    max_year_offId = _response4[x]['chiaveADFisica']['aaOffId']
 
+                                            temp_arr = []
                                             for x in range(0, len(_response4)):
-                                                if _response4[x]['chiaveADFisica']['aaOffId'] == max_year:
+                                                if _response4[x]['chiaveADFisica']['aaOffId'] == max_year_offId:
+                                                    temp_arr.append(_response4[x])
+
+                                            for k in range(0, len(temp_arr)):
+                                                if temp_arr[k]['chiaveADFisica']['aaOrdId'] > max_year_ordId:
+                                                    max_year_ordId = temp_arr[k]['chiaveADFisica']['aaOrdId']
+
+                                            for x in range(0, len(temp_arr)):
+                                                if temp_arr[x]['chiaveADFisica']['aaOrdId'] == max_year_ordId:
                                                     actual_exam = ({
                                                         'nome': _response['attivita'][i]['adLibDes'],
                                                         'codice': _response['attivita'][i]['adLibCod'],
@@ -723,7 +745,8 @@ class ExamsToFreq(Resource):
                                                         'adLogId': _response4[x]['chiavePartizione']['adLogId'],
                                                         'inizio': _response4[x]['dataInizio'].split()[0],
                                                         'fine': _response4[x]['dataFine'].split()[0],
-                                                        'ultMod': _response4[x]['dataModLog'].split()[0]
+                                                        'ultMod': _response4[x]['dataModLog'].split()[0],
+                                                        'domPartCod': temp_arr[x]['chiavePartizione']['domPartCod']
                                                     })
                                                     my_exams.append(actual_exam)
                 return my_exams, 200
