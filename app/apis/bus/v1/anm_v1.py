@@ -132,32 +132,38 @@ class ANMBus(Resource):
                     for j in range(0, len(glob[i]["info"])):
                         array2 = []
                         for k in range(0, len(glob[i]["info"][j])):
-                            print("PALINA = " + glob[i]["info"][j]["linea"][k]["palina"])
                             data = {
-                                'linea': glob[i]["info"][j]["linea"][k]["bus"],
-                                'key': key_final
+                                "linea": glob[i]["info"][j]["linea"][k]["bus"],
+                                "key": key_final
                             }
 
                             r = requests.post("http://srv.anm.it/ServiceInfoAnmLinee.asmx/CaricaPosizioneVeicolo", json=data)
-                            response = r.json()
+                            if r.status_code == 200:
+                                response = r.json()
 
-                            if response["d"][0]["stato"] is None:
-                                pos_bus = []
-                                for x in range(0, len(response["d"])):
-                                    print(response["d"][x]["linea"])
-                                    item = ({
-                                        'lat': response["d"][x]["lat"],
-                                        'long': response["d"][x]["lon"]
-                                    })
-                                    pos_bus.append(item)
+                                if response["d"][0]["stato"] is None:
+                                    pos_bus = []
+                                    for x in range(0, len(response["d"])):
+                                        print(response["d"][x]["linea"])
+                                        item = ({
+                                            'lat': response["d"][x]["lat"],
+                                            'long': response["d"][x]["lon"]
+                                        })
+                                        pos_bus.append(item)
 
-                                item = ({'linea': glob[i]["info"][j]["linea"][k]["bus"],
-                                         'bus': pos_bus})
-                                array2.append(item)
+                                    item = ({'linea': glob[i]["info"][j]["linea"][k]["bus"],
+                                             'bus': pos_bus})
+                                    array2.append(item)
+                                else:
+                                    item = ({'linea': glob[i]["info"][j]["linea"][k]["bus"],
+                                             'bus': ""})
+                                    array2.append(item)
 
-                        item = ({'name': glob[i]["info"][j]["nome"],
-                                 'linea': array2})
-                        array.append(item)
+                                item = ({'name': glob[i]["info"][j]["nome"],
+                                         'linea': array2})
+                                array.append(item)
+                            else:
+                                return {'errMsg': 'Impossibile recuperare informazioni Bus'}, 500
                     return array
 
                 else:
