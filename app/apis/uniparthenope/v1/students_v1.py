@@ -2,7 +2,7 @@ import base64
 import json
 import sys
 import traceback
-import string
+from babel.numbers import format_currency
 
 from app.apis.uniparthenope.v1.general_v1 import InfoPersone
 from app.apis.uniparthenope.v1.login_v1 import token_required, token_required_general
@@ -878,7 +878,7 @@ class Taxes(Resource):
                         item = ({
                             'desc': _response[i]['desMav1'],
                             'fattId': _response[i]['fattId'],
-                            'importo': _response[i]['importoFattura'],
+                            'importo': format_currency(_response[i]['importoFattura'], 'EUR', locale='it_IT'),
                             'iuv': _response[i]['iuv'],
                             'scadFattura': _response[i]['scadFattura']
                         })
@@ -887,7 +887,7 @@ class Taxes(Resource):
                         item = ({
                             'desc': _response[i]['desMav1'],
                             'fattId': _response[i]['fattId'],
-                            'importo': _response[i]['importoFattura'],
+                            'importo': format_currency(_response[i]['importoFattura'], 'EUR', locale='it_IT'),
                             'dataPagamento': _response[i]['dataPagamento'],
                             'scadFattura': _response[i]['scadFattura'],
                             'iur': _response[i]['iur'],
