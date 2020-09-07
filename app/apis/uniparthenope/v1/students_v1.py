@@ -895,15 +895,19 @@ class Taxes(Resource):
                         })
                         array_payed.append(item)
 
+                print(array_to_pay)
                 format = '%d/%m/%Y'  # The format
-                if len(array_to_pay) >= 1 and datetime.now() < datetime.strptime(array_to_pay[0]["scadFattura"],
-                                                                                 format):
-                    array["semaforo"] = "GIALLO"
-                elif len(array_to_pay) >= 1 and datetime.now() > datetime.strptime(array_to_pay[0]["scadFattura"],
-                                                                                   format):
+                if array_to_pay[0]["scadFattura"] == "null":
                     array["semaforo"] = "ROSSO"
-                elif len(array_to_pay) == 0:
-                    array["semaforo"] = "VERDE"
+                else:
+                    if len(array_to_pay) >= 1 and datetime.now() < datetime.strptime(array_to_pay[0]["scadFattura"],
+                                                                                     format):
+                        array["semaforo"] = "GIALLO"
+                    elif len(array_to_pay) >= 1 and datetime.now() > datetime.strptime(array_to_pay[0]["scadFattura"],
+                                                                                       format):
+                        array["semaforo"] = "ROSSO"
+                    elif len(array_to_pay) == 0:
+                        array["semaforo"] = "VERDE"
 
                 array["payed"] = array_payed
                 array["to_pay"] = array_to_pay
