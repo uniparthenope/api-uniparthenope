@@ -9,6 +9,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime
+from shutil import copyfileobj
+from tempfile import NamedTemporaryFile
 
 import feedparser
 import html2text
@@ -139,8 +141,12 @@ class PersonalImage(Resource):
                     cache_timeout=-1
                 )
             else:
-                _response = res.json()
-                return {'errMsg': _response["retErrMsg"]}, res.status_code
+                return send_file(
+                    io.FileIO('./images/default_pic.jpg'),
+                    attachment_filename='image.jpg',
+                    mimetype='image/jpg',
+                    cache_timeout=-1
+                )
 
         except requests.exceptions.HTTPError as e:
             return {'errMsg': e}, 500
@@ -190,8 +196,12 @@ class ProfImage(Resource):
                         cache_timeout=-1
                     )
                 else:
-                    _response = res.json()
-                    return {'errMsg': _response["retErrMsg"]}, res.status_code
+                    return send_file(
+                        io.FileIO('./images/default_pic.jpg'),
+                        attachment_filename='image.jpg',
+                        mimetype='image/jpg',
+                        cache_timeout=-1
+                    )
 
             except requests.exceptions.HTTPError as e:
                 return {'errMsg': e}, 500
