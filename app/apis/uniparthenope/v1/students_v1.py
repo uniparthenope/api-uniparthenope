@@ -898,6 +898,7 @@ class Taxes(Resource):
                 print(array_to_pay)
                 format = '%d/%m/%Y'  # The format
                 if array_to_pay[0]["scadFattura"] == "null":
+                    array_to_pay[0]["scadFattura"] = "Non disponibile"
                     array["semaforo"] = "ROSSO"
                 else:
                     if len(array_to_pay) >= 1 and datetime.now() < datetime.strptime(array_to_pay[0]["scadFattura"],
