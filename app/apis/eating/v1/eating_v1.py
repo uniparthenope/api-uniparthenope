@@ -3,6 +3,8 @@ import sys
 import traceback
 from datetime import datetime
 
+from babel.numbers import format_currency
+
 from app.apis.uniparthenope.v1.login_v1 import token_required_general
 from flask import g, request
 from app import api, db
@@ -104,7 +106,7 @@ class getToday(Resource):
 
                         menu = ({'nome': f.nome,
                                  'descrizione': f.descrizione,
-                                 'prezzo': f.prezzo,
+                                 'prezzo': format_currency(f.prezzo, 'EUR', locale='it_IT'),
                                  'tipologia': f.tipologia,
                                  'sempre_attivo': f.sempre_attivo,
                                  'nome_bar': f.user_username,
@@ -227,7 +229,7 @@ class getMenuBar(Resource):
                              'nome': f.nome,
                              'descrizione': f.descrizione,
                              'tipologia': f.tipologia,
-                             'prezzo': f.prezzo,
+                             'prezzo': format_currency(f.prezzo, 'EUR', locale='it_IT'),
                              'sempre_attivo': f.sempre_attivo,
                              'id': f.id,
                              'image': image
