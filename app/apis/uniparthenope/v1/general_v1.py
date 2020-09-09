@@ -590,4 +590,17 @@ class Privacy(Resource):
         return {'privacy': text}, 200
 
 
+# ------------- COVID ALERT -------------
 
+
+class CovidAlert(Resource):
+    def get(self):
+        """Get codiv alert message"""
+
+        return {
+            "titolo": "DICHIARAZIONE PER IL CONTENIMENTO DEL COVID-19",
+            "body": "In relazione a quanto previsto dalle Linee guida per il contenimento della diffusione del covid-19 in materia di accesso alle sedi universitarie, confermo\n" +
+                    "di non essere affetto da COVID-19 o di non essere stato sottoposto a periodo di quarantena obbligatoria di almeno 14 giorni;\n" +
+                    "di non accusare sintomi riconducibili al COVID-19 quali, a titolo esemplificativo, temperatura corporea superiore a 37,5°C, tosse, raffreddore e di non aver avuto contatti con persona affetta da COVID-19 negli ultimi 14 giorni;\n" +
+                    "l'impegno a rinunciare all’accesso alle sedi dell’Università degli Studi Parthenope e ad informare l'Autorità sanitaria competente nell'ipotesi in cui qualsiasi dei predetti sintomi dovesse emergere prima, durante o dopo la frequentazione delle strutture di questo Ateneo;"
+        }, 200
