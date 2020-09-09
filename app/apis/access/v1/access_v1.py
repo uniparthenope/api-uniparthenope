@@ -13,7 +13,7 @@ from flask_restplus import Resource, fields
 from werkzeug import Response
 
 from app.models import User, Role
-from app.apis.access.models import UserAccess
+from app.apis.access.models import UserAccessFull
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
@@ -46,20 +46,20 @@ class Access(Resource):
                 if 'accessType' in content:
                     print(content['accessType'])
                     if content['accessType'] == 'presence' or content['accessType'] == 'distance' or content['accessType'] == 'undefined':
-                        user = UserAccess.query.filter_by(username=userId).first()
+                        user = UserAccessFull.query.filter_by(username=userId).first()
 
                         if r['user']['grpId'] == 6:
                             if r['user']['userId'] != userId:
-                                user = UserAccess.query.filter_by(username=r['user']['userId']).first()
+                                user = UserAccessFull.query.filter_by(username=r['user']['userId']).first()
 
                         if user is None:
                             try:
                                 if r['user']['grpId'] == 6:
-                                    u = UserAccess(username=r['user']['userId'], classroom=content['accessType'], grpId=r['user']['grpId'], persId=r['user']['persId'], stuId=r['user']['trattiCarriera'][0]['stuId'], matId=r['user']['trattiCarriera'][0]['matId'],matricola=r['user']['trattiCarriera'][0]['matricola'],cdsId=r['user']['trattiCarriera'][0]['cdsId'])
+                                    u = UserAccessFull(username=r['user']['userId'], classroom=content['accessType'], grpId=r['user']['grpId'], persId=r['user']['persId'], stuId=r['user']['trattiCarriera'][0]['stuId'], matId=r['user']['trattiCarriera'][0]['matId'],matricola=r['user']['trattiCarriera'][0]['matricola'],cdsId=r['user']['trattiCarriera'][0]['cdsId'])
                                 elif r['user']['grpId'] == 7:
-                                    u = UserAccess(username=userId, classroom=content['accessType'], grpId=r['user']['grpId'], persId=r['user']['docenteId'], stuId="", matId="",matricola="",cdsId="")
+                                    u = UserAccessFull(username=userId, classroom=content['accessType'], grpId=r['user']['grpId'], persId=r['user']['docenteId'], stuId="", matId="",matricola="",cdsId="")
                                 else:
-                                    u = UserAccess(username=userId, classroom=content['accessType'],
+                                    u = UserAccessFull(username=userId, classroom=content['accessType'],
                                                        grpId="", persId="",
                                                        stuId="", matId="", matricola="", cdsId="")
                                 db.session.add(u)
@@ -117,11 +117,11 @@ class Access(Resource):
 
                 r = g.response
 
-                user = UserAccess.query.filter_by(username=userId).first()
+                user = UserAccessFull.query.filter_by(username=userId).first()
 
                 if r['user']['grpId'] == 6:
                     if r['user']['userId'] != userId:
-                        user = UserAccess.query.filter_by(username=r['user']['userId']).first()
+                        user = UserAccessFull.query.filter_by(username=r['user']['userId']).first()
 
                 if user is not None:
                     if user.persId is "":
@@ -173,7 +173,7 @@ class getCompleteCSV(Resource):
             if user is not None:
                 def generate():
                     try:
-                        users = UserAccess.query.all()
+                        users = UserAccessFull.query.all()
 
                         data = StringIO()
                         writer = csv.writer(data)
