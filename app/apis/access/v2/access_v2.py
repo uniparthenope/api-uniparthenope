@@ -1,0 +1,153 @@
+import base64
+import sys
+import traceback
+
+from app import api, db
+from app.apis.uniparthenope.v1.login_v1 import token_required_general
+
+from flask import g, request
+from flask_restplus import Resource, fields
+
+from app.apis.access.models import UserAccess
+
+url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
+ns = api.namespace('uniparthenope')
+
+# ------------- CLASSROOM -------------
+
+access = ns.model("access_v2", {
+    "accessType": fields.String(description="undefined|presence|distance", required=True),
+    "certification": fields.Boolean(description="true|false", required=True)
+})
+
+
+class Access2(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    @ns.expect(access)
+    def post(self):
+        """Modify classroom (Version 2)"""
+
+        content = request.json
+
+        if g.status == 200:
+            try:
+                base64_bytes = g.token.encode('utf-8')
+                message_bytes = base64.b64decode(base64_bytes)
+                token_string = message_bytes.decode('utf-8')
+                userId = token_string.split(':')[0]
+
+                r = g.response
+
+                if 'accessType' in content and 'certification' in content:
+                    if (content['accessType'] == 'presence' or content['accessType'] == 'distance' or content['accessType'] == 'undefined') and (content['certification'] == True or content['certification'] == False):
+                        if content['accessType'] == 'presence' and content['certification'] == False:
+                            return {'errMsg': "Per poter selezionare il tipo di accesso in PRESENZA bisogna prima accettare l'Autocertificazione Obbligatoria!"}, 403
+                        else:
+                            user = UserAccess.query.filter_by(username=userId).first()
+
+                            if r['user']['grpId'] == 6:
+                                if r['user']['userId'] != userId:
+                                    user = UserAccess.query.filter_by(username=r['user']['userId']).first()
+
+                            if user is None:
+                                try:
+                                    if r['user']['grpId'] == 6:
+                                        u = UserAccess(username=r['user']['userId'], classroom=content['accessType'], autocertification=content['certification'], grpId=r['user']['grpId'], persId=r['user']['persId'], stuId=r['user']['trattiCarriera'][0]['stuId'], matId=r['user']['trattiCarriera'][0]['matId'],matricola=r['user']['trattiCarriera'][0]['matricola'],cdsId=r['user']['trattiCarriera'][0]['cdsId'])
+                                    elif r['user']['grpId'] == 7:
+                                        u = UserAccess(username=userId, classroom=content['accessType'], autocertification=content['certification'], grpId=r['user']['grpId'], persId=r['user']['docenteId'], stuId="", matId="",matricola="",cdsId="")
+                                    else:
+                                        u = UserAccess(username=userId, classroom=content['accessType'], autocertification=content['certification'],
+                                                           grpId="", persId="",
+                                                           stuId="", matId="", matricola="", cdsId="")
+                                    db.session.add(u)
+                                    db.session.commit()
+
+                                    return {'message': 'Classroom modified'}, 200
+
+                                except:
+                                    print("Unexpected error:")
+                                    print("Title: " + sys.exc_info()[0].__name__)
+                                    print("Description: " + traceback.format_exc())
+                                    return {
+                                               'errMsgTitle': sys.exc_info()[0].__name__,
+                                               'errMsg': traceback.format_exc()
+                                           }, 500
+                            else:
+                                try:
+                                    user.classroom = content['accessType']
+                                    user.autocertification = content['certification']
+                                    db.session.commit()
+                                    return {'message': 'Classroom modified'}, 200
+                                except:
+                                    print("Unexpected error:")
+                                    print("Title: " + sys.exc_info()[0].__name__)
+                                    print("Description: " + traceback.format_exc())
+                                    return {
+                                               'errMsgTitle': sys.exc_info()[0].__name__,
+                                               'errMsg': traceback.format_exc()
+                                           }, 500
+                    else:
+                        return {'errMsg': 'Wrong body!'}, 500
+                else:
+                    return {'errMsg': 'Wrong body!'}, 500
+            except:
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
+                return {
+                           'errMsgTitle': sys.exc_info()[0].__name__,
+                           'errMsg': traceback.format_exc()
+                       }, 500
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
+
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    def get(self):
+        """Get classroom (Version 2)"""
+
+        if g.status == 200:
+            try:
+                base64_bytes = g.token.encode('utf-8')
+                message_bytes = base64.b64decode(base64_bytes)
+                token_string = message_bytes.decode('utf-8')
+                userId = token_string.split(':')[0]
+
+                r = g.response
+
+                user = UserAccess.query.filter_by(username=userId).first()
+
+                if r['user']['grpId'] == 6:
+                    if r['user']['userId'] != userId:
+                        user = UserAccess.query.filter_by(username=r['user']['userId']).first()
+
+                if user is not None:
+                    if user.persId is "":
+                        if r['user']['grpId'] == 6:
+                            user.grpId = r['user']['grpId']
+                            user.persId = r['user']['persId']
+                            user.stuId = r['user']['trattiCarriera'][0]['stuId']
+                            user.matId = r['user']['trattiCarriera'][0]['matId']
+                            user.matricola = r['user']['trattiCarriera'][0]['matricola']
+                            user.cdsId = r['user']['trattiCarriera'][0]['cdsId']
+                            db.session.commit()
+                        elif r['user']['grpId'] == 7:
+                            user.grpId = r['user']['grpId']
+                            user.persId = r['user']['persId']
+                            db.session.commit()
+                        return {"accessType": user.classroom, "autocertification": user.autocertification}, 200
+                    else:
+                        return {"accessType": user.classroom, "autocertification": user.autocertification}, 200
+                else:
+                    return {"accessType": "undefined", "autocertification": False}, 200
+            except:
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
+                return {
+                           'errMsgTitle': sys.exc_info()[0].__name__,
+                           'errMsg': traceback.format_exc()
+                       }, 500
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
