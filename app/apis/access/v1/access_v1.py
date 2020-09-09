@@ -13,7 +13,7 @@ from flask_restplus import Resource, fields
 from werkzeug import Response
 
 from app.models import User, Role
-from app.apis.access.models import UserAccessFull
+from app.apis.access.models2 import UserAccessFull
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
