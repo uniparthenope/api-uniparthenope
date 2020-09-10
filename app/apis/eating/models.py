@@ -12,8 +12,8 @@ class Ristorante(db.Model):
     luogo = db.Column(db.String(64))
     email = db.Column(db.String(64))
     image = db.Column(db.BLOB)
-    bar = db.Column(db.String(120), index=True, unique=True)
-    users = db.relationship('UserFood', backref='ristoranteFood')
+    #bar = db.Column(db.String(120), index=True, unique=True)
+    #users = db.relationship('UserFood', backref='ristoranteFood')
 
 class UserFood(db.Model):
     __bind_key__ = 'eating'
@@ -27,7 +27,7 @@ class UserFood(db.Model):
     email = db.Column(db.String(120), index=True, unique=True)
     user = db.Column(db.String(120), index=True, unique=True)
     foods = db.relationship('Food', backref='userFood')
-    bar = db.Column(db.String(120), db.ForeignKey('ristoranteFood.bar'))
+    #bar = db.Column(db.String(120), db.ForeignKey('ristoranteFood.bar'))
 
     def __repr__(self):
         return '<User {}>'.format(self.username) + '<foods {}>'.format(self.foods)
