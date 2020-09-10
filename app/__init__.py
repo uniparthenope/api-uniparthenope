@@ -3,14 +3,23 @@ from flask_restplus import Api
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS, cross_origin
+import sqlalchemy
 
 import os
 
 ### <database> ###
 from sqlalchemy import MetaData
 
-SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'default.db')
+#SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'default.db')
+SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://user:pass@host/api-db'
+
 SQLALCHEMY_BINDS = {
+    'access': 'mysql+pymysql://user:pass@host/access',
+    'badges': 'mysql+pymysql://user:pass@host/badges',
+    'eating': 'mysql+pymysql://user:pass@host/eating',
+    'ga': 'mysql+pymysql://user:pass@host/ga',
+    'uniparthenope': 'mysql+pymysql://user:pass@host/user_roles'
+    '''
     'access': 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'apis/access/access.db'),
     'new_access_full': 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'apis/access/new_access_full.db'),
     'eating': 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'apis/eating/eating.db'),
@@ -18,6 +27,7 @@ SQLALCHEMY_BINDS = {
     'uniparthenope': 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'apis/uniparthenope/uniparthenope.db'),
     'badges': 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'apis/badges/badges.db')
     # Insert here your database
+    '''
 }
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 SECRET_KEY = '---'
