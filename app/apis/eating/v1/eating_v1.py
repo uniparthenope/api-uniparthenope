@@ -11,18 +11,21 @@ from app import api, db
 from flask_restplus import Resource, fields, reqparse
 
 from app.models import User
-from app.apis.eating.models import UserFood, Food
+from app.apis.eating.models import UserFood, Food, Ristorante
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
 
-# ------------- INSERT USER -------------
+# ------------- CREATE USER -------------
 
 user = ns.model("user credentials", {
     "user": fields.String(description="username", required=True),
     "pass": fields.String(description="password", required=True),
+    "nome": fields.String(description="password", required=True),
+    "cognome": fields.String(description="password", required=True),
     "email": fields.String(description="password", required=True),
-    "nome_bar": fields.String(description="password", required=True)
+    "nome_bar": fields.String(description="password", required=True),
+    "img": fields.String(description="image", required=True)
 })
 
 
@@ -35,7 +38,7 @@ class newUser(Resource):
         content = request.json
 
         if g.status == 200:
-            if 'user' in content and 'pass' in content and 'email' in content and 'nome_bar' in content:
+            if 'user' in content and 'pass' in content and 'nome' in content and 'cognome' in content and 'email' in content and 'nome_bar' in content and 'img' in content:
                 base64_bytes = g.token.encode('utf-8')
                 message_bytes = base64.b64decode(base64_bytes)
                 token_string = message_bytes.decode('utf-8')
@@ -46,14 +49,26 @@ class newUser(Resource):
                     for x in user.roles:
                         if x.role == 'admin':
                             try:
-                                u = UserFood(username=content['user'], email=content['email'],
-                                             nome_bar=content['nome_bar'])
+                                if content['img'] != "":
+                                    image_data = content['img']
+                                    image_data = bytes(image_data, encoding="ascii")
+                                else:
+                                    image_data = None
+
+                                u = UserFood(username=content['user'], nome=content['nome'], cognome=content['cognome'], email=content['email'],
+                                             bar=content['nome_bar'], image=image_data)
                                 u.set_password(content['pass'])
                                 db.session.add(u)
                                 db.session.commit()
                                 return {'message': 'User added'}, 200
                             except:
-                                return {'errMsg': 'User already exists!'}, 500
+                                print("Unexpected error:")
+                                print("Title: " + sys.exc_info()[0].__name__)
+                                print("Description: " + traceback.format_exc())
+                                return {
+                                           'errMsgTitle': sys.exc_info()[0].__name__,
+                                           'errMsg': traceback.format_exc()
+                                       }, 500
                 else:
                     return {'errMsg': 'No admin'}, 403
             else:
@@ -62,64 +77,114 @@ class newUser(Resource):
             return {'errMsg': 'Wrong username/pass'}, g.status
 
 
-# ------------- GET USERS NAME BAR -------------
+# ------------- CREATE RESTAURANT -------------
 
-class getUsers(Resource):
+risto = ns.model("restaurant credentials", {
+    "name": fields.String(description="name", required=True),
+    "tel": fields.String(description="telephone", required=True),
+    "p_iva": fields.String(description="p. IVA", required=True),
+    "place": fields.String(description="place", required=True),
+    "email": fields.String(description="email", required=True),
+    "img": fields.String(description="image", required=True)
+})
+
+
+class newRisto(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    @ns.expect(risto)
+    def post(self):
+        """New restaurant"""
+        content = request.json
+
+        if g.status == 200:
+            if 'name' in content and 'tel' in content and 'p_iva' in content and 'place' in content and 'email' in content and 'img' in content:
+                base64_bytes = g.token.encode('utf-8')
+                message_bytes = base64.b64decode(base64_bytes)
+                token_string = message_bytes.decode('utf-8')
+                userId = token_string.split(':')[0]
+
+                user = User.query.filter_by(username=userId).first()
+                if user is not None:
+                    for x in user.roles:
+                        if x.role == 'admin':
+                            try:
+                                if content['img'] != "":
+                                    image_data = content['img']
+                                    image_data = bytes(image_data, encoding="ascii")
+                                else:
+                                    image_data = None
+
+                                u = Ristorante(nome_bar=content['name'], telefono=content['tel'], p_iva=content['p_iva'], email=content['email'],
+                                             luogo=content['place'], image=image_data)
+                                db.session.add(u)
+                                db.session.commit()
+                                return {'message': 'Risto added'}, 200
+                            except:
+                                print("Unexpected error:")
+                                print("Title: " + sys.exc_info()[0].__name__)
+                                print("Description: " + traceback.format_exc())
+                                return {
+                                           'errMsgTitle': sys.exc_info()[0].__name__,
+                                           'errMsg': traceback.format_exc()
+                                       }, 500
+                else:
+                    return {'errMsg': 'No admin'}, 403
+            else:
+                return {'errMsg': 'Missing username/password'}, 502
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
+
+
+# ------------- GET TODAY ALL MENU -------------
+
+class getAllToday(Resource):
     def get(self):
-        array = []
+        """Get today all menu"""
+        all_menu = []
+        today = datetime.today()
 
         try:
-            users = UserFood.query.all()
-            for f in users:
-                array.append(f.nome_bar)
-            return array, 200
-        except:
-            print("Unexpected error:")
-            print("Title: " + sys.exc_info()[0].__name__)
-            print("Description: " + traceback.format_exc())
-            return {
-                       'errMsgTitle': sys.exc_info()[0].__name__,
-                       'errMsg': traceback.format_exc()
-                   }, 500
-
-
-# ------------- GET TODAY MENU -------------
-
-class getToday(Resource):
-    def get(self):
-        """Get Menu Today"""
-        try:
-            all_menu = []
-            today = datetime.today()
-
-            users = UserFood.query.all()
-            for u in users:
-                foods = UserFood.query.filter_by(username=u.username).first().foods
-
+            ristoranti = Ristorante.query.all()
+            for risto in ristoranti:
                 array = []
-                for f in foods:
-                    if (f.data.year == today.year and f.data.month == today.month and f.data.day == today.day) or f.sempre_attivo:
-                        if f.image is None:
-                            image = ""
-                        else:
-                            image = (f.image).decode('ascii')
+                for food in risto.users:
+                    for f in food.foods:
+                        if (f.data.year == today.year and f.data.month == today.month and f.data.day == today.day) or f.sempre_attivo:
+                            if f.image is None:
+                                image = ""
+                            else:
+                                image = (f.image).decode('ascii')
 
-                        menu = ({'nome': f.nome,
+                            menu = ({'nome': f.nome,
                                  'descrizione': f.descrizione,
                                  'prezzo': format_currency(f.prezzo, 'EUR', locale='it_IT'),
                                  'tipologia': f.tipologia,
                                  'sempre_attivo': f.sempre_attivo,
-                                 'nome_bar': f.user_username,
+                                 'pubblicato_da': f.user_username,
                                  'image': image})
 
-                        array.append(menu)
+                            array.append(menu)
+
+                if risto.image is None:
+                    risto_image = ""
+                else:
+                    risto_image = (risto.image).decode('ascii')
 
                 all_menu.append({
-                    "bar": u.nome_bar,
+                    "info": {
+                        "nome": risto.nome_bar,
+                        "email": risto.email,
+                        "p_iva": risto.p_iva,
+                        "luogo": risto.luogo,
+                        "tel": risto.telefono,
+                        "image": risto_image
+                    },
                     "menu": array
                 })
 
             return all_menu, 200
+
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
@@ -128,7 +193,6 @@ class getToday(Resource):
                        'errMsgTitle': sys.exc_info()[0].__name__,
                        'errMsg': traceback.format_exc()
                    }, 500
-
 
 # ------------- ADD NEW MENU -------------
 
@@ -198,13 +262,13 @@ class addMenu(Resource):
             return {'errMsg': 'Unauthorized'}, 403
 
 
-# ------------- get all specified user's menu -------------
+# ------------- GET ALL SPECIFIED USER'S MENU -------------
 
 class getMenuBar(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
     def get(self):
-        """GET ALL SPECIFIED USER'S MENU"""
+        """Get all specified user's menu"""
 
         array = []
 

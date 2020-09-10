@@ -19,6 +19,8 @@ class UserFood(db.Model):
     __tablename__ = 'userFood'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True)
+    nome = db.Column(db.String(128))
+    cognome = db.Column(db.String(128))
     password_hash = db.Column(db.String(128))
     image = db.Column(db.BLOB)
     grpDes = db.Column(db.String(16))
@@ -45,7 +47,7 @@ class Food(db.Model):
     image = db.Column(db.BLOB)
     tipologia = db.Column(db.String(120))
     descrizione = db.Column(db.String(120))
-    prezzo = db.Column(db.Integer)
+    prezzo = db.Column(db.Float)
     sempre_attivo = db.Column(db.Boolean)
     data = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     user_username = db.Column(db.String(120), db.ForeignKey('userFood.username'))
