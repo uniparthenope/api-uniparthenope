@@ -33,7 +33,7 @@ migrate = Migrate(app, db)
 ### </DATABASE> ###
 
 
-### <routes> ###
+### <ROUTES> ###
 from app.apis.auth import routes
 from app.apis.access import routes
 from app.apis.uniparthenope import routes
@@ -41,4 +41,4 @@ from app.apis.ga_uniparthenope import routes
 from app.apis.bus import routes
 from app.apis.badges import routes
 from app.apis.eating import routes
-### </routes> ###
+### </ROUTES> ###
