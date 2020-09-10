@@ -164,17 +164,17 @@ class Access(Resource):
 
 # ------------- CERTIFICATION -------------
 
-cert = ns.model("certification", {
-    "certification": fields.Boolean(description="true|false", required=True)
+covidStatement = ns.model("covidStatement", {
+    "covidStatement": fields.Boolean(description="true|false", required=True)
 })
 
 
 class Certification(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
-    @ns.expect(cert)
+    @ns.expect(covidStatement)
     def post(self):
-        """Modify autocertification"""
+        """Modify covidStatement"""
 
         content = request.json
 
@@ -187,9 +187,9 @@ class Certification(Resource):
 
                 r = g.response
 
-                if 'certification' in content:
-                    print(content['certification'])
-                    if content['certification'] == True or content['certification'] == False:
+                if 'covidStatement' in content:
+                    print(content['covidStatement'])
+                    if content['covidStatement'] == True or content['covidStatement'] == False:
                         user = UserAccess.query.filter_by(username=userId).first()
 
                         if r['user']['grpId'] == 6:
@@ -200,7 +200,7 @@ class Certification(Resource):
                             try:
                                 if r['user']['grpId'] == 6:
                                     u = UserAccess(username=r['user']['userId'], classroom="undefined",
-                                                   autocertification=content['certification'], grpId=r['user']['grpId'],
+                                                   autocertification=content['covidStatement'], grpId=r['user']['grpId'],
                                                    persId=r['user']['persId'],
                                                    stuId=r['user']['trattiCarriera'][0]['stuId'],
                                                    matId=r['user']['trattiCarriera'][0]['matId'],
@@ -208,17 +208,17 @@ class Certification(Resource):
                                                    cdsId=r['user']['trattiCarriera'][0]['cdsId'])
                                 elif r['user']['grpId'] == 7:
                                     u = UserAccess(username=userId,
-                                                   autocertification=content['certification'], classroom="undefined",
+                                                   autocertification=content['covidStatement'], classroom="undefined",
                                                    grpId=r['user']['grpId'], persId=r['user']['docenteId'], stuId="",
                                                    matId="", matricola="", cdsId="")
                                 else:
                                     u = UserAccess(username=userId, classroom="undefined",
-                                                   autocertification=content['certification'], grpId="", persId="",
+                                                   autocertification=content['covidStatement'], grpId="", persId="",
                                                    stuId="", matId="", matricola="", cdsId="")
                                 db.session.add(u)
                                 db.session.commit()
 
-                                return {'message': 'Certification modified'}, 200
+                                return {'message': 'Covid Statement modified'}, 200
 
                             except:
                                 print("Unexpected error:")
@@ -230,9 +230,9 @@ class Certification(Resource):
                                        }, 500
                         else:
                             try:
-                                user.autocertification = content['certification']
+                                user.autocertification = content['covidStatement']
                                 db.session.commit()
-                                return {'message': 'Certification modified'}, 200
+                                return {'message': 'Covid Statement modified'}, 200
                             except:
                                 print("Unexpected error:")
                                 print("Title: " + sys.exc_info()[0].__name__)
@@ -259,7 +259,7 @@ class Certification(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
     def get(self):
-        """Get autocertification"""
+        """Get covidStatement"""
 
         if g.status == 200 or g.status == 202:
             try:
@@ -290,11 +290,11 @@ class Certification(Resource):
                             user.grpId = r['user']['grpId']
                             user.persId = r['user']['persId']
                             db.session.commit()
-                        return {"certification": user.autocertification}, 200
+                        return {"covidStatement": user.autocertification}, 200
                     else:
-                        return {"certification": user.autocertification}, 200
+                        return {"covidStatement": user.autocertification}, 200
                 else:
-                    return {"certification": False}, 200
+                    return {"covidStatement": False}, 200
             except:
                 print("Unexpected error:")
                 print("Title: " + sys.exc_info()[0].__name__)
