@@ -34,7 +34,7 @@ class Access(Resource):
 
         content = request.json
 
-        if g.status == 200:
+        if g.status == 200 or g.status == 202:
             try:
                 base64_bytes = g.token.encode('utf-8')
                 message_bytes = base64.b64decode(base64_bytes)
@@ -45,7 +45,8 @@ class Access(Resource):
 
                 if 'accessType' in content:
                     print(content['accessType'])
-                    if content['accessType'] == 'presence' or content['accessType'] == 'distance' or content['accessType'] == 'undefined':
+                    if content['accessType'] == 'presence' or content['accessType'] == 'distance' or content[
+                        'accessType'] == 'undefined':
                         user = UserAccess.query.filter_by(username=userId).first()
 
                         if r['user']['grpId'] == 6:
@@ -55,13 +56,20 @@ class Access(Resource):
                         if user is None:
                             try:
                                 if r['user']['grpId'] == 6:
-                                    u = UserAccess(username=r['user']['userId'], classroom=content['accessType'], grpId=r['user']['grpId'], persId=r['user']['persId'], stuId=r['user']['trattiCarriera'][0]['stuId'], matId=r['user']['trattiCarriera'][0]['matId'],matricola=r['user']['trattiCarriera'][0]['matricola'],cdsId=r['user']['trattiCarriera'][0]['cdsId'])
+                                    u = UserAccess(username=r['user']['userId'], classroom=content['accessType'],
+                                                   grpId=r['user']['grpId'], persId=r['user']['persId'],
+                                                   stuId=r['user']['trattiCarriera'][0]['stuId'],
+                                                   matId=r['user']['trattiCarriera'][0]['matId'],
+                                                   matricola=r['user']['trattiCarriera'][0]['matricola'],
+                                                   cdsId=r['user']['trattiCarriera'][0]['cdsId'])
                                 elif r['user']['grpId'] == 7:
-                                    u = UserAccess(username=userId, classroom=content['accessType'], grpId=r['user']['grpId'], persId=r['user']['docenteId'], stuId="", matId="",matricola="",cdsId="")
+                                    u = UserAccess(username=userId, classroom=content['accessType'],
+                                                   grpId=r['user']['grpId'], persId=r['user']['docenteId'], stuId="",
+                                                   matId="", matricola="", cdsId="")
                                 else:
                                     u = UserAccess(username=userId, classroom=content['accessType'],
-                                                       grpId="", persId="",
-                                                       stuId="", matId="", matricola="", cdsId="")
+                                                   grpId="", persId="",
+                                                   stuId="", matId="", matricola="", cdsId="")
                                 db.session.add(u)
                                 db.session.commit()
 
@@ -108,7 +116,7 @@ class Access(Resource):
     def get(self):
         """Get classroom"""
 
-        if g.status == 200:
+        if g.status == 200 or g.status == 202:
             try:
                 base64_bytes = g.token.encode('utf-8')
                 message_bytes = base64.b64decode(base64_bytes)
@@ -154,6 +162,151 @@ class Access(Resource):
             return {'errMsg': 'Wrong username/pass'}, g.status
 
 
+# ------------- CERTIFICATION -------------
+
+cert = ns.model("certification", {
+    "certification": fields.Boolean(description="true|false", required=True)
+})
+
+
+class Certification(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    @ns.expect(cert)
+    def post(self):
+        """Modify autocertification"""
+
+        content = request.json
+
+        if g.status == 200 or g.status == 202:
+            try:
+                base64_bytes = g.token.encode('utf-8')
+                message_bytes = base64.b64decode(base64_bytes)
+                token_string = message_bytes.decode('utf-8')
+                userId = token_string.split(':')[0]
+
+                r = g.response
+
+                if 'certification' in content:
+                    print(content['certification'])
+                    if content['certification'] == True or content['certification'] == False:
+                        user = UserAccess.query.filter_by(username=userId).first()
+
+                        if r['user']['grpId'] == 6:
+                            if r['user']['userId'] != userId:
+                                user = UserAccess.query.filter_by(username=r['user']['userId']).first()
+
+                        if user is None:
+                            try:
+                                if r['user']['grpId'] == 6:
+                                    u = UserAccess(username=r['user']['userId'], classroom="undefined",
+                                                   autocertification=content['certification'], grpId=r['user']['grpId'],
+                                                   persId=r['user']['persId'],
+                                                   stuId=r['user']['trattiCarriera'][0]['stuId'],
+                                                   matId=r['user']['trattiCarriera'][0]['matId'],
+                                                   matricola=r['user']['trattiCarriera'][0]['matricola'],
+                                                   cdsId=r['user']['trattiCarriera'][0]['cdsId'])
+                                elif r['user']['grpId'] == 7:
+                                    u = UserAccess(username=userId,
+                                                   autocertification=content['certification'], classroom="undefined",
+                                                   grpId=r['user']['grpId'], persId=r['user']['docenteId'], stuId="",
+                                                   matId="", matricola="", cdsId="")
+                                else:
+                                    u = UserAccess(username=userId, classroom="undefined",
+                                                   autocertification=content['certification'], grpId="", persId="",
+                                                   stuId="", matId="", matricola="", cdsId="")
+                                db.session.add(u)
+                                db.session.commit()
+
+                                return {'message': 'Certification modified'}, 200
+
+                            except:
+                                print("Unexpected error:")
+                                print("Title: " + sys.exc_info()[0].__name__)
+                                print("Description: " + traceback.format_exc())
+                                return {
+                                           'errMsgTitle': sys.exc_info()[0].__name__,
+                                           'errMsg': traceback.format_exc()
+                                       }, 500
+                        else:
+                            try:
+                                user.autocertification = content['certification']
+                                db.session.commit()
+                                return {'message': 'Certification modified'}, 200
+                            except:
+                                print("Unexpected error:")
+                                print("Title: " + sys.exc_info()[0].__name__)
+                                print("Description: " + traceback.format_exc())
+                                return {
+                                           'errMsgTitle': sys.exc_info()[0].__name__,
+                                           'errMsg': traceback.format_exc()
+                                       }, 500
+                    else:
+                        return {'errMsg': 'Wrong body!'}, 500
+                else:
+                    return {'errMsg': 'Wrong body!'}, 500
+            except:
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
+                return {
+                           'errMsgTitle': sys.exc_info()[0].__name__,
+                           'errMsg': traceback.format_exc()
+                       }, 500
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
+
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    def get(self):
+        """Get autocertification"""
+
+        if g.status == 200 or g.status == 202:
+            try:
+                base64_bytes = g.token.encode('utf-8')
+                message_bytes = base64.b64decode(base64_bytes)
+                token_string = message_bytes.decode('utf-8')
+                userId = token_string.split(':')[0]
+
+                r = g.response
+
+                user = UserAccess.query.filter_by(username=userId).first()
+
+                if r['user']['grpId'] == 6:
+                    if r['user']['userId'] != userId:
+                        user = UserAccess.query.filter_by(username=r['user']['userId']).first()
+
+                if user is not None:
+                    if user.persId is "":
+                        if r['user']['grpId'] == 6:
+                            user.grpId = r['user']['grpId']
+                            user.persId = r['user']['persId']
+                            user.stuId = r['user']['trattiCarriera'][0]['stuId']
+                            user.matId = r['user']['trattiCarriera'][0]['matId']
+                            user.matricola = r['user']['trattiCarriera'][0]['matricola']
+                            user.cdsId = r['user']['trattiCarriera'][0]['cdsId']
+                            db.session.commit()
+                        elif r['user']['grpId'] == 7:
+                            user.grpId = r['user']['grpId']
+                            user.persId = r['user']['persId']
+                            db.session.commit()
+                        return {"certification": user.autocertification}, 200
+                    else:
+                        return {"certification": user.autocertification}, 200
+                else:
+                    return {"certification": False}, 200
+            except:
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
+                return {
+                           'errMsgTitle': sys.exc_info()[0].__name__,
+                           'errMsg': traceback.format_exc()
+                       }, 500
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
+
+
 # ------------- CSV -------------
 
 
@@ -169,7 +322,8 @@ class getCompleteCSV(Resource):
             token_string = message_bytes.decode('utf-8')
             userId = token_string.split(':')[0]
 
-            user = User.query.filter_by(username=userId).join(Role).filter_by(role='admin').first() or User.query.filter_by(username=userId).join(Role).filter_by(role='pta').first()
+            user = User.query.filter_by(username=userId).join(Role).filter_by(
+                role='admin').first() or User.query.filter_by(username=userId).join(Role).filter_by(role='pta').first()
             if user is not None:
                 def generate():
                     try:
@@ -178,7 +332,9 @@ class getCompleteCSV(Resource):
                         data = StringIO()
                         writer = csv.writer(data)
 
-                        writer.writerow(("username", "grpId", "persId/docenteId", "stuId", "matId", "matricola", "scelta"))
+                        writer.writerow((
+                                        "username", "grpId", "persId/docenteId", "stuId", "matId", "cdsId", "matricola",
+                                        "scelta", "dichiarazione"))
                         yield data.getvalue()
                         data.seek(0)
                         data.truncate(0)
@@ -187,7 +343,8 @@ class getCompleteCSV(Resource):
                             row.username = re.sub('|', '', row.username)
                             row.username = re.sub(' ', '', row.username)
 
-                            writer.writerow((row.username, row.grpId, row.persId, row.stuId, row.matId, row.matricola, row.classroom))
+                            writer.writerow((row.username, row.grpId, row.persId, row.stuId, row.matId, row.cdsId,
+                                             row.matricola, row.classroom, row.autocertification))
                             yield data.getvalue()
                             data.seek(0)
                             data.truncate(0)
@@ -207,3 +364,19 @@ class getCompleteCSV(Resource):
                 return {'errMsg': 'Not Authorized!'}, 403
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
+
+
+# ------------- COVID ALERT -------------
+
+
+class CovidAlert(Resource):
+    def get(self):
+        """Get codiv alert message"""
+
+        return {
+                   "title": "DICHIARAZIONE PER IL CONTENIMENTO DEL COVID-19",
+                   "body": "In relazione a quanto previsto dalle Linee guida per il contenimento della diffusione del covid-19 in materia di accesso alle sedi universitarie, confermo\n" +
+                           "di non essere affetto da COVID-19 o di non essere stato sottoposto a periodo di quarantena obbligatoria di almeno 14 giorni;\n" +
+                           "di non accusare sintomi riconducibili al COVID-19 quali, a titolo esemplificativo, temperatura corporea superiore a 37,5°C, tosse, raffreddore e di non aver avuto contatti con persona affetta da COVID-19 negli ultimi 14 giorni;\n" +
+                           "l'impegno a rinunciare all’accesso alle sedi dell’Università degli Studi Parthenope e ad informare l'Autorità sanitaria competente nell'ipotesi in cui qualsiasi dei predetti sintomi dovesse emergere prima, durante o dopo la frequentazione delle strutture di questo Ateneo;"
+               }, 200
