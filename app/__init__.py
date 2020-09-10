@@ -5,6 +5,7 @@ from flask_migrate import Migrate
 from flask_cors import CORS, cross_origin
 import sqlalchemy
 import os
+from app.config import Config
 
 app = Flask(__name__, static_url_path='/')
 cors = CORS(app)
