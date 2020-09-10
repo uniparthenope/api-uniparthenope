@@ -32,7 +32,7 @@ class QrCode(Resource):
     def get(self):
         """Get qr-code image"""
 
-        if g.status == 200:
+        if g.status == 200 or g.status == 202:
             try:
                 base64_bytes = g.token.encode('utf-8')
                 message_bytes = base64.b64decode(base64_bytes)
