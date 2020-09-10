@@ -1,6 +1,7 @@
 from app import db
 
 class User(db.Model):
+    __bind_key__ = 'users_roles'
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True)
@@ -10,6 +11,7 @@ class User(db.Model):
         return '<User {}>'.format(self.username) + '<roles {}>'.format(self.roles)
 
 class Role(db.Model):
+    __bind_key__ = 'users_roles'
     __tablename__ = 'role'
     id = db.Column(db.Integer, primary_key=True)
     role = db.Column(db.String(20))

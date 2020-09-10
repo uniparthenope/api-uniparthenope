@@ -11,4 +11,3 @@ from app.apis.access.v2.access_v2 import Access2
 ns.add_resource(Access, '/v1/classroom', methods=['GET', 'POST'])
 ns.add_resource(getCompleteCSV, '/v1/general/CSV', methods=['GET'])
 
-ns.add_resource(Access2, '/v2/classroom', methods=['GET', 'POST'])

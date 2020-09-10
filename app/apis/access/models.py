@@ -2,6 +2,7 @@ from app import db
 
 
 class UserAccess(db.Model):
+    __bind_key__ = 'access'
     __tablename__ = 'userAccess'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True)

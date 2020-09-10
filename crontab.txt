@@ -1,0 +1,2 @@
+# Check the server health each minute
+* * * * * /root/server-check.sh >>server-check.log
