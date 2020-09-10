@@ -140,7 +140,10 @@ def auth(token):
                 "nome": user.nome.upper(),
                 "cognome": user.cognome.upper(),
                 "grpDes": user.grpDes,
-                "grpId": user.grpId
+                "grpId": user.grpId,
+                "telefono": user.telefono,
+                "sesso": user.sesso,
+                "email": user.email
                 }, "userId": username
             }, 202
         else:

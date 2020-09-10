@@ -21,11 +21,15 @@ ns = api.namespace('uniparthenope')
 user = ns.model("user credentials", {
     "user": fields.String(description="username", required=True),
     "pass": fields.String(description="password", required=True),
-    "nome": fields.String(description="password", required=True),
-    "cognome": fields.String(description="password", required=True),
-    "email": fields.String(description="password", required=True),
-    "nome_bar": fields.String(description="password", required=True),
-    "img": fields.String(description="image", required=True)
+    "nome": fields.String(description="nome", required=True),
+    "cognome": fields.String(description="cognome", required=True),
+    "email": fields.String(description="email", required=True),
+    "nome_bar": fields.String(description="nome bar di appartenenza", required=True),
+    "grpDes": fields.String(description="gruppo di appartenenza", required=True),
+    "grpId": fields.String(description="Id gruppo", required=True),
+    "sex": fields.String(description="sesso (M/F)", required=True),
+    "tel": fields.String(description="telefono", required=True),
+    "img": fields.String(description="immagine", required=True)
 })
 
 
@@ -38,7 +42,7 @@ class newUser(Resource):
         content = request.json
 
         if g.status == 200:
-            if 'user' in content and 'pass' in content and 'nome' in content and 'cognome' in content and 'email' in content and 'nome_bar' in content and 'img' in content:
+            if 'user' in content and 'pass' in content and 'nome' in content and 'cognome' in content and 'email' in content and 'nome_bar' in content and 'img' in content and 'grpDes' in content and 'grpId' in content and 'tel' in content and 'sex' in content:
                 base64_bytes = g.token.encode('utf-8')
                 message_bytes = base64.b64decode(base64_bytes)
                 token_string = message_bytes.decode('utf-8')
@@ -56,7 +60,7 @@ class newUser(Resource):
                                     image_data = None
 
                                 u = UserFood(username=content['user'], nome=content['nome'], cognome=content['cognome'], email=content['email'],
-                                             bar=content['nome_bar'], image=image_data)
+                                             bar=content['nome_bar'], image=image_data, grpId=content['grpId'], grpDes=content['grpDes'], telefono=content['tel'], sesso=content['sex'])
                                 u.set_password(content['pass'])
                                 db.session.add(u)
                                 db.session.commit()

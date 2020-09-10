@@ -21,6 +21,8 @@ class UserFood(db.Model):
     username = db.Column(db.String(64), index=True, unique=True)
     nome = db.Column(db.String(128))
     cognome = db.Column(db.String(128))
+    sesso = db.Column(db.String(2))
+    telefono = db.Column(db.String(64), unique=True)
     password_hash = db.Column(db.String(128))
     image = db.Column(db.BLOB)
     grpDes = db.Column(db.String(16))
