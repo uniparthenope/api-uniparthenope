@@ -25,13 +25,11 @@ api = Api(app, version='1.0', title='University of Naples "Parthenope" API',
           authorizations=authorizations)
 ### </SWAGGER> ###
 
-
 ### <DATABASE> ###
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 ### </DATABASE> ###
-
 
 ### <ROUTES> ###
 from app.apis.auth import routes
