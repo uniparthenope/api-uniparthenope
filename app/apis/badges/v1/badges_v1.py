@@ -11,7 +11,7 @@ from flask_restplus import Resource, fields
 
 from app import api, db
 from app.apis.uniparthenope.v1.login_v1 import token_required_general
-from app.apis.badges.models import Badges
+from app.apis.badges.models import Badges, Scan
 from app.apis.access.models import UserAccess
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
@@ -74,7 +74,10 @@ class QrCode(Resource):
 # ------------- QR-CODE CHECK -------------
 
 
-insert_token = ns.model("Token", {"token": fields.String(description="token", required=True)})
+insert_token = ns.model("Token", {
+    "token": fields.String(description="token", required=True),
+    "id_tablet": fields.String(description="identificativo tablet", required=True)
+})
 
 
 class QrCodeCheck(Resource):
@@ -86,7 +89,7 @@ class QrCodeCheck(Resource):
         content = request.json
 
         if g.status == 200:
-            if 'token' in content:
+            if 'token' in content and 'id_tablet' in content:
                 try:
                     base64_bytes = content['token'].encode('utf-8')
                     message_bytes = base64.b64decode(base64_bytes)
@@ -103,23 +106,58 @@ class QrCodeCheck(Resource):
                                     if grpId == '6':
                                         matricola = token_string.split(':')[3]
                                         if user.classroom == "presence":
+                                            u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
+                                                     username=username, grpId=grpId, matricola=matricola, result="OK", scan_by=g.response['user']['userId'])
+                                            db.session.add(u)
+                                            db.session.commit()
                                             return {'status': 'Ok'}, 200
                                         else:
+                                            u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
+                                                     username=username, grpId=grpId, matricola=matricola, result="Tipo di accesso non in presenza!", scan_by=g.response['user']['userId'])
+                                            db.session.add(u)
+                                            db.session.commit()
                                             return {'status': 'error', 'errMsg': 'Tipo di accesso non in presenza!'}, 500
                                     else:
+                                        u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
+                                                 username=username, grpId=grpId,
+                                                 result="OK", scan_by=g.response['user']['userId'])
+                                        db.session.add(u)
+                                        db.session.commit()
                                         return {'status': 'Ok'}, 200
                                 else:
+                                    u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
+                                             username=username, grpId=grpId,
+                                             result="Autocertificazione mancante!", scan_by=g.response['user']['userId'])
+                                    db.session.add(u)
+                                    db.session.commit()
                                     return {'status': 'error', 'errMsg': 'Autocertificazione mancante!'}, 500
                             else:
+                                u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
+                                         username=username, grpId=grpId,
+                                         result="Autocertificazione mancante!", scan_by=g.response['user']['userId'])
+                                db.session.add(u)
+                                db.session.commit()
                                 return {'status': 'error', 'errMsg': 'Autocertificazione mancante!'}, 500
                         else:
+                            u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
+                                     username=username, grpId=grpId,
+                                     result="Token scaduto", scan_by=g.response['user']['userId'])
+                            db.session.add(u)
+                            db.session.commit()
                             return {'status': 'error', 'errMsg': 'Token scaduto!'}, 500
                     else:
+                        u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),  result="Token non valido!", scan_by=g.response['user']['userId'])
+                        db.session.add(u)
+                        db.session.commit()
                         return {'status': 'error', 'errMsg': 'Token non valido!'}, 500
                 except:
                     print("Unexpected error:")
                     print("Title: " + sys.exc_info()[0].__name__)
                     print("Description: " + traceback.format_exc())
+
+                    u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(), result="Qr-code non valido!", scan_by=g.response['user']['userId'])
+                    db.session.add(u)
+                    db.session.commit()
 
                     return {'status': 'error', 'errMsg': 'Qr-code non valido!'}, 500
             else:
