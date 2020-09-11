@@ -45,7 +45,7 @@ class QrCode(Resource):
                 token_qr_final = (base64.b64encode(bytes(str(token_qr).encode("utf-8")))).decode('utf-8')
                 print(token_qr_final)
 
-                expire_data = datetime.now() + timedelta(minutes=1)
+                expire_data = datetime.now() + timedelta(minutes=10)
                 print(expire_data)
 
                 badge = Badges(token=token_qr_final, expire_time=expire_data)
