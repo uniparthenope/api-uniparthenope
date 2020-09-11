@@ -12,6 +12,7 @@ from flask_restplus import Resource, fields
 from app import api, db
 from app.apis.uniparthenope.v1.login_v1 import token_required_general
 from app.apis.badges.models import Badges
+from app.apis.access.models import UserAccess
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
@@ -39,7 +40,7 @@ class QrCode(Resource):
                 token_string = message_bytes.decode('utf-8')
                 userId = token_string.split(':')[0]
 
-                token_qr = userId + ":" + randomword(30)
+                token_qr = userId + ":" + randomword(30) + ":" + str(g.response['user']['grpId'])
                 print(token_qr)
                 token_qr_final = (base64.b64encode(bytes(str(token_qr).encode("utf-8")))).decode('utf-8')
                 print(token_qr_final)
@@ -83,14 +84,34 @@ class QrCodeCheck(Resource):
         if g.status == 200:
             if 'token' in content:
                 try:
+                    base64_bytes = content['token'].encode('utf-8')
+                    message_bytes = base64.b64decode(base64_bytes)
+                    token_string = message_bytes.decode('utf-8')
+                    username = token_string.split(':')[0]
+                    grpId = token_string.split(':')[2]
+
                     badge = Badges.query.filter_by(token=content['token']).first()
                     if badge is not None:
                         if datetime.now() < badge.expire_time:
-                            return {'status': 'Ok'}, 200
+                            user = UserAccess.query.filter_by(username=username).first()
+                            if user is not None:
+                                print(user.autocertification)
+                                if user.autocertification:
+                                    if grpId == 6:
+                                        if user.classroom == "presence":
+                                            return {'status': 'Ok'}, 200
+                                        else:
+                                            return {'status': 'error', 'errMsg': 'Tipo di accesso non in presenza!'}, 500
+                                    else:
+                                        return {'status': 'Ok'}, 200
+                                else:
+                                    return {'status': 'error', 'errMsg': 'Autocertificazione mancante!'}, 500
+                            else:
+                                return {'status': 'error', 'errMsg': 'Autocertificazione mancante!'}, 500
                         else:
-                            return {'status': 'error', 'errMsg': 'Token expired!'}, 500
+                            return {'status': 'error', 'errMsg': 'Token scaduto!'}, 500
                     else:
-                        return {'status': 'error', 'errMsg': 'Token error'}, 500
+                        return {'status': 'error', 'errMsg': 'Token non valido!'}, 500
                 except:
                     print("Unexpected error:")
                     print("Title: " + sys.exc_info()[0].__name__)

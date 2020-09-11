@@ -151,7 +151,7 @@ def auth(token):
             if response.status_code == 401:
                 try:
                     r = ldap_auth(username, password)
-                    r['user']['grpId'] = 0
+                    r['user']['grpId'] = 99
                     g.response = r
 
                     if r['result'] == 0:
