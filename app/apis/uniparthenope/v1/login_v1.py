@@ -97,7 +97,7 @@ def ldap_auth(user, passwd):
     if c.result['result'] == 0:
         print("LDAP people!")
 
-        c.result["user"] = {"grpDes": "PTA", "userId": user}
+        c.result["user"] = {"grpDes": "PTA", "grpId": 99, "userId": user}
         return c.result
     else:
         # define the server
@@ -114,7 +114,7 @@ def ldap_auth(user, passwd):
 
         print("LDAP studenti!")
 
-        c.result["user"] = {"grpDes": "StudentiNonImm", "userId": user}
+        c.result["user"] = {"grpDes": "StudentiNonImm", "grpId": 4, "userId": user}
 
         return c.result
 
@@ -151,7 +151,6 @@ def auth(token):
             if response.status_code == 401:
                 try:
                     r = ldap_auth(username, password)
-                    r['user']['grpId'] = 99
                     g.response = r
 
                     if r['result'] == 0:
