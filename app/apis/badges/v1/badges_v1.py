@@ -120,10 +120,8 @@ class QrCodeCheck(Resource):
                     print("Unexpected error:")
                     print("Title: " + sys.exc_info()[0].__name__)
                     print("Description: " + traceback.format_exc())
-                    return {
-                               'errMsgTitle': sys.exc_info()[0].__name__,
-                               'errMsg': traceback.format_exc()
-                           }, 500
+
+                    return {'status': 'error', 'errMsg': 'Qr-code non valido!'}, 500
             else:
                 return {'errMsg': 'Error payload'}, 500
         else:
