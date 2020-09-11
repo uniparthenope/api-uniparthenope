@@ -64,12 +64,12 @@ class Access(Resource):
                                                    cdsId=r['user']['trattiCarriera'][0]['cdsId'])
                                 elif r['user']['grpId'] == 7:
                                     u = UserAccess(username=userId, classroom=content['accessType'],
-                                                   grpId=r['user']['grpId'], persId=r['user']['docenteId'], stuId="",
-                                                   matId="", matricola="", cdsId="")
+                                                   grpId=r['user']['grpId'], persId=r['user']['docenteId'], stuId=None,
+                                                   matId=None, matricola="", cdsId=None)
                                 else:
                                     u = UserAccess(username=userId, classroom=content['accessType'],
-                                                   grpId="", persId="",
-                                                   stuId="", matId="", matricola="", cdsId="")
+                                                   grpId=None, persId=None,
+                                                   stuId=None, matId=None, matricola="", cdsId=None)
                                 db.session.add(u)
                                 db.session.commit()
 
@@ -209,12 +209,12 @@ class Certification(Resource):
                                 elif r['user']['grpId'] == 7:
                                     u = UserAccess(username=userId,
                                                    autocertification=content['covidStatement'], classroom="undefined",
-                                                   grpId=r['user']['grpId'], persId=r['user']['docenteId'], stuId="",
-                                                   matId="", matricola="", cdsId="")
+                                                   grpId=r['user']['grpId'], persId=r['user']['docenteId'], stuId=None,
+                                                   matId=None, matricola="", cdsId=None)
                                 else:
                                     u = UserAccess(username=userId, classroom="undefined",
-                                                   autocertification=content['covidStatement'], grpId="", persId="",
-                                                   stuId="", matId="", matricola="", cdsId="")
+                                                   autocertification=content['covidStatement'], grpId=None, persId=None,
+                                                   stuId=None, matId=None, matricola="", cdsId=None)
                                 db.session.add(u)
                                 db.session.commit()
 
