@@ -40,7 +40,11 @@ class QrCode(Resource):
                 token_string = message_bytes.decode('utf-8')
                 userId = token_string.split(':')[0]
 
-                token_qr = userId + ":" + randomword(30) + ":" + str(g.response['user']['grpId'])
+                if g.response['user']['grpId'] == 6:
+                    token_qr = userId + ":" + randomword(30) + ":" + str(g.response['user']['grpId']) + ":" + g.response['user']['trattiCarriera'][0]['matricola']
+                else:
+                    token_qr = userId + ":" + randomword(30) + ":" + str(g.response['user']['grpId'])
+
                 print(token_qr)
                 token_qr_final = (base64.b64encode(bytes(str(token_qr).encode("utf-8")))).decode('utf-8')
                 print(token_qr_final)
@@ -95,9 +99,9 @@ class QrCodeCheck(Resource):
                         if datetime.now() < badge.expire_time:
                             user = UserAccess.query.filter_by(username=username).first()
                             if user is not None:
-                                print(user.autocertification)
                                 if user.autocertification:
-                                    if grpId == 6:
+                                    if grpId == '6':
+                                        matricola = token_string.split(':')[3]
                                         if user.classroom == "presence":
                                             return {'status': 'Ok'}, 200
                                         else:
