@@ -855,7 +855,7 @@ class getProfessors(Resource):
     def get(self, aaId, cdsId):
         """Get professor's list"""
 
-        pool = ThreadPoolExecutor(max_workers=100)
+        pool = ThreadPoolExecutor(max_workers=50)
 
         headers = {
             'Content-Type': "application/json",
@@ -870,8 +870,16 @@ class getProfessors(Resource):
                                             headers=headers)
                 _response = response.json()
 
+                arr_id = []
+                temp_prof = []
+
                 if response.status_code == 200:
-                    for res in pool.map(fetch, _response):
+                    for i in range(len(_response)):
+                        if _response[i]['docenteId'] not in arr_id:
+                            arr_id.append(_response[i]['docenteId'])
+                            temp_prof.append(_response[i])
+
+                    for res in pool.map(fetch, temp_prof):
                         info_json = json.loads(json.dumps(res))[0]
                         info_img = info_json['url_pic']
                         img = base64.b64encode(requests.get(info_img, verify=False).content)

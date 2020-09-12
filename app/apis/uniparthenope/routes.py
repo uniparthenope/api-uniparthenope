@@ -34,7 +34,6 @@ ns.add_resource(DetInfo, '/v1/professor/detailedInfo/<docenteId>', methods=['GET
 ns.add_resource(getCourses, '/v1/professor/getCourses/<aaId>', methods=['GET'])
 ns.add_resource(getSession, '/v1/professor/getSession', methods=['GET'])
 
-
 ns.add_resource(CurrentAA, '/v1/general/current_aa/<cdsId>', methods=['GET'])
 ns.add_resource(RecentAD, '/v1/general/recentAD/<adId>', methods=['GET'])
 ns.add_resource(InfoCourse, '/v1/general/infoCourse/<adLogId>', methods=['GET'])
