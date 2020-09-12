@@ -1,16 +1,18 @@
-import base64
-import json
-import sys
-import traceback
-from babel.numbers import format_currency
-
-from app.apis.uniparthenope.v1.general_v1 import InfoPersone
-from app.apis.uniparthenope.v1.login_v1 import token_required, token_required_general
 from flask import g, request
 from app import api
 from flask_restplus import Resource, fields
 import requests
 from datetime import datetime, timedelta
+import base64
+import json
+import sys
+import traceback
+import urllib
+from concurrent.futures import ThreadPoolExecutor
+from bs4 import BeautifulSoup
+from babel.numbers import format_currency
+
+from app.apis.uniparthenope.v1.login_v1 import token_required, token_required_general
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
@@ -772,11 +774,78 @@ class ExamsToFreq(Resource):
 
 
 # ------------- GET PROFESSORS -------------
-
-
 parser = api.parser()
 parser.add_argument('aaId', type=str, required=True, help='User stuId')
 parser.add_argument('cdsId', type=str, required=True, help='User pianoId')
+
+
+def fetch(_response):
+    _nome = _response['docenteCognome'] + "%20" + _response['docenteNome']
+    nome = _nome.replace(" ", "+")
+    url = 'https://www.uniparthenope.it/rubrica?nome_esteso_1=' + nome
+    response = urllib.request.urlopen(url)
+    webContent = response.read()
+
+    parsed = BeautifulSoup(webContent, 'html.parser')
+
+    div = parsed.find('div', attrs={'class': 'region region-content'})
+
+    ul = div.find('ul', attrs={'class': 'rubrica-list'})
+    if ul is not None:
+        tel = ul.find('div', attrs={'class': 'views-field views-field-contatto-tfu'})
+        if tel is not None:
+            tel_f = tel.find('span', attrs={'class': 'field-content'})
+            tel_finale = tel_f.text
+        else:
+            tel_finale = "N/A"
+
+        email = ul.find('div', attrs={'class': 'views-field views-field-contatto-email'})
+        email_finale = email.find('span', attrs={'class': 'field-content'})
+
+        scheda = ul.find('div', attrs={'class': 'views-field views-field-view-uelement'})
+        scheda_finale = scheda.find('span', attrs={'class': 'field-content'})
+
+        for a in scheda_finale.find_all('a', href=True):
+            link = a['href']
+
+        link_pers = str(link).split("/")[-1]
+
+        response = urllib.request.urlopen(link)
+        webContent = response.read()
+
+        parsed = BeautifulSoup(webContent, 'html.parser')
+        div = parsed.find('div', attrs={'class': 'views-field views-field-field-ugov-foto'})
+        img = div.find('img', attrs={'class': 'img-responsive'})
+
+        prof = ({
+            'docenteNome': _response['docenteNome'],
+            'docenteCognome': _response['docenteCognome'],
+            'docenteId': _response['docenteId'],
+            'docenteMat': _response['docenteMatricola'],
+            'corso': _response['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adDes'],
+            'adId': _response['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adId'],
+            'telefono': str(tel_finale),
+            'email': str(email_finale.text.rstrip()),
+            'link': str(link),
+            'ugov_id': link_pers,
+            'url_pic': str(img['src'])
+        })
+    else:
+        prof = ({
+            'docenteNome': _response['docenteNome'],
+            'docenteCognome': _response['docenteCognome'],
+            'docenteId': _response['docenteId'],
+            'docenteMat': _response['docenteMatricola'],
+            'corso': _response['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adDes'],
+            'adId': _response['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adId'],
+            'telefono': "",
+            'email': "",
+            'link': "",
+            'ugov_id': "",
+            'url_pic': "https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/default_images/ugov_fotopersona.jpg"
+        })
+
+    return prof, 200
 
 
 @ns.doc(parser=parser)
@@ -785,6 +854,8 @@ class getProfessors(Resource):
     @token_required_general
     def get(self, aaId, cdsId):
         """Get professor's list"""
+
+        pool = ThreadPoolExecutor(max_workers=100)
 
         headers = {
             'Content-Type': "application/json",
@@ -800,19 +871,18 @@ class getProfessors(Resource):
                 _response = response.json()
 
                 if response.status_code == 200:
-                    for i in range(0, len(_response)):
-                        info = InfoPersone(Resource).get(_response[i]['docenteCognome'] + "%20" + _response[i]['docenteNome'])
-                        info_json = json.loads(json.dumps(info))[0]
+                    for res in pool.map(fetch, _response):
+                        info_json = json.loads(json.dumps(res))[0]
                         info_img = info_json['url_pic']
                         img = base64.b64encode(requests.get(info_img, verify=False).content)
 
                         item = ({
-                            'docenteNome': _response[i]['docenteNome'],
-                            'docenteCognome': _response[i]['docenteCognome'],
-                            'docenteId': _response[i]['docenteId'],
-                            'docenteMat': _response[i]['docenteMatricola'],
-                            'corso': _response[i]['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adDes'],
-                            'adId': _response[i]['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adId'],
+                            'docenteNome': info_json['docenteNome'],
+                            'docenteCognome': info_json['docenteCognome'],
+                            'docenteId': info_json['docenteId'],
+                            'docenteMat': info_json['docenteMat'],
+                            'corso': info_json['corso'],
+                            'adId': info_json['adId'],
                             'telefono': info_json['telefono'],
                             'email': info_json['email'],
                             'link': info_json['link'],
