@@ -11,6 +11,7 @@ import urllib
 from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
 from babel.numbers import format_currency
+import unicodedata
 
 from app.apis.uniparthenope.v1.login_v1 import token_required, token_required_general
 
@@ -688,8 +689,9 @@ class ExamsToFreq(Resource):
 
                                             for x in range(0, len(temp_arr)):
                                                 if temp_arr[x]['chiaveADFisica']['aaOrdId'] == max_year_ordId:
+                                                    nome = unicodedata.normalize('NFKD', _response['attivita'][i]['adLibDes']).encode('ASCII', 'ignore')
                                                     actual_exam = ({
-                                                        'nome': _response['attivita'][i]['adLibDes'],
+                                                        'nome': nome.decode('utf-8'),
                                                         'codice': _response['attivita'][i]['adLibCod'],
                                                         'adId': _response['attivita'][i]['chiaveADContestualizzata'][
                                                             'adId'],
@@ -733,8 +735,10 @@ class ExamsToFreq(Resource):
                                             for x in range(0, len(temp_arr)):
                                                 print(temp_arr[x])
                                                 if temp_arr[x]['chiaveADFisica']['aaOrdId'] == max_year_ordId:
+                                                    nome = unicodedata.normalize('NFKD', _response['attivita'][i][
+                                                        'adLibDes']).encode('ASCII', 'ignore')
                                                     actual_exam = ({
-                                                        'nome': _response['attivita'][i]['adLibDes'],
+                                                        'nome': nome.decode('utf-8'),
                                                         'codice': _response['attivita'][i]['adLibCod'],
                                                         'adId': _response['attivita'][i]['chiaveADContestualizzata'][
                                                             'adId'],
