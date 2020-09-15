@@ -176,9 +176,11 @@ class QrCodeStatus(Resource):
         """Get qr-code status"""
         try:
             print(datetime.now()-timedelta(minutes=3600), datetime.now())
-            #result = Scan.query.filter(Scan.time_stamp.between(datetime.now()-timedelta(minutes=3600), datetime.now())).all()
-            result = Scan.query.filter(Scan.time_stamp <= datetime.now()).all()
-            print(result)
+            time_now = datetime.now()
+            result = Scan.query.filter(Scan.time_stamp.between(time_now-timedelta(minutes=1), time_now)).all()
+            print(len(result))
+            return [{"timeStamp": str(time_now.strftime("%Y-%m-%dT%H:%M:%S")), "count": len(result)}], 200
+
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
