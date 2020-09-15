@@ -164,3 +164,24 @@ class QrCodeCheck(Resource):
                 return {'errMsg': 'Error payload'}, 500
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
+
+
+# ------------- QR-CODE STATUS -------------
+
+
+class QrCodeStatus(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    def get(self):
+        """Get qr-code status"""
+        try:
+            print(datetime.now()-timedelta(minutes=3600), datetime.now())
+            #result = Scan.query.filter(Scan.time_stamp.between(datetime.now()-timedelta(minutes=3600), datetime.now())).all()
+            result = Scan.query.filter(Scan.time_stamp <= datetime.now()).all()
+            print(result)
+        except:
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+
+            return {'status': 'error', 'errMsg': traceback.format_exc()}, 500
