@@ -172,6 +172,11 @@ def auth(token):
                 if r['user']['grpDes'] == "Docenti":
                     return r, 200
 
+                elif r['user']['grpDes'] == "Studenti" and len(r['user']['trattiCarriera']) == 0:
+                    r['user']['grpId'] = 97
+                    r['user']['grpDes'] = "Dottorandi"
+                    return r, 200
+
                 else:
                     for i in range(0, len(r['user']['trattiCarriera'])):
                         id = Building.query.filter_by(id_corso=r['user']['trattiCarriera'][i]['cdsId']).first()
