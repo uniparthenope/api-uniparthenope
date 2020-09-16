@@ -166,10 +166,11 @@ def auth(token):
             elif response.status_code == 200:
                 print("ESSE3 success!")
                 r = response.json()
-
+                if r['credentials']['user'] != r['user']['userId'] and r['credentials']['user'] != r['user']['codFis']:
+                        r['user']['userId'] = r['credentials']['user']
                 g.response = r
 
-                if r['user']['grpDes'] == "Docenti":
+                if r['user']['grpDes'] == "Docenti" or r['user']['grpDes'] == "Registrati":
                     return r, 200
 
                 elif r['user']['grpDes'] == "Studenti" and len(r['user']['trattiCarriera']) == 0:
