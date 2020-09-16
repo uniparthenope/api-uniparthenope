@@ -135,7 +135,7 @@ def auth(token):
 
         user = UserFood.query.filter_by(username=username).first()
         if user is not None and user.check_password(password):
-            return {'user': {
+            r = {'user': {
                 "nomeBar": user.bar,
                 "nome": user.nome.upper(),
                 "cognome": user.cognome.upper(),
@@ -145,7 +145,9 @@ def auth(token):
                 "sesso": user.sesso,
                 "email": user.email
                 }, "userId": username
-            }, 202
+            }
+            g.response = r
+            return r, 200
         else:
             response = requests.request("GET", url + "login", headers=headers)
             if response.status_code == 401:
