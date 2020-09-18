@@ -6,7 +6,6 @@ import base64
 from ldap3 import Server, Connection, ALL
 from functools import wraps
 
-from app.apis.ga_uniparthenope.models import Building
 from app.apis.eating.models import UserFood
 
 from app.apis.uniparthenope.demo import users_demo
@@ -182,17 +181,10 @@ def auth(token):
 
                 else:
                     for i in range(0, len(r['user']['trattiCarriera'])):
-                        id = Building.query.filter_by(id_corso=r['user']['trattiCarriera'][i]['cdsId']).first()
-                        if id is not None:
-                            r["user"]["trattiCarriera"][i]["strutturaDes"] = id.struttura_des
-                            r["user"]["trattiCarriera"][i]["strutturaId"] = id.struttura_id
-                            r["user"]["trattiCarriera"][i]["strutturaGaId"] = id.struttura_ga_id
-                            r["user"]["trattiCarriera"][i]["corsoGaId"] = id.corso_ga_id
-                        else:
-                            r["user"]["trattiCarriera"][i]["strutturaDes"] = ""
-                            r["user"]["trattiCarriera"][i]["strutturaId"] = ""
-                            r["user"]["trattiCarriera"][i]["strutturaGaId"] = ""
-                            r["user"]["trattiCarriera"][i]["corsoGaId"] = ""
+                        r["user"]["trattiCarriera"][i]["strutturaDes"] = ""
+                        r["user"]["trattiCarriera"][i]["strutturaId"] = ""
+                        r["user"]["trattiCarriera"][i]["strutturaGaId"] = ""
+                        r["user"]["trattiCarriera"][i]["corsoGaId"] = ""
 
                     return r, 200
 
