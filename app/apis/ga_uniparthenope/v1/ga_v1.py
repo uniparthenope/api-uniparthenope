@@ -251,14 +251,34 @@ parser.add_argument('id_corso', required=True, help='')
 @ns.doc(parser=parser)
 class Lezioni(Resource):
     @ns.doc(security='Basic Auth')
-    @token_required_general
+    #@token_required_general
     def get(self, id_corso):
-        """Ottiene lista delle lezioni dal codice"""
+        """Ottiene lezione del giorno"""
 
-        con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=True)
-        # print(con.table_names())
+        con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
 
-        rs = con.execute("SELECT * FROM `mrbs_entry` WHERE `id_corso` ==" + str(id_corso))
+        start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
+        end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59).timestamp()
 
+        rs = con.execute("SELECT * FROM `mrbs_entry` WHERE `id_corso` = '" + str(id_corso) + "' AND start_time >= '" + str(start) + "' AND end_time <= '" + str(end) + "'")
+
+        array = []
         for row in rs:
-            print(rs[row])
+            rs_room = con.execute("SELECT * FROM `mrbs_room` WHERE id = '"+ str(row[5]) + "'")
+            rooms = rs_room.fetchall()
+
+            array.append({
+                'id': row[0],
+                'start': str(datetime.fromtimestamp(row[1])),
+                'end': str(datetime.fromtimestamp(row[2])),
+                'room': {
+                    'name': rooms[0][3],
+                    'capacity': rooms[0][6],
+                    'description': rooms[0][5],
+                    'availability': ""
+                },
+                'course_name': row[9],
+                'prof': row[11]
+            })
+
+        return array, 200
