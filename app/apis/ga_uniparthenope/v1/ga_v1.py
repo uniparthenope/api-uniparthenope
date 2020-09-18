@@ -3,11 +3,15 @@ import sys
 import traceback
 import urllib.request
 import io
+
+import sqlalchemy
+
 from app import api
 from flask_restplus import Resource
 from datetime import datetime, timedelta
 from flask import g
 from app.apis.uniparthenope.v1.login_v1 import token_required_general
+from app.config import Config
 
 ns = api.namespace('uniparthenope')
 
@@ -235,3 +239,26 @@ class ProfessorCourse(Resource):
                        }, 500
         else:
             return {'errMsg': 'Autenticazione fallita!'}, g.status
+
+
+# ------------- SEARCH BY NAME AND SURNAME -------------
+
+
+parser = api.parser()
+parser.add_argument('id_corso', required=True, help='')
+
+
+@ns.doc(parser=parser)
+class Lezioni(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    def get(self, id_corso):
+        """Ottiene lista delle lezioni dal codice"""
+
+        con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=True)
+        # print(con.table_names())
+
+        rs = con.execute("SELECT * FROM `mrbs_entry` WHERE `id_corso` ==" + str(id_corso))
+
+        for row in rs:
+            print(rs[row])

@@ -6,7 +6,6 @@ import qrcode
 from datetime import datetime, timedelta
 import random, string
 
-from flask_restful import reqparse
 from flask import g, send_file, Response, request
 from flask_restplus import Resource, fields
 
