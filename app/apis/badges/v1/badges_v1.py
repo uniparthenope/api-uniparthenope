@@ -6,6 +6,7 @@ import qrcode
 from datetime import datetime, timedelta
 import random, string
 
+from flask_restful import reqparse
 from flask import g, send_file, Response, request
 from flask_restplus import Resource, fields
 
@@ -13,6 +14,7 @@ from app import api, db
 from app.apis.uniparthenope.v1.login_v1 import token_required_general
 from app.apis.badges.models import Badges, Scan
 from app.apis.access.models import UserAccess
+from app.models import User, Role
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
@@ -168,22 +170,61 @@ class QrCodeCheck(Resource):
 
 # ------------- QR-CODE STATUS -------------
 
+parser = api.parser()
+parser.add_argument('interval', type=int, required=True, help='Interval (seconds)')
+parser.add_argument('tabletId', type=str, help='Id tablet')
 
+@ns.doc(parser=parser)
 class QrCodeStatus(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
-    def get(self):
-        """Get qr-code status"""
-        try:
-            print(datetime.now()-timedelta(minutes=3600), datetime.now())
-            time_now = datetime.now()
-            result = Scan.query.filter(Scan.time_stamp.between(time_now-timedelta(minutes=1), time_now)).all()
-            print(len(result))
-            return [{"timeStamp": str(time_now.strftime("%Y-%m-%dT%H:%M:%S")), "count": len(result)}], 200
+    
+    def get(self, interval, tabletId):
+        """Get qr-code status by interval"""
+        
+        if g.status == 200:
+            
+            try:
+                base64_bytes = g.token.encode('utf-8')
+                message_bytes = base64.b64decode(base64_bytes)
+                token_string = message_bytes.decode('utf-8')
+                userId = token_string.split(':')[0]
+                user = User.query.filter_by(username=userId).join(Role).filter_by(role='admin').first() or User.query.filter_by(username=userId).join(Role).filter_by(role='pta').first()
+                if user is not None:
+                    if tabletId is None:
+                        tabletId = ""
+                    #print(datetime.now()-timedelta(minutes=3600), datetime.now())
+                    time_now = datetime.now()
+                    interval = int(interval)
+                    
+                    ok_count = Scan.query.filter(Scan.time_stamp.between(time_now - timedelta(seconds=interval),time_now)).filter(Scan.result == "OK").filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+                    bad_token_count = Scan.query.filter(Scan.time_stamp.between(time_now - timedelta(seconds=interval),time_now)).filter(Scan.result.like("%Token%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+                    bad_aut_count = Scan.query.filter(Scan.time_stamp.between(time_now - timedelta(seconds=interval),time_now)).filter(Scan.result.like("%Autocertificazione%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count() 
+                    bad_presence_count = Scan.query.filter(Scan.time_stamp.between(time_now - timedelta(seconds=interval),time_now)).filter(Scan.result.like("%Tipo di%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+                    bad_qr_count = Scan.query.filter(Scan.time_stamp.between(time_now - timedelta(seconds=interval),time_now)).filter(Scan.result.like("%Qr-code%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+            
+                    bad_count = bad_token_count + bad_aut_count + bad_presence_count + bad_qr_count
+            
+                    total_count = ok_count + bad_count
+                    fail = {
+                        "total": bad_count,
+                        "expired_token": bad_token_count,
+                        "unknown_user": bad_qr_count,
+                        "no_selfcert": bad_aut_count,
+                        "not_in_presence":bad_presence_count
+                        }
+                    return [{"timeStamp": str(time_now.strftime("%Y-%m-%dT%H:%M:%S")),
+                        "interval_seconds": interval,
+                        "total": total_count,
+                        "success": ok_count,
+                        "fail" : fail
+                        }], 200
+            
+                else:
+                    return {'errMsg': 'Not Authorized!'}, 403   
+            except:
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
 
-        except:
-            print("Unexpected error:")
-            print("Title: " + sys.exc_info()[0].__name__)
-            print("Description: " + traceback.format_exc())
-
-            return {'status': 'error', 'errMsg': traceback.format_exc()}, 500
+                return {'status': 'error', 'errMsg': traceback.format_exc()}, 500
