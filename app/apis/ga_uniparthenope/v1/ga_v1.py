@@ -278,7 +278,7 @@ class getTodayLecture(Resource):
                     'name': row[38],
                     'capacity': row[41]/2,
                     'description': row[40],
-                    'availability': ""
+                    'availability': int(row[41])/2 - Reservations.query.with_for_update().filter_by(id_lezione=row[0]).count()
                 },
                 'course_name': row[9],
                 'prof': row[11]
@@ -319,7 +319,7 @@ class getLectures(Resource):
                     'name': row[38],
                     'capacity': int(row[41])/2,
                     'description': row[40],
-                    'availability': ""
+                    'availability': int(row[41])/2 - Reservations.query.with_for_update().filter_by(id_lezione=row[0]).count()
                 },
                 'course_name': row[9],
                 'prof': row[11]
