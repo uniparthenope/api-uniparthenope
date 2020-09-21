@@ -394,10 +394,7 @@ class Reservation(Resource):
     @ns.expect(prenotazione)
     def post(self):
         """Set Reservation"""
-        ##TODO controllare se lo studente appartiene a quella lezione
-
         content = request.json
-        print(content)
 
         result = ExamsToFreq(Resource).get(content['stuId'], content['pianoId'], content['matId'])
 
@@ -408,16 +405,9 @@ class Reservation(Resource):
         if status == 200:
             for i in range(len(_result)):
                 codici.append(_result[i]['codice'])
-        else:
-            return {'errMsg': _result['errMsg']}, status
-    
-        print(codici)
 
-        '''
-
-        if g.status == 200:
-            if g.response['user']['grpId'] == 6:
-                try:
+            try:
+                if content['id_corso'] in codici:
                     user = UserAccess.query.filter_by(username=g.response['user']['userId']).first()
                     if user is not None:
                         if user.autocertification and user.classroom == "presence":
@@ -464,32 +454,30 @@ class Reservation(Resource):
                     else:
                         return {'status': 'error',
                                 'errMsg': 'Impossibile prenotarsi in mancanza di autocertificazione/accesso in presenza.'}, 500
-
-                except exc.IntegrityError:
-                    db.session.rollback()
+                else:
                     return {
-                               'errMsgTitle': 'Attenzione',
-                               'errMsg': 'Prenotazione già effettuata per questa lezione.'
-                           }, 500
-                except:
-                    db.session.rollback()
-                    print("Unexpected error:")
-                    print("Title: " + sys.exc_info()[0].__name__)
-                    print("Description: " + traceback.format_exc())
-                    return {
-                               'errMsgTitle': sys.exc_info()[0].__name__,
-                               'errMsg': traceback.format_exc()
-                           }, 500
+                        'errMsgTitle': 'Attenzione',
+                        'errMsg': 'Non è possibile prenotarsi ad una lezione non presente nel proprio piano di studi/già superata.'
+                    }, 500
 
-            else:
+            except exc.IntegrityError:
+                db.session.rollback()
                 return {
-                           'errMsgTitle': "Attenzione",
-                           'errMsg': "Il tipo di user non è di tipo Studente"
+                           'errMsgTitle': 'Attenzione',
+                           'errMsg': 'Prenotazione già effettuata per questa lezione.'
                        }, 500
+            except:
+                db.session.rollback()
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
+                return {
+                           'errMsgTitle': sys.exc_info()[0].__name__,
+                           'errMsg': traceback.format_exc()
+                       }, 500
+
         else:
-            return {'errMsg': 'Wrong username/pass'}, g.status
-            
-    '''
+            return {'errMsg': _result['errMsg']}, status
 
     @ns.doc(security='Basic Auth')
     @token_required_general
