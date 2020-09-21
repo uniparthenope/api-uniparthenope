@@ -4,6 +4,7 @@ import sys
 import traceback
 import urllib.request
 import io
+import base64
 
 import sqlalchemy
 from sqlalchemy import exc
@@ -259,6 +260,13 @@ class getTodayLecture(Resource):
     @token_required
     def get(self, stuId, pianoId, matId):
         """Get Today Lectures"""
+
+        base64_bytes = g.token.encode('utf-8')
+        message_bytes = base64.b64decode(base64_bytes)
+        token_string = message_bytes.decode('utf-8')
+
+        username = token_string.split(':')[0]
+
         result = ExamsToFreq(Resource).get(stuId, pianoId, matId)
 
         status = json.loads(json.dumps(result))[1]
@@ -285,7 +293,7 @@ class getTodayLecture(Resource):
                     reserved = False
                     resered_id = None
                     reservation = Reservations.query.filter_by(id_lezione=row[0]).filter_by(
-                        username=g.response['user']['userId'])
+                        username=username)
 
                     if reservation.first() is not None:
                         reserved = True
