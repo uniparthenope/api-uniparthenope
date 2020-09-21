@@ -377,26 +377,27 @@ class getLectures(Resource):
 prenotazione = ns.model("reservation", {
     "id_corso": fields.String(description="", required=True),
     "id_lezione": fields.String(description="", required=True),
-    "matricola": fields.String(description="", required=True)
-})
-
-delete_reservation = ns.model("delete_reservations", {
-    "id_prenotazione": fields.String(description="", required=True),
+    "matricola": fields.String(description="", required=True),
     "stuId": fields.String(description="", required=True),
     "pianoId": fields.String(description="", required=True),
     "matId": fields.String(description="", required=True)
 })
 
+delete_reservation = ns.model("delete_reservations", {
+    "id_prenotazione": fields.String(description="", required=True)
+})
+
 
 class Reservation(Resource):
     @ns.doc(security='Basic Auth')
-    @token_required_general
+    @token_required
     @ns.expect(prenotazione)
     def post(self):
         """Set Reservation"""
         ##TODO controllare se lo studente appartiene a quella lezione
 
         content = request.json
+        print(content)
 
         result = ExamsToFreq(Resource).get(content['stuId'], content['pianoId'], content['matId'])
 
@@ -404,9 +405,12 @@ class Reservation(Resource):
         _result = json.loads(json.dumps(result))[0]
 
         codici = []
-        for i in range(len(_result)):
-            codici.append(_result[i]['codice'])
-
+        if status == 200:
+            for i in range(len(_result)):
+                codici.append(_result[i]['codice'])
+        else:
+            return {'errMsg': _result['errMsg']}, status
+    
         print(codici)
 
         '''
