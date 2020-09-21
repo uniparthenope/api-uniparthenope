@@ -325,46 +325,53 @@ class getTodayLecture(Resource):
             return {'errMsg': _result['errMsg']}, status
 
 
-# ------------- GET ALL LECTURES OF SPECIFIED COURSE -------------
+# ------------- GET ALL OWN LECTURES -------------
 
 
 parser = api.parser()
-parser.add_argument('id_corso', required=True, help='')
 
 
 @ns.doc(parser=parser)
 class getLectures(Resource):
     @ns.doc(security='Basic Auth')
-    @token_required_general
-    def get(self, id_corso):
-        """Get Today Lectures"""
-        if g.status == 200:
-            con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
+    @token_required
+    def get(self, stuId, pianoId, matId):
+        """Get All Own Lectures"""
+        result = ExamsToFreq(Resource).get(stuId, pianoId, matId)
 
-            start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
+        status = json.loads(json.dumps(result))[1]
+        _result = json.loads(json.dumps(result))[0]
 
-            rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso LIKE '%%" + str(id_corso) + "%%' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
+        con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
 
+        if status == 200:
             array = []
-            for row in rs:
-                array.append({
-                    'id': row[0],
-                    'start': str(datetime.fromtimestamp(row[1])),
-                    'end': str(datetime.fromtimestamp(row[2])),
-                    'room': {
-                        'name': row[38],
-                        'capacity': int(row[41])/2,
-                        'description': row[40],
-                        'availability': int(row[41])/2 - Reservations.query.with_for_update().filter_by(id_lezione=row[0]).count()
-                    },
-                    'course_name': row[9],
-                    'prof': row[11]
-                })
+            for i in range(len(_result)):
+                codice = _result[i]['codice']
+                start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
 
-            return array, 200
+                rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso LIKE '%%" + str(
+                    codice) + "%%' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
+
+                for row in rs:
+                    array.append({
+                        'id': row[0],
+                        'start': str(datetime.fromtimestamp(row[1])),
+                        'end': str(datetime.fromtimestamp(row[2])),
+                        'room': {
+                            'name': row[38],
+                            'capacity': int(row[41]) / 2,
+                            'description': row[40],
+                            'availability': int(row[41]) / 2 - Reservations.query.with_for_update().filter_by(
+                                id_lezione=row[0]).count()
+                        },
+                        'course_name': row[9],
+                        'prof': row[11]
+                    })
+
+                return array, 200
         else:
-            return {'errMsg': 'Wrong username/pass'}, g.status
-
+            return {'errMsg': _result['errMsg']}, status
 
 
 # ------------- RESERVATIONS -------------
@@ -386,7 +393,6 @@ class Reservation(Resource):
     def post(self):
         """Set Reservation"""
         ##TODO controllare se lo studente appartiene a quella lezione
-        ##TODO elimiare la data fissa
 
         content = request.json
 
@@ -397,62 +403,70 @@ class Reservation(Resource):
                     if user is not None:
                         if user.autocertification and user.classroom == "presence":
                             con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
-                            rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id = '" + content['id_lezione']  + "' AND E.room_id = R.id")
+                            rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id = '" + content[
+                                'id_lezione'] + "' AND E.room_id = R.id")
                             result = rs.fetchall()
-                            capacity = int(result[0][41])/2
+                            capacity = int(result[0][41]) / 2
 
-                            #now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59)
+                            # now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59)
                             now = datetime(2020, 9, 21, 23, 59)
                             print(datetime.fromtimestamp(result[0][1]), now)
 
                             if datetime.fromtimestamp(result[0][1]) > now:
                                 return {
-                                    'errMsgTitle': 'Attenzione',
-                                    'errMsg': 'Prenotazione non consentita.'
-                                }, 500
+                                           'errMsgTitle': 'Attenzione',
+                                           'errMsg': 'Prenotazione non consentita.'
+                                       }, 500
 
-                            r = Reservations(id_corso=content['id_corso'], course_name=result[0][9], start_time=datetime.fromtimestamp(result[0][1]), end_time=datetime.fromtimestamp(result[0][2]), username=g.response['user']['userId'], matricola=content['matricola'], time=datetime.now(), id_lezione=content['id_lezione'])
+                            r = Reservations(id_corso=content['id_corso'], course_name=result[0][9],
+                                             start_time=datetime.fromtimestamp(result[0][1]),
+                                             end_time=datetime.fromtimestamp(result[0][2]),
+                                             username=g.response['user']['userId'], matricola=content['matricola'],
+                                             time=datetime.now(), id_lezione=content['id_lezione'])
                             db.session.add(r)
-                
-                            count = Reservations.query.with_for_update().filter_by(id_lezione=content['id_lezione']).count()
+
+                            count = Reservations.query.with_for_update().filter_by(
+                                id_lezione=content['id_lezione']).count()
                             if count > capacity:
                                 db.session.rollback()
                                 return {
-                                    'errMsgTitle': 'Attenzione',
-                                    'errMsg': 'Raggiunta la capacità massima consentita.'
-                                }, 500
-                
+                                           'errMsgTitle': 'Attenzione',
+                                           'errMsg': 'Raggiunta la capacità massima consentita.'
+                                       }, 500
+
                             db.session.commit()
 
                             return {
-                                "status": "Prenotazione effettuata con successo."
-                            }, 200
+                                       "status": "Prenotazione effettuata con successo."
+                                   }, 200
                         else:
-                            return {'status': 'error', 'errMsg': 'Impossibile prenotarsi in mancanza di autocertificazione/accesso in presenza.'}, 500
+                            return {'status': 'error',
+                                    'errMsg': 'Impossibile prenotarsi in mancanza di autocertificazione/accesso in presenza.'}, 500
                     else:
-                        return {'status': 'error', 'errMsg': 'Impossibile prenotarsi in mancanza di autocertificazione/accesso in presenza.'}, 500
+                        return {'status': 'error',
+                                'errMsg': 'Impossibile prenotarsi in mancanza di autocertificazione/accesso in presenza.'}, 500
 
                 except exc.IntegrityError:
                     db.session.rollback()
                     return {
-                        'errMsgTitle': 'Attenzione',
-                        'errMsg': 'Prenotazione già effettuata per questa lezione.'
-                    }, 500
+                               'errMsgTitle': 'Attenzione',
+                               'errMsg': 'Prenotazione già effettuata per questa lezione.'
+                           }, 500
                 except:
                     db.session.rollback()
                     print("Unexpected error:")
                     print("Title: " + sys.exc_info()[0].__name__)
                     print("Description: " + traceback.format_exc())
                     return {
-                        'errMsgTitle': sys.exc_info()[0].__name__,
-                        'errMsg': traceback.format_exc()
-                    }, 500
+                               'errMsgTitle': sys.exc_info()[0].__name__,
+                               'errMsg': traceback.format_exc()
+                           }, 500
 
             else:
                 return {
-                    'errMsgTitle': "Attenzione",
-                    'errMsg': "Il tipo di user non è di tipo Studente"
-                }, 500
+                           'errMsgTitle': "Attenzione",
+                           'errMsg': "Il tipo di user non è di tipo Studente"
+                       }, 500
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
 
@@ -461,17 +475,18 @@ class Reservation(Resource):
     def get(self):
         """Get Reservations"""
         ##TODO elimiare la data fissa
-        
+
         if g.status == 200:
             if g.response['user']['grpId'] == 6:
                 try:
                     start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
                     end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59).timestamp()
 
-                    #start = datetime(2020, 9, 21, 0, 0)
-                    #end = datetime(2020, 9, 21, 23, 59)
+                    # start = datetime(2020, 9, 21, 0, 0)
+                    # end = datetime(2020, 9, 21, 23, 59)
 
-                    reservations = Reservations.query.filter_by(username=g.response['user']['userId']).filter(Reservations.start_time>=start).all()
+                    reservations = Reservations.query.filter_by(username=g.response['user']['userId']).filter(
+                        Reservations.start_time >= start).all()
                     array = []
                     for r in reservations:
                         array.append({
@@ -490,15 +505,15 @@ class Reservation(Resource):
                     print("Title: " + sys.exc_info()[0].__name__)
                     print("Description: " + traceback.format_exc())
                     return {
-                        'errMsgTitle': sys.exc_info()[0].__name__,
-                        'errMsg': traceback.format_exc()
-                    }, 500
+                               'errMsgTitle': sys.exc_info()[0].__name__,
+                               'errMsg': traceback.format_exc()
+                           }, 500
 
             else:
                 return {
-                    'errMsgTitle': "Attenzione",
-                    'errMsg': "Il tipo di user non è di tipo Studente"
-                }, 500
+                           'errMsgTitle': "Attenzione",
+                           'errMsg': "Il tipo di user non è di tipo Studente"
+                       }, 500
 
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
@@ -514,41 +529,42 @@ class Reservation(Resource):
         if g.status == 200:
             if g.response['user']['grpId'] == 6:
                 try:
-                    reservation = Reservations.query.filter_by(id=content['id_prenotazione']).filter_by(username=g.response['user']['userId'])
-                    
+                    reservation = Reservations.query.filter_by(id=content['id_prenotazione']).filter_by(
+                        username=g.response['user']['userId'])
+
                     if reservation.first() is not None:
                         reservation.delete()
                         db.session.commit()
 
                         return {
-                            "status": "Cancellazione effettuata con successo."
-                        }, 200
+                                   "status": "Cancellazione effettuata con successo."
+                               }, 200
                     else:
                         return {
-                            'errMsgTitle': "Attenzione",
-                            'errMsg': "Operazione non consentita."
-                        }, 500
+                                   'errMsgTitle': "Attenzione",
+                                   'errMsg': "Operazione non consentita."
+                               }, 500
 
                 except AttributeError as error:
                     return {
-                        'errMsgTitle': "Attenzione",
-                        'errMsg': "Operazione non consentita."
-                    }, 500
+                               'errMsgTitle': "Attenzione",
+                               'errMsg': "Operazione non consentita."
+                           }, 500
                 except:
                     db.session.rollback()
                     print("Unexpected error:")
                     print("Title: " + sys.exc_info()[0].__name__)
                     print("Description: " + traceback.format_exc())
                     return {
-                        'errMsgTitle': sys.exc_info()[0].__name__,
-                        'errMsg': traceback.format_exc()
-                    }, 500
+                               'errMsgTitle': sys.exc_info()[0].__name__,
+                               'errMsg': traceback.format_exc()
+                           }, 500
 
             else:
                 return {
-                    'errMsgTitle': "Attenzione",
-                    'errMsg': "Il tipo di user non è di tipo Studente"
-                }, 500
+                           'errMsgTitle': "Attenzione",
+                           'errMsg': "Il tipo di user non è di tipo Studente"
+                       }, 500
 
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
@@ -573,14 +589,14 @@ class getStudentsList(Resource):
 
                 try:
                     mat = Reservations.query.filter_by(id_lezione=id_lezione).all()
-                
+
                     array = []
                     for m in mat:
                         array.append({
                             'matricola': m.matricola,
                             'username': m.username
                         })
-                
+
                     return array, 200
                 except:
                     db.session.rollback()
@@ -588,17 +604,16 @@ class getStudentsList(Resource):
                     print("Title: " + sys.exc_info()[0].__name__)
                     print("Description: " + traceback.format_exc())
                     return {
-                        'errMsgTitle': sys.exc_info()[0].__name__,
-                        'errMsg': traceback.format_exc()
-                    }, 500
+                               'errMsgTitle': sys.exc_info()[0].__name__,
+                               'errMsg': traceback.format_exc()
+                           }, 500
             else:
                 return {
-                    'errMsgTitle': "Attenzione",
-                    'errMsg': "Il tipo di user non è di tipo Studente"
-                }, 500
+                           'errMsgTitle': "Attenzione",
+                           'errMsg': "Il tipo di user non è di tipo Studente"
+                       }, 500
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
-
 
 
 # ------------- GET EVENTS -------------
@@ -610,8 +625,10 @@ class getEvents(Resource):
         try:
             start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
             con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
-            rs = con.execute("SELECT *  FROM `mrbs_entry` E JOIN mrbs_room R WHERE (E.type = 't' COLLATE utf8mb4_bin OR E.type = 's' COLLATE utf8mb4_bin OR E.type = 'b' COLLATE utf8mb4_bin OR E.type = 'a' COLLATE utf8mb4_bin OR E.type = 'z' COLLATE utf8mb4_bin OR E.type = 'Y' COLLATE utf8mb4_bin OR E.type = 'O' COLLATE utf8mb4_bin) AND start_time >= '" + str(start) + "' AND E.room_id = R.id")
-        
+            rs = con.execute(
+                "SELECT *  FROM `mrbs_entry` E JOIN mrbs_room R WHERE (E.type = 't' COLLATE utf8mb4_bin OR E.type = 's' COLLATE utf8mb4_bin OR E.type = 'b' COLLATE utf8mb4_bin OR E.type = 'a' COLLATE utf8mb4_bin OR E.type = 'z' COLLATE utf8mb4_bin OR E.type = 'Y' COLLATE utf8mb4_bin OR E.type = 'O' COLLATE utf8mb4_bin) AND start_time >= '" + str(
+                    start) + "' AND E.room_id = R.id")
+
             array = []
             for row in rs:
                 array.append({
@@ -620,9 +637,10 @@ class getEvents(Resource):
                     'end': str(datetime.fromtimestamp(row[2])),
                     'room': {
                         'name': row[38],
-                        'capacity': int(row[41])/2,
+                        'capacity': int(row[41]) / 2,
                         'description': row[40],
-                        'availability': int(row[41])/2 - Reservations.query.with_for_update().filter_by(id_lezione=row[0]).count()
+                        'availability': int(row[41]) / 2 - Reservations.query.with_for_update().filter_by(
+                            id_lezione=row[0]).count()
                     },
                     'course_name': row[9],
                     'description': row[11],
@@ -630,14 +648,12 @@ class getEvents(Resource):
                 })
 
             return array, 200
-        
+
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
             print("Description: " + traceback.format_exc())
             return {
-                'errMsgTitle': sys.exc_info()[0].__name__,
-                'errMsg': traceback.format_exc()
-            }, 500
-
-
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500
