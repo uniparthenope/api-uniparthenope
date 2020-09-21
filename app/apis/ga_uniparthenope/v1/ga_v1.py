@@ -381,7 +381,10 @@ prenotazione = ns.model("reservation", {
 })
 
 delete_reservation = ns.model("delete_reservations", {
-    "id_prenotazione": fields.String(description="", required=True)
+    "id_prenotazione": fields.String(description="", required=True),
+    "stuId": fields.String(description="", required=True),
+    "pianoId": fields.String(description="", required=True),
+    "matId": fields.String(description="", required=True)
 })
 
 
@@ -394,6 +397,19 @@ class Reservation(Resource):
         ##TODO controllare se lo studente appartiene a quella lezione
 
         content = request.json
+
+        result = ExamsToFreq(Resource).get(content['stuId'], content['pianoId'], content['matId'])
+
+        status = json.loads(json.dumps(result))[1]
+        _result = json.loads(json.dumps(result))[0]
+
+        codici = []
+        for i in range(len(_result)):
+            codici.append(_result[i]['codice'])
+
+        print(codici)
+
+        '''
 
         if g.status == 200:
             if g.response['user']['grpId'] == 6:
@@ -468,13 +484,13 @@ class Reservation(Resource):
                        }, 500
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
+            
+    '''
 
     @ns.doc(security='Basic Auth')
     @token_required_general
     def get(self):
         """Get Reservations"""
-        ##TODO elimiare la data fissa
-
         if g.status == 200:
             if g.response['user']['grpId'] == 6:
                 try:
