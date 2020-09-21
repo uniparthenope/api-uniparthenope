@@ -89,6 +89,7 @@ def ldap_auth(user, passwd):
 
     # define the connection
     c = Connection(s, user=user_dn, password=passwd)
+    print(c)
 
     # perform the Bind operation
     c.bind()

@@ -490,7 +490,7 @@ class RSSNews(Resource):
         """Get news"""
 
         try:
-            feed = feedparser.parse("https://www.uniparthenope.it/rss.xml")
+            feed = feedparser.parse("https://www.uniparthenope.it/rss/tutte-le-news")
             h = html2text.HTML2Text()
             h.ignore_links = True
             h.ignore_images = True
@@ -504,7 +504,8 @@ class RSSNews(Resource):
                 img = ""
                 text_string = (BeautifulSoup(feed['entries'][i]['summary'], features="html.parser")).get_text()
                 text_string = text_string.split("Foto/Video:")[0]
-
+    
+                '''
                 if "Foto/Video" in feed['entries'][i]['summary']:
                     text = feed['entries'][i]['summary']
 
@@ -518,7 +519,7 @@ class RSSNews(Resource):
 
                     img = img.replace(start, "")
                     img = img.replace(end, "")
-
+                '''
                 if "Testo:" in text_string:
                     text_string = text_string.split("Testo:")[1]
 
@@ -527,12 +528,14 @@ class RSSNews(Resource):
                     'titolo': feed['entries'][i]['title'],
                     'link': feed['entries'][i]['link'],
                     'data': feed['entries'][i]['published'],
-                    'image': img,
+                    #'image': img,
+                    'image': "",
                     'HTML': feed['entries'][i]['summary'],
                     'TEXT': text_string
                 })
-                news.append(article)
 
+                news.append(article)
+            
             return news, 200
 
         except:
@@ -553,7 +556,7 @@ class RSSAvvisi(Resource):
         """Get news"""
 
         try:
-            feed = feedparser.parse("https://www.uniparthenope.it/rss.xml")
+            feed = feedparser.parse("https://www.uniparthenope.it/rss/tutti-gli-avvisi")
 
             avvisi = []
 

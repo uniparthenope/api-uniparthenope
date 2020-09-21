@@ -15,6 +15,7 @@ from app.apis.uniparthenope.v1.login_v1 import token_required_general, token_req
 from app.config import Config
 
 from app.apis.ga_uniparthenope.models import Reservations
+from app.apis.access.models import UserAccess
 
 ns = api.namespace('uniparthenope')
 
@@ -268,10 +269,18 @@ class getTodayLecture(Resource):
             #start = datetime(2020, 9, 21, 0, 0).timestamp()
             #end = datetime(2020, 9, 21, 23, 59).timestamp()
 
-            rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND `id_corso` = '" + str(id_corso) + "' AND start_time >= '" + str(start) + "' AND end_time <= '" + str(end) + "'")
+            rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND `id_corso` LIKE '%%" + str(id_corso) + "%%' AND start_time >= '" + str(start) + "' AND end_time <= '" + str(end) + "'")
 
             array = []
             for row in rs:
+                reserved = False
+                resered_id = None
+                reservation = Reservations.query.filter_by(id_lezione=row[0]).filter_by(username=g.response['user']['userId'])
+
+                if reservation.first() is not None:
+                    reserved = True
+                    resered_id = reservation.first().id
+
                 array.append({
                     'id': row[0],
                     'start': str(datetime.fromtimestamp(row[1])),
@@ -283,7 +292,11 @@ class getTodayLecture(Resource):
                         'availability': int(row[41])/2 - Reservations.query.with_for_update().filter_by(id_lezione=row[0]).count()
                     },
                     'course_name': row[9],
-                    'prof': row[11]
+                    'prof': row[11],
+                    'reservation':{
+                        'reserved_id': resered_id,
+                        'reserved': reserved
+                    }
                 })
 
             print(array)
@@ -309,9 +322,9 @@ class getLectures(Resource):
         if g.status == 200:
             con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
 
-            start = datetime.now().timestamp()
+            start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
 
-            rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso = '" + str(id_corso) + "' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
+            rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso LIKE '%%" + str(id_corso) + "%%' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
 
             array = []
             for row in rs:
@@ -362,37 +375,44 @@ class Reservation(Resource):
         if g.status == 200:
             if g.response['user']['grpId'] == 6:
                 try:
-                    con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
-                    rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id = '" + content['id_lezione']  + "' AND E.room_id = R.id")
-                    result = rs.fetchall()
-                    capacity = int(result[0][41])/2
+                    user = UserAccess.query.filter_by(username=g.response['user']['userId']).first()
+                    if user is not None:
+                        if user.autocertification and user.classroom == "presence":
+                            con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
+                            rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id = '" + content['id_lezione']  + "' AND E.room_id = R.id")
+                            result = rs.fetchall()
+                            capacity = int(result[0][41])/2
 
-                    #now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59)
-                    now = datetime(2020, 9, 21, 23, 59)
-                    print(datetime.fromtimestamp(result[0][1]), now)
+                            #now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59)
+                            now = datetime(2020, 9, 21, 23, 59)
+                            print(datetime.fromtimestamp(result[0][1]), now)
 
-                    if datetime.fromtimestamp(result[0][1]) > now:
-                        return {
-                            'errMsgTitle': 'Attenzione',
-                            'errMsg': 'Prenotazione non consentita.'
-                        }, 500
+                            if datetime.fromtimestamp(result[0][1]) > now:
+                                return {
+                                    'errMsgTitle': 'Attenzione',
+                                    'errMsg': 'Prenotazione non consentita.'
+                                }, 500
 
-                    r = Reservations(id_corso=content['id_corso'], course_name=result[0][9], start_time=datetime.fromtimestamp(result[0][1]), end_time=datetime.fromtimestamp(result[0][2]), username=g.response['user']['userId'], matricola=content['matricola'], time=datetime.now(), id_lezione=content['id_lezione'])
-                    db.session.add(r)
+                            r = Reservations(id_corso=content['id_corso'], course_name=result[0][9], start_time=datetime.fromtimestamp(result[0][1]), end_time=datetime.fromtimestamp(result[0][2]), username=g.response['user']['userId'], matricola=content['matricola'], time=datetime.now(), id_lezione=content['id_lezione'])
+                            db.session.add(r)
                 
-                    count = Reservations.query.with_for_update().filter_by(id_lezione=content['id_lezione']).count()
-                    if count > capacity:
-                        db.session.rollback()
-                        return {
-                            'errMsgTitle': 'Attenzione',
-                            'errMsg': 'Raggiunta la capacità massima consentita.'
-                        }, 500
+                            count = Reservations.query.with_for_update().filter_by(id_lezione=content['id_lezione']).count()
+                            if count > capacity:
+                                db.session.rollback()
+                                return {
+                                    'errMsgTitle': 'Attenzione',
+                                    'errMsg': 'Raggiunta la capacità massima consentita.'
+                                }, 500
                 
-                    db.session.commit()
+                            db.session.commit()
 
-                    return {
-                        "status": "Prenotazione effettuata con successo."
-                    }, 200
+                            return {
+                                "status": "Prenotazione effettuata con successo."
+                            }, 200
+                        else:
+                            return {'status': 'error', 'errMsg': 'Impossibile prenotarsi in mancanza di autocertificazione/accesso in presenza.'}, 500
+                    else:
+                        return {'status': 'error', 'errMsg': 'Impossibile prenotarsi in mancanza di autocertificazione/accesso in presenza.'}, 500
 
                 except exc.IntegrityError:
                     db.session.rollback()
@@ -560,3 +580,46 @@ class getStudentsList(Resource):
                 }, 500
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
+
+
+
+# ------------- GET EVENTS -------------
+
+
+class getEvents(Resource):
+    def get(self):
+        """Get Events"""
+        try:
+            start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
+            con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
+            rs = con.execute("SELECT *  FROM `mrbs_entry` E JOIN mrbs_room R WHERE (E.type = 't' COLLATE utf8mb4_bin OR E.type = 's' COLLATE utf8mb4_bin OR E.type = 'b' COLLATE utf8mb4_bin OR E.type = 'a' COLLATE utf8mb4_bin OR E.type = 'z' COLLATE utf8mb4_bin OR E.type = 'Y' COLLATE utf8mb4_bin OR E.type = 'O' COLLATE utf8mb4_bin) AND start_time >= '" + str(start) + "' AND E.room_id = R.id")
+        
+            array = []
+            for row in rs:
+                array.append({
+                    'id': row[0],
+                    'start': str(datetime.fromtimestamp(row[1])),
+                    'end': str(datetime.fromtimestamp(row[2])),
+                    'room': {
+                        'name': row[38],
+                        'capacity': int(row[41])/2,
+                        'description': row[40],
+                        'availability': int(row[41])/2 - Reservations.query.with_for_update().filter_by(id_lezione=row[0]).count()
+                    },
+                    'course_name': row[9],
+                    'description': row[11],
+                    'type': row[10]
+                })
+
+            return array, 200
+        
+        except:
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                'errMsgTitle': sys.exc_info()[0].__name__,
+                'errMsg': traceback.format_exc()
+            }, 500
+
+
