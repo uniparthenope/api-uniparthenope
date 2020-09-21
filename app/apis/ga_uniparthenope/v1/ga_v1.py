@@ -318,9 +318,8 @@ class getTodayLecture(Resource):
                         }
                     })
 
-                print(array)
 
-                return array, 200
+            return array, 200
         else:
             return {'errMsg': _result['errMsg']}, status
 
@@ -369,7 +368,7 @@ class getLectures(Resource):
                         'prof': row[11]
                     })
 
-                return array, 200
+            return array, 200
         else:
             return {'errMsg': _result['errMsg']}, status
 
