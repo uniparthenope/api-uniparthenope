@@ -257,36 +257,40 @@ class getTodayLecture(Resource):
     @token_required_general
     def get(self, id_corso):
         """Get Today Lectures"""
+        ##TODO elimiare la data fissa
 
-        con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
+        if g.status == 200:
+            con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
 
-        #start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
-        #end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59).timestamp()
+            start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
+            end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59).timestamp()
 
-        start = datetime(2020, 9, 21, 0, 0).timestamp()
-        end = datetime(2020, 9, 21, 23, 59).timestamp()
+            #start = datetime(2020, 9, 21, 0, 0).timestamp()
+            #end = datetime(2020, 9, 21, 23, 59).timestamp()
 
-        rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND `id_corso` = '" + str(id_corso) + "' AND start_time >= '" + str(start) + "' AND end_time <= '" + str(end) + "'")
+            rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND `id_corso` = '" + str(id_corso) + "' AND start_time >= '" + str(start) + "' AND end_time <= '" + str(end) + "'")
 
-        array = []
-        for row in rs:
-            array.append({
-                'id': row[0],
-                'start': str(datetime.fromtimestamp(row[1])),
-                'end': str(datetime.fromtimestamp(row[2])),
-                'room': {
-                    'name': row[38],
-                    'capacity': row[41]/2,
-                    'description': row[40],
-                    'availability': int(row[41])/2 - Reservations.query.with_for_update().filter_by(id_lezione=row[0]).count()
-                },
-                'course_name': row[9],
-                'prof': row[11]
-            })
+            array = []
+            for row in rs:
+                array.append({
+                    'id': row[0],
+                    'start': str(datetime.fromtimestamp(row[1])),
+                    'end': str(datetime.fromtimestamp(row[2])),
+                    'room': {
+                        'name': row[38],
+                        'capacity': row[41]/2,
+                        'description': row[40],
+                        'availability': int(row[41])/2 - Reservations.query.with_for_update().filter_by(id_lezione=row[0]).count()
+                    },
+                    'course_name': row[9],
+                    'prof': row[11]
+                })
 
-        print(array)
+            print(array)
 
-        return array, 200
+            return array, 200
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
 
 
 # ------------- GET ALL LECTURES OF SPECIFIED COURSE -------------
@@ -302,34 +306,36 @@ class getLectures(Resource):
     @token_required_general
     def get(self, id_corso):
         """Get Today Lectures"""
+        if g.status == 200:
+            con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
 
-        con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
+            start = datetime.now().timestamp()
 
-        start = datetime.now().timestamp()
+            rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso = '" + str(id_corso) + "' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
 
-        rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso = '" + str(id_corso) + "' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
+            array = []
+            for row in rs:
+                array.append({
+                    'id': row[0],
+                    'start': str(datetime.fromtimestamp(row[1])),
+                    'end': str(datetime.fromtimestamp(row[2])),
+                    'room': {
+                        'name': row[38],
+                        'capacity': int(row[41])/2,
+                        'description': row[40],
+                        'availability': int(row[41])/2 - Reservations.query.with_for_update().filter_by(id_lezione=row[0]).count()
+                    },
+                    'course_name': row[9],
+                    'prof': row[11]
+                })
 
-        array = []
-        for row in rs:
-            array.append({
-                'id': row[0],
-                'start': str(datetime.fromtimestamp(row[1])),
-                'end': str(datetime.fromtimestamp(row[2])),
-                'room': {
-                    'name': row[38],
-                    'capacity': int(row[41])/2,
-                    'description': row[40],
-                    'availability': int(row[41])/2 - Reservations.query.with_for_update().filter_by(id_lezione=row[0]).count()
-                },
-                'course_name': row[9],
-                'prof': row[11]
-            })
-
-        return array, 200
+            return array, 200
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
 
 
 
-# ------------- PRENOTAZIONE -------------
+# ------------- RESERVATIONS -------------
 
 prenotazione = ns.model("reservation", {
     "id_corso": fields.String(description="", required=True),
@@ -337,62 +343,177 @@ prenotazione = ns.model("reservation", {
     "matricola": fields.String(description="", required=True)
 })
 
+delete_reservation = ns.model("delete_reservations", {
+    "id_prenotazione": fields.String(description="", required=True)
+})
 
-class setReservation(Resource):
+
+class Reservation(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
     @ns.expect(prenotazione)
     def post(self):
-        """Reservation"""
+        """Set Reservation"""
         ##TODO controllare se lo studente appartiene a quella lezione
+        ##TODO elimiare la data fissa
 
         content = request.json
 
-        if g.response['user']['grpId'] == 6:
-            try:
-                con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
-                rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id = '" + content['id_lezione']  + "' AND E.room_id = R.id")
-                result = rs.fetchall()
-                capacity = int(result[0][41])/2
+        if g.status == 200:
+            if g.response['user']['grpId'] == 6:
+                try:
+                    con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
+                    rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id = '" + content['id_lezione']  + "' AND E.room_id = R.id")
+                    result = rs.fetchall()
+                    capacity = int(result[0][41])/2
+
+                    #now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59)
+                    now = datetime(2020, 9, 21, 23, 59)
+                    print(datetime.fromtimestamp(result[0][1]), now)
+
+                    if datetime.fromtimestamp(result[0][1]) > now:
+                        return {
+                            'errMsgTitle': 'Attenzione',
+                            'errMsg': 'Prenotazione non consentita.'
+                        }, 500
+
+                    r = Reservations(id_corso=content['id_corso'], course_name=result[0][9], start_time=datetime.fromtimestamp(result[0][1]), end_time=datetime.fromtimestamp(result[0][2]), username=g.response['user']['userId'], matricola=content['matricola'], time=datetime.now(), id_lezione=content['id_lezione'])
+                    db.session.add(r)
                 
-                r = Reservations(id_corso=content['id_corso'], username=g.response['user']['userId'], matricola=content['matricola'], time=datetime.now(), id_lezione=content['id_lezione'])
-                db.session.add(r)
+                    count = Reservations.query.with_for_update().filter_by(id_lezione=content['id_lezione']).count()
+                    if count > capacity:
+                        db.session.rollback()
+                        return {
+                            'errMsgTitle': 'Attenzione',
+                            'errMsg': 'Raggiunta la capacità massima consentita.'
+                        }, 500
                 
-                count = Reservations.query.with_for_update().filter_by(id_lezione=content['id_lezione']).count()
-                if count > capacity:
+                    db.session.commit()
+
+                    return {
+                        "status": "Prenotazione effettuata con successo."
+                    }, 200
+
+                except exc.IntegrityError:
                     db.session.rollback()
                     return {
-                    'errMsgTitle': 'Attenzione',
-                    'errMsg': 'Raggiunta la capacità massima consentita.'
-                }, 500
-                
-                db.session.commit()
+                        'errMsgTitle': 'Attenzione',
+                        'errMsg': 'Prenotazione già effettuata per questa lezione.'
+                    }, 500
+                except:
+                    db.session.rollback()
+                    print("Unexpected error:")
+                    print("Title: " + sys.exc_info()[0].__name__)
+                    print("Description: " + traceback.format_exc())
+                    return {
+                        'errMsgTitle': sys.exc_info()[0].__name__,
+                        'errMsg': traceback.format_exc()
+                    }, 500
 
+            else:
                 return {
-                    "status": "Prenotazione effettuata con successo."
-                }, 200
-
-            except exc.IntegrityError:
-                db.session.rollback()
-                return {
-                    'errMsgTitle': 'Attenzione',
-                    'errMsg': 'Prenotazione già effettuata per questa lezione.'
+                    'errMsgTitle': "Attenzione",
+                    'errMsg': "Il tipo di user non è di tipo Studente"
                 }, 500
-            except:
-                db.session.rollback()
-                print("Unexpected error:")
-                print("Title: " + sys.exc_info()[0].__name__)
-                print("Description: " + traceback.format_exc())
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
+
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    def get(self):
+        """Get Reservations"""
+        ##TODO elimiare la data fissa
+        
+        if g.status == 200:
+            if g.response['user']['grpId'] == 6:
+                try:
+                    start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
+                    end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59).timestamp()
+
+                    #start = datetime(2020, 9, 21, 0, 0)
+                    #end = datetime(2020, 9, 21, 23, 59)
+
+                    reservations = Reservations.query.filter_by(username=g.response['user']['userId']).filter(Reservations.start_time>=start).all()
+                    array = []
+                    for r in reservations:
+                        array.append({
+                            "id": r.id,
+                            "id_corso": r.id_corso,
+                            "course_name": r.course_name,
+                            "start_time": str(r.start_time),
+                            "end_time": str(r.end_time)
+                        })
+
+                    return array, 200
+
+                except:
+                    db.session.rollback()
+                    print("Unexpected error:")
+                    print("Title: " + sys.exc_info()[0].__name__)
+                    print("Description: " + traceback.format_exc())
+                    return {
+                        'errMsgTitle': sys.exc_info()[0].__name__,
+                        'errMsg': traceback.format_exc()
+                    }, 500
+
+            else:
                 return {
-                    'errMsgTitle': sys.exc_info()[0].__name__,
-                    'errMsg': traceback.format_exc()
+                    'errMsgTitle': "Attenzione",
+                    'errMsg': "Il tipo di user non è di tipo Studente"
                 }, 500
 
         else:
-            return {
-                'errMsgTitle': "Attenzione",
-                'errMsg': "Il tipo di user non è di tipo Studente"
-            }, 500
+            return {'errMsg': 'Wrong username/pass'}, g.status
+
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    @ns.expect(delete_reservation)
+    def delete(self):
+        """Delete Reservation"""
+
+        content = request.json
+
+        if g.status == 200:
+            if g.response['user']['grpId'] == 6:
+                try:
+                    reservation = Reservations.query.filter_by(id=content['id_prenotazione']).filter_by(username=g.response['user']['userId'])
+                    
+                    if reservation.first() is not None:
+                        reservation.delete()
+                        db.session.commit()
+
+                        return {
+                            "status": "Cancellazione effettuata con successo."
+                        }, 200
+                    else:
+                        return {
+                            'errMsgTitle': "Attenzione",
+                            'errMsg': "Operazione non consentita."
+                        }, 500
+
+                except AttributeError as error:
+                    return {
+                        'errMsgTitle': "Attenzione",
+                        'errMsg': "Operazione non consentita."
+                    }, 500
+                except:
+                    db.session.rollback()
+                    print("Unexpected error:")
+                    print("Title: " + sys.exc_info()[0].__name__)
+                    print("Description: " + traceback.format_exc())
+                    return {
+                        'errMsgTitle': sys.exc_info()[0].__name__,
+                        'errMsg': traceback.format_exc()
+                    }, 500
+
+            else:
+                return {
+                    'errMsgTitle': "Attenzione",
+                    'errMsg': "Il tipo di user non è di tipo Studente"
+                }, 500
+
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
 
 
 # ------------- GET STUDENTS LIST -------------
@@ -408,26 +529,34 @@ class getStudentsList(Resource):
     @token_required_general
     def get(self, id_lezione):
         """Get Students Lists"""
-        if g.response['user']['grpId'] == 7:
-            ##TODO controllare se la lezione appartiene a quel determinato professore
+        if g.status == 200:
+            if g.response['user']['grpId'] == 7:
+                ##TODO controllare se la lezione appartiene a quel determinato professore
 
-            try:
-                mat = Reservations.query.filter_by(id_lezione=id_lezione).all()
+                try:
+                    mat = Reservations.query.filter_by(id_lezione=id_lezione).all()
                 
-                array = []
-                for m in mat:
-                    array.append({
-                        'matricola': m.matricola,
-                        'username': m.username
-                    })
+                    array = []
+                    for m in mat:
+                        array.append({
+                            'matricola': m.matricola,
+                            'username': m.username
+                        })
                 
-                return array, 200
-            except:
-                db.session.rollback()
-                print("Unexpected error:")
-                print("Title: " + sys.exc_info()[0].__name__)
-                print("Description: " + traceback.format_exc())
+                    return array, 200
+                except:
+                    db.session.rollback()
+                    print("Unexpected error:")
+                    print("Title: " + sys.exc_info()[0].__name__)
+                    print("Description: " + traceback.format_exc())
+                    return {
+                        'errMsgTitle': sys.exc_info()[0].__name__,
+                        'errMsg': traceback.format_exc()
+                    }, 500
+            else:
                 return {
-                    'errMsgTitle': sys.exc_info()[0].__name__,
-                    'errMsg': traceback.format_exc()
+                    'errMsgTitle': "Attenzione",
+                    'errMsg': "Il tipo di user non è di tipo Studente"
                 }, 500
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status

@@ -13,6 +13,9 @@ class Reservations(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     id_corso = db.Column(db.String(16), nullable=False)
+    course_name = db.Column(db.String(128), nullable=False)
+    start_time = db.Column(db.DateTime, index=True, nullable=False)
+    end_time = db.Column(db.DateTime, index=True, nullable=False)
     username = db.Column(db.String(64), nullable=False)
     matricola = db.Column(db.String(32), nullable=False)
     time = db.Column(db.DateTime, index=True, default=datetime.utcnow, nullable=False)
