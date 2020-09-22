@@ -252,13 +252,14 @@ class ProfessorCourse(Resource):
 
 
 parser = api.parser()
+parser.add_argument('matId', required=True, help='')
 
 
 @ns.doc(parser=parser)
 class getTodayLecture(Resource):
     @ns.doc(security='Basic Auth')
     @token_required
-    def get(self, stuId, pianoId, matId):
+    def get(self, matId):
         """Get Today Lectures"""
 
         base64_bytes = g.token.encode('utf-8')
@@ -302,6 +303,7 @@ class getTodayLecture(Resource):
 
                         array.append({
                             'id': row[0],
+                            'id_corso': codice,
                             'start': str(datetime.fromtimestamp(row[1])),
                             'end': str(datetime.fromtimestamp(row[2])),
                             'room': {
@@ -329,13 +331,14 @@ class getTodayLecture(Resource):
 
 
 parser = api.parser()
+parser.add_argument('matId', required=True, help='')
 
 
 @ns.doc(parser=parser)
 class getLectures(Resource):
     @ns.doc(security='Basic Auth')
     @token_required
-    def get(self, stuId, pianoId, matId):
+    def get(self, matId):
         """Get All Own Lectures"""
         result = MyExams(Resource).get(matId)
 
@@ -347,7 +350,7 @@ class getLectures(Resource):
         if status == 200:
             array = []
             for i in range(len(_result)):
-                if _result[i]['stato']['esito'] == 'P':
+                if _result[i]['status']['esito'] == 'P':
                     codice = _result[i]['codice']
                     start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
 
@@ -357,6 +360,7 @@ class getLectures(Resource):
                     for row in rs:
                         array.append({
                             'id': row[0],
+                            'id_corso': codice,
                             'start': str(datetime.fromtimestamp(row[1])),
                             'end': str(datetime.fromtimestamp(row[2])),
                             'room': {
@@ -380,8 +384,6 @@ prenotazione = ns.model("reservation", {
     "id_corso": fields.String(description="", required=True),
     "id_lezione": fields.String(description="", required=True),
     "matricola": fields.String(description="", required=True),
-    "stuId": fields.String(description="", required=True),
-    "pianoId": fields.String(description="", required=True),
     "matId": fields.String(description="", required=True)
 })
 
@@ -396,6 +398,12 @@ class Reservation(Resource):
     @ns.expect(prenotazione)
     def post(self):
         """Set Reservation"""
+        base64_bytes = g.token.encode('utf-8')
+        message_bytes = base64.b64decode(base64_bytes)
+        token_string = message_bytes.decode('utf-8')
+
+        username = token_string.split(':')[0]
+
         content = request.json
 
         result = MyExams(Resource).get(content['matId'])
@@ -406,12 +414,12 @@ class Reservation(Resource):
         codici = []
         if status == 200:
             for i in range(len(_result)):
-                if _result[i]['stato']['esito'] == 'P':
+                if _result[i]['status']['esito'] == 'P':
                     codici.append(_result[i]['codice'])
 
             try:
                 if content['id_corso'] in codici:
-                    user = UserAccess.query.filter_by(username=g.response['user']['userId']).first()
+                    user = UserAccess.query.filter_by(username=username).first()
                     if user is not None:
                         if user.autocertification and user.classroom == "presence":
                             con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
@@ -420,8 +428,8 @@ class Reservation(Resource):
                             result = rs.fetchall()
                             capacity = int(result[0][41]) / 2
 
-                            # now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59)
-                            now = datetime(2020, 9, 21, 23, 59)
+                            now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59)
+                            #now = datetime(2020, 9, 21, 23, 59)
                             print(datetime.fromtimestamp(result[0][1]), now)
 
                             if datetime.fromtimestamp(result[0][1]) > now:
@@ -433,7 +441,7 @@ class Reservation(Resource):
                             r = Reservations(id_corso=content['id_corso'], course_name=result[0][9],
                                              start_time=datetime.fromtimestamp(result[0][1]),
                                              end_time=datetime.fromtimestamp(result[0][2]),
-                                             username=g.response['user']['userId'], matricola=content['matricola'],
+                                             username=username, matricola=content['matricola'],
                                              time=datetime.now(), id_lezione=content['id_lezione'])
                             db.session.add(r)
 
@@ -486,6 +494,12 @@ class Reservation(Resource):
     @token_required_general
     def get(self):
         """Get Reservations"""
+        base64_bytes = g.token.encode('utf-8')
+        message_bytes = base64.b64decode(base64_bytes)
+        token_string = message_bytes.decode('utf-8')
+
+        username = token_string.split(':')[0]    
+    
         if g.status == 200:
             if g.response['user']['grpId'] == 6:
                 try:
@@ -495,7 +509,7 @@ class Reservation(Resource):
                     # start = datetime(2020, 9, 21, 0, 0)
                     # end = datetime(2020, 9, 21, 23, 59)
 
-                    reservations = Reservations.query.filter_by(username=g.response['user']['userId']).filter(
+                    reservations = Reservations.query.filter_by(username=username).filter(
                         Reservations.start_time >= start).all()
                     array = []
                     for r in reservations:
@@ -533,6 +547,11 @@ class Reservation(Resource):
     @ns.expect(delete_reservation)
     def delete(self):
         """Delete Reservation"""
+        base64_bytes = g.token.encode('utf-8')
+        message_bytes = base64.b64decode(base64_bytes)
+        token_string = message_bytes.decode('utf-8')
+
+        username = token_string.split(':')[0]
 
         content = request.json
 
@@ -540,7 +559,7 @@ class Reservation(Resource):
             if g.response['user']['grpId'] == 6:
                 try:
                     reservation = Reservations.query.filter_by(id=content['id_prenotazione']).filter_by(
-                        username=g.response['user']['userId'])
+                        username=username)
 
                     if reservation.first() is not None:
                         reservation.delete()
