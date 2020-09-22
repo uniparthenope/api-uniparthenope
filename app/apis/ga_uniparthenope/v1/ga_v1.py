@@ -392,7 +392,7 @@ class getProfLectures(Resource):
     @ns.doc(security='Basic Auth')
     @token_required
     def get(self, aaId):
-        """Get All Own Lectures"""
+        """Get All Prof Lectures"""
         result = getCourses(Resource).get(aaId)
 
         status = json.loads(json.dumps(result))[1]
@@ -411,8 +411,9 @@ class getProfLectures(Resource):
                 rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso LIKE '%%" + str(
                     codice) + "%%' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
 
+                courses = []
                 for row in rs:
-                    array.append({
+                    courses.append({
                         'id': row[0],
                         'start': str(datetime.fromtimestamp(row[1])),
                         'end': str(datetime.fromtimestamp(row[2])),
@@ -426,9 +427,10 @@ class getProfLectures(Resource):
                         'course_name': row[9],
                         'prof': row[11]
                     })
-            else:
-                return {'errMsg': 'Codice corso non presente in carriera.'}, 500
-
+                array.append({
+                    'nome': _result[i]['adDes'],
+                    'courses': courses
+                })
             return array, 200
         else:
             return {'errMsg': _result['errMsg']}, status
