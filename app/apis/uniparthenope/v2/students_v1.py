@@ -43,42 +43,72 @@ class MyExams(Resource):
             response = requests.request("GET", url + "libretto-service-v2/libretti/" + matId + "/partizioni",
                                          headers=headers)
             _response = response.json()
+            print(_response)
 
             if response.status_code == 200:
                 response2 = requests.request("GET", url + "libretto-service-v2/libretti/" + matId + "/righe",
                                             headers=headers)
 
                 _response2 = response2.json()
+                print(_response2)
 
                 if response2.status_code == 200:
-                    for i in range(len(_response)):
-                        x = next(item for item in _response2 if item["adsceId"] == _response[i]['adsceId'])
-                        actual_exam = ({
-                            'nome': _response[i]['chiaveAdContestualizzata']['adDes'],
-                            'codice': _response[i]['chiaveAdContestualizzata']['adCod'],
-                            'adId': _response[i]['chiaveAdContestualizzata']['adId'],
-                            'adsceID': _response[i]['adsceId'],
-                            'docente': _response[i]['cognomeDocTit'] + " " + _response[i]['nomeDoctit'],
-                            'docenteID': _response[i]['docenteId'],
-                            'semestre': _response[i]['partEffCod'],
-                            'semestreDes': _response[i]['partEffDes'],
-                            'adLogId': _response[i]['chiavePartizione']['adLogId'],
-                            'domPartCod': _response[i]['chiavePartizione']['domPartCod'],
-                            'status': {
-                                'esito': x['stato']['value'],
-                                'voto': x['esito']['voto'],
-                                'lode': x['esito']['lodeFlg'],
-                                'data': x['esito']['dataEsa']
-                            },
-                            'CFU': x['peso'],
-                            'annoId': x['annoCorso'],
-                            'numAppelliPrenotabili': x['numAppelliPrenotabili'],
-                            'tipoInsDes': x['tipoInsDes'],
-                            'tipoInsCod': x['tipoInsCod'],
-                            'tipoEsaDes': x['tipoEsaDes']
-                        })
-                        my_exams.append(actual_exam)
-
+                    for i in range(len(_response2)):
+                        if _response2[i]['esito']['modValCod']['value'] == 'G':
+                            actual_exam = ({
+                                'nome': _response2[i]['adDes'],
+                                'codice': _response2[i]['adDes'],
+                                'tipo': _response2[i]['esito']['modValCod']['value'],
+                                'adId': _response2[i]['chiaveADContestualizzata']['adId'],
+                                'adsceID': _response2[i]['adsceId'],
+                                'docente': "",
+                                'docenteID': "",
+                                'semestre': "",
+                                'semestreDes': "",
+                                'adLogId': "",
+                                'domPartCod': "",
+                                'status': {
+                                    'esito': _response2[i]['stato']['value'],
+                                    'voto': _response2[i]['esito']['voto'],
+                                    'lode': _response2[i]['esito']['lodeFlg'],
+                                    'data': _response2[i]['esito']['dataEsa']
+                                },
+                                'CFU': _response2[i]['peso'],
+                                'annoId': _response2[i]['annoCorso'],
+                                'numAppelliPrenotabili': _response2[i]['numAppelliPrenotabili'],
+                                'tipoInsDes': _response2[i]['tipoInsDes'],
+                                'tipoInsCod': _response2[i]['tipoInsCod'],
+                                'tipoEsaDes': _response2[i]['tipoEsaDes']
+                            })
+                            my_exams.append(actual_exam)
+                        for j in range(len(_response)):
+                            if _response2[i]["adsceId"] == _response[j]["adsceId"]:
+                                actual_exam = ({
+                                    'nome': _response[j]['chiaveAdContestualizzata']['adDes'],
+                                    'codice': _response[j]['chiaveAdContestualizzata']['adCod'],
+                                    'tipo': _response2[i]['esito']['modValCod']['value'],
+                                    'adId': _response[j]['chiaveAdContestualizzata']['adId'],
+                                    'adsceID': _response[j]['adsceId'],
+                                    'docente': _response[j]['cognomeDocTit'] + " " + _response[j]['nomeDoctit'],
+                                    'docenteID': _response[j]['docenteId'],
+                                    'semestre': _response[j]['partEffCod'],
+                                    'semestreDes': _response[j]['partEffDes'],
+                                    'adLogId': _response[j]['chiavePartizione']['adLogId'],
+                                    'domPartCod': _response[j]['chiavePartizione']['domPartCod'],
+                                    'status': {
+                                        'esito': _response2[i]['stato']['value'],
+                                        'voto': _response2[i]['esito']['voto'],
+                                        'lode': _response2[i]['esito']['lodeFlg'],
+                                        'data': _response2[i]['esito']['dataEsa']
+                                    },
+                                    'CFU': _response2[i]['peso'],
+                                    'annoId': _response2[i]['annoCorso'],
+                                    'numAppelliPrenotabili': _response2[i]['numAppelliPrenotabili'],
+                                    'tipoInsDes': _response2[i]['tipoInsDes'],
+                                    'tipoInsCod': _response2[i]['tipoInsCod'],
+                                    'tipoEsaDes': _response2[i]['tipoEsaDes']
+                                })
+                                my_exams.append(actual_exam)
                     return my_exams, 200
                 else:
                     return {'errMsg': _response2['retErrMsg']}, response2.status_code

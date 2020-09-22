@@ -13,5 +13,6 @@ ns.add_resource(ProfessorCourse, '/v1/professorCourse/<periodo>/<cognome>', meth
 ns.add_resource(getTodayLecture, '/v1/getTodayLecture/<matId>', methods=['GET'])
 ns.add_resource(getLectures, '/v1/getLectures/<matId>', methods=['GET'])
 ns.add_resource(getStudentsList, '/v1/getStudentsList/<id_lezione>', methods=['GET'])
-ns.add_resource(Reservation, '/v1/Reservations', methods=['GET', 'POST', 'DELETE'])
+ns.add_resource(Reservation, '/v1/Reservations', methods=['GET', 'POST'])
+ns.add_resource(Reservation, '/v1/Reservations/<id_prenotazione>', methods=['DELETE'])
 ns.add_resource(getEvents, '/v1/getEvents', methods=['GET'])

@@ -210,13 +210,13 @@ class GetTotalExams(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "libretto-service-v1/libretti/" + matId + "/stats",
+            response = requests.request("GET", url + "libretto-service-v2/libretti/" + matId + "/stats",
                                         headers=headers)
             _response = response.json()
 
             if response.status_code == 200:
                 if len(_response) != 0:
-                    totAdSuperate = _response['numAdSuperate'] + _response['numAdFrequentate']
+                    totAdSuperate = _response['numAdSuperate'] + _response['numAdFrequentate'] + _response['numAdPianificate']
                     output = {
                         'totAdSuperate': totAdSuperate,
                         'numAdSuperate': _response['numAdSuperate'],
@@ -427,7 +427,6 @@ class CheckAppello(Resource):
 
             if response.status_code == 200:
                 for i in range(0, len(_response)):
-                    print(_response[i]['stato'])
                     #if _response[i]['stato'] == "I" or _response[i]['stato'] == "P":
                     if _response[i]['stato'] not in bad_status:
                         #I = Esami futuri non ancora prenotabili

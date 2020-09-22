@@ -387,10 +387,6 @@ prenotazione = ns.model("reservation", {
     "matId": fields.String(description="", required=True)
 })
 
-delete_reservation = ns.model("delete_reservations", {
-    "id_prenotazione": fields.String(description="", required=True)
-})
-
 
 class Reservation(Resource):
     @ns.doc(security='Basic Auth')
@@ -544,8 +540,7 @@ class Reservation(Resource):
 
     @ns.doc(security='Basic Auth')
     @token_required_general
-    @ns.expect(delete_reservation)
-    def delete(self):
+    def delete(self, id_prenotazione):
         """Delete Reservation"""
         base64_bytes = g.token.encode('utf-8')
         message_bytes = base64.b64decode(base64_bytes)
@@ -553,12 +548,10 @@ class Reservation(Resource):
 
         username = token_string.split(':')[0]
 
-        content = request.json
-
         if g.status == 200:
             if g.response['user']['grpId'] == 6:
                 try:
-                    reservation = Reservations.query.filter_by(id=content['id_prenotazione']).filter_by(
+                    reservation = Reservations.query.filter_by(id=id_prenotazione).filter_by(
                         username=username)
 
                     if reservation.first() is not None:
