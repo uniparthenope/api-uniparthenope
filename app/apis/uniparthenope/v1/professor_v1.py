@@ -187,7 +187,7 @@ class getCourses(Resource):
                         })
                         array.append(item)
 
-                return array
+                return array, 200
             else:
                 return {'errMsg': _response['retErrMsg']}, response.status_code
 

@@ -14,7 +14,8 @@ from flask_restplus import Resource, fields
 from datetime import datetime, timedelta
 from flask import g, request
 from app.apis.uniparthenope.v1.login_v1 import token_required_general, token_required
-from app.apis.uniparthenope.v2.students_v1 import MyExams
+from app.apis.uniparthenope.v1.professor_v1 import getCourses
+from app.apis.uniparthenope.v2.students_v2 import MyExams
 from app.config import Config
 
 from app.apis.ga_uniparthenope.models import Reservations
@@ -373,6 +374,60 @@ class getLectures(Resource):
                             'course_name': row[9],
                             'prof': row[11]
                         })
+
+            return array, 200
+        else:
+            return {'errMsg': _result['errMsg']}, status
+
+
+# ------------- GET ALL PROF LECTURES -------------
+
+
+parser = api.parser()
+parser.add_argument('aaId', required=True, help='')
+
+
+@ns.doc(parser=parser)
+class getProfLectures(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required
+    def get(self, aaId):
+        """Get All Own Lectures"""
+        result = getCourses(Resource).get(aaId)
+
+        status = json.loads(json.dumps(result))[1]
+        _result = json.loads(json.dumps(result))[0]
+
+        con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
+
+        if status == 200:
+            array = []
+
+            for i in range(len(_result)):
+                codice = _result[i]['adDefAppCod']
+
+                start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
+
+                rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso LIKE '%%" + str(
+                    codice) + "%%' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
+
+                for row in rs:
+                    array.append({
+                        'id': row[0],
+                        'start': str(datetime.fromtimestamp(row[1])),
+                        'end': str(datetime.fromtimestamp(row[2])),
+                        'room': {
+                            'name': row[38],
+                            'capacity': int(row[41]) / 2,
+                            'description': row[40],
+                            'availability': int(row[41]) / 2 - Reservations.query.with_for_update().filter_by(
+                                id_lezione=row[0]).count()
+                        },
+                        'course_name': row[9],
+                        'prof': row[11]
+                    })
+            else:
+                return {'errMsg': 'Codice corso non presente in carriera.'}, 500
 
             return array, 200
         else:
