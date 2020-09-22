@@ -614,7 +614,7 @@ class getReservations(Resource):
 
 
 # ------------- EXAMS TO FREQ -------------
-
+##TODO DA ELIMINARE
 
 parser = api.parser()
 parser.add_argument('stuId', type=str, required=True, help='User stuId')

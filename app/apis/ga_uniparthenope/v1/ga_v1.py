@@ -14,7 +14,7 @@ from flask_restplus import Resource, fields
 from datetime import datetime, timedelta
 from flask import g, request
 from app.apis.uniparthenope.v1.login_v1 import token_required_general, token_required
-from app.apis.uniparthenope.v1.students_v1 import ExamsToFreq
+from app.apis.uniparthenope.v2.students_v1 import MyExams
 from app.config import Config
 
 from app.apis.ga_uniparthenope.models import Reservations
@@ -267,7 +267,7 @@ class getTodayLecture(Resource):
 
         username = token_string.split(':')[0]
 
-        result = ExamsToFreq(Resource).get(stuId, pianoId, matId)
+        result = MyExams(Resource).get(matId)
 
         status = json.loads(json.dumps(result))[1]
         _result = json.loads(json.dumps(result))[0]
@@ -277,46 +277,47 @@ class getTodayLecture(Resource):
         if status == 200:
             array = []
             for i in range(len(_result)):
-                codice = _result[i]['codice']
+                if _result[i]['status']['esito'] == 'P':
+                    codice = _result[i]['codice']
 
-                start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
-                end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59).timestamp()
+                    start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
+                    end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59).timestamp()
 
-                # start = datetime(2020, 9, 21, 0, 0).timestamp()
-                # end = datetime(2020, 9, 21, 23, 59).timestamp()
+                    # start = datetime(2020, 9, 21, 0, 0).timestamp()
+                    # end = datetime(2020, 9, 21, 23, 59).timestamp()
 
-                rs = con.execute(
-                    "SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND `id_corso` LIKE '%%" + str(
-                        codice) + "%%' AND start_time >= '" + str(start) + "' AND end_time <= '" + str(end) + "'")
+                    rs = con.execute(
+                        "SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND `id_corso` LIKE '%%" + str(
+                            codice) + "%%' AND start_time >= '" + str(start) + "' AND end_time <= '" + str(end) + "'")
 
-                for row in rs:
-                    reserved = False
-                    resered_id = None
-                    reservation = Reservations.query.filter_by(id_lezione=row[0]).filter_by(
-                        username=username)
+                    for row in rs:
+                        reserved = False
+                        resered_id = None
+                        reservation = Reservations.query.filter_by(id_lezione=row[0]).filter_by(
+                            username=username)
 
-                    if reservation.first() is not None:
-                        reserved = True
-                        resered_id = reservation.first().id
+                        if reservation.first() is not None:
+                            reserved = True
+                            resered_id = reservation.first().id
 
-                    array.append({
-                        'id': row[0],
-                        'start': str(datetime.fromtimestamp(row[1])),
-                        'end': str(datetime.fromtimestamp(row[2])),
-                        'room': {
-                            'name': row[38],
-                            'capacity': row[41] / 2,
-                            'description': row[40],
-                            'availability': int(row[41]) / 2 - Reservations.query.with_for_update().filter_by(
-                                id_lezione=row[0]).count()
-                        },
-                        'course_name': row[9],
-                        'prof': row[11],
-                        'reservation': {
-                            'reserved_id': resered_id,
-                            'reserved': reserved
-                        }
-                    })
+                        array.append({
+                            'id': row[0],
+                            'start': str(datetime.fromtimestamp(row[1])),
+                            'end': str(datetime.fromtimestamp(row[2])),
+                            'room': {
+                                'name': row[38],
+                                'capacity': row[41] / 2,
+                                'description': row[40],
+                                'availability': int(row[41]) / 2 - Reservations.query.with_for_update().filter_by(
+                                    id_lezione=row[0]).count()
+                            },
+                            'course_name': row[9],
+                            'prof': row[11],
+                            'reservation': {
+                                'reserved_id': resered_id,
+                                'reserved': reserved
+                            }
+                        })
 
 
             return array, 200
@@ -336,7 +337,7 @@ class getLectures(Resource):
     @token_required
     def get(self, stuId, pianoId, matId):
         """Get All Own Lectures"""
-        result = ExamsToFreq(Resource).get(stuId, pianoId, matId)
+        result = MyExams(Resource).get(matId)
 
         status = json.loads(json.dumps(result))[1]
         _result = json.loads(json.dumps(result))[0]
@@ -346,27 +347,28 @@ class getLectures(Resource):
         if status == 200:
             array = []
             for i in range(len(_result)):
-                codice = _result[i]['codice']
-                start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
+                if _result[i]['stato']['esito'] == 'P':
+                    codice = _result[i]['codice']
+                    start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
 
-                rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso LIKE '%%" + str(
-                    codice) + "%%' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
+                    rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso LIKE '%%" + str(
+                        codice) + "%%' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
 
-                for row in rs:
-                    array.append({
-                        'id': row[0],
-                        'start': str(datetime.fromtimestamp(row[1])),
-                        'end': str(datetime.fromtimestamp(row[2])),
-                        'room': {
-                            'name': row[38],
-                            'capacity': int(row[41]) / 2,
-                            'description': row[40],
-                            'availability': int(row[41]) / 2 - Reservations.query.with_for_update().filter_by(
-                                id_lezione=row[0]).count()
-                        },
-                        'course_name': row[9],
-                        'prof': row[11]
-                    })
+                    for row in rs:
+                        array.append({
+                            'id': row[0],
+                            'start': str(datetime.fromtimestamp(row[1])),
+                            'end': str(datetime.fromtimestamp(row[2])),
+                            'room': {
+                                'name': row[38],
+                                'capacity': int(row[41]) / 2,
+                                'description': row[40],
+                                'availability': int(row[41]) / 2 - Reservations.query.with_for_update().filter_by(
+                                    id_lezione=row[0]).count()
+                            },
+                            'course_name': row[9],
+                            'prof': row[11]
+                        })
 
             return array, 200
         else:
@@ -396,7 +398,7 @@ class Reservation(Resource):
         """Set Reservation"""
         content = request.json
 
-        result = ExamsToFreq(Resource).get(content['stuId'], content['pianoId'], content['matId'])
+        result = MyExams(Resource).get(content['matId'])
 
         status = json.loads(json.dumps(result))[1]
         _result = json.loads(json.dumps(result))[0]
@@ -404,7 +406,8 @@ class Reservation(Resource):
         codici = []
         if status == 200:
             for i in range(len(_result)):
-                codici.append(_result[i]['codice'])
+                if _result[i]['stato']['esito'] == 'P':
+                    codici.append(_result[i]['codice'])
 
             try:
                 if content['id_corso'] in codici:
