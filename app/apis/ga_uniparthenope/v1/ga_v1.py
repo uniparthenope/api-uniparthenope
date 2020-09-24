@@ -599,13 +599,15 @@ class Reservation(Resource):
     @token_required_general
     def delete(self, id_prenotazione):
         """Delete Reservation"""
-        base64_bytes = g.token.encode('utf-8')
-        message_bytes = base64.b64decode(base64_bytes)
-        token_string = message_bytes.decode('utf-8')
-
-        username = token_string.split(':')[0]
-
         if g.status == 200:
+            base64_bytes = g.token.encode('utf-8')
+            message_bytes = base64.b64decode(base64_bytes)
+            token_string = message_bytes.decode('utf-8')
+
+            username = token_string.split(':')[0]
+
+            print(request.args.get('aaId'))
+
             if g.response['user']['grpId'] == 6:
                 try:
                     reservation = Reservations.query.filter_by(id=id_prenotazione).filter_by(
@@ -638,7 +640,11 @@ class Reservation(Resource):
                                'errMsgTitle': sys.exc_info()[0].__name__,
                                'errMsg': traceback.format_exc()
                            }, 500
+            elif g.response['user']['grpId'] == 7:
+                result = getCourses(Resource).get("2019")
 
+                status = json.loads(json.dumps(result))[1]
+                _result = json.loads(json.dumps(result))[0]
             else:
                 return {
                            'errMsgTitle': "Attenzione",

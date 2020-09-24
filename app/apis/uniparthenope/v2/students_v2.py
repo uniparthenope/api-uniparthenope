@@ -2,18 +2,10 @@ from flask import g, request
 from app import api
 from flask_restplus import Resource, fields
 import requests
-from datetime import datetime, timedelta
-import base64
-import json
 import sys
 import traceback
-import urllib
-from concurrent.futures import ThreadPoolExecutor
-from bs4 import BeautifulSoup
-from babel.numbers import format_currency
-import unicodedata
 
-from app.apis.uniparthenope.v1.login_v1 import token_required, token_required_general
+from app.apis.uniparthenope.v1.login_v1 import token_required
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
