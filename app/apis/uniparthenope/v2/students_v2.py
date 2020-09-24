@@ -54,11 +54,16 @@ class MyExams(Resource):
 
                 if response2.status_code == 200:
                     for i in range(len(_response2)):
-                        if _response2[i]['esito']['modValCod']['value'] == 'G':
+                        if _response2[i]['esito']['modValCod'] is None:
+                            tipo = 'G'
+                        else:
+                            tipo = _response2[i]['esito']['modValCod']['value']
+
+                        if tipo == 'G':
                             actual_exam = ({
                                 'nome': _response2[i]['adDes'],
                                 'codice': _response2[i]['adDes'],
-                                'tipo': _response2[i]['esito']['modValCod']['value'],
+                                'tipo': tipo,
                                 'adId': _response2[i]['chiaveADContestualizzata']['adId'],
                                 'adsceID': _response2[i]['adsceId'],
                                 'docente': "",
@@ -86,7 +91,7 @@ class MyExams(Resource):
                                 actual_exam = ({
                                     'nome': _response[j]['chiaveAdContestualizzata']['adDes'],
                                     'codice': _response[j]['chiaveAdContestualizzata']['adCod'],
-                                    'tipo': _response2[i]['esito']['modValCod']['value'],
+                                    'tipo': tipo,
                                     'adId': _response[j]['chiaveAdContestualizzata']['adId'],
                                     'adsceID': _response[j]['adsceId'],
                                     'docente': _response[j]['cognomeDocTit'] + " " + _response[j]['nomeDoctit'],
