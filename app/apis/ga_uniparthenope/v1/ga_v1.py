@@ -279,7 +279,7 @@ class getTodayLecture(Resource):
         if status == 200:
             array = []
             for i in range(len(_result)):
-                if _result[i]['status']['esito'] == 'P':
+                if _result[i]['status']['esito'] == 'P' or _result[i]['status']['esito'] == 'F':
                     codice = _result[i]['codice']
 
                     start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
@@ -351,7 +351,7 @@ class getLectures(Resource):
         if status == 200:
             array = []
             for i in range(len(_result)):
-                if _result[i]['status']['esito'] == 'P':
+                if _result[i]['status']['esito'] == 'P' or _result[i]['status']['esito'] == 'F':
                     codice = _result[i]['codice']
                     start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
 
@@ -467,7 +467,7 @@ class Reservation(Resource):
         codici = []
         if status == 200:
             for i in range(len(_result)):
-                if _result[i]['status']['esito'] == 'P':
+                if _result[i]['status']['esito'] == 'P' or _result[i]['status']['esito'] == 'F':
                     codici.append(_result[i]['codice'])
 
             try:
