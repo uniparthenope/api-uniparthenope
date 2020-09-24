@@ -43,14 +43,12 @@ class MyExams(Resource):
             response = requests.request("GET", url + "libretto-service-v2/libretti/" + matId + "/partizioni",
                                          headers=headers)
             _response = response.json()
-            print(_response)
 
             if response.status_code == 200:
                 response2 = requests.request("GET", url + "libretto-service-v2/libretti/" + matId + "/righe",
                                             headers=headers)
 
                 _response2 = response2.json()
-                print(_response2)
 
                 if response2.status_code == 200:
                     for i in range(len(_response2)):
