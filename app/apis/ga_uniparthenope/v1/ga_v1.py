@@ -449,7 +449,7 @@ class getLectures(Resource):
                             }
                         })
 
-            res = Reservations.query.filter_by(username=username).filter(Reservations.start_time>=start).all()
+            res = Reservations.query.filter_by(username=username).filter(Reservations.start_time>=datetime.fromtimestamp(start)).all()
             print(res)
             
             if len(array) == 0:
@@ -700,7 +700,7 @@ class Reservation(Resource):
                     # end = datetime(2020, 9, 21, 23, 59)
 
                     reservations = Reservations.query.filter_by(username=username).filter(
-                        Reservations.start_time >= start).all()
+                        Reservations.start_time>=datetime.fromtimestamp(start)).all()
                     array = []
                     for r in reservations:
                         array.append({
