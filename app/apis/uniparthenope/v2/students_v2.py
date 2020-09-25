@@ -52,7 +52,7 @@ class MyExams(Resource):
                         if tipo == 'G':
                             actual_exam = ({
                                 'nome': _response2[i]['adDes'],
-                                'codice': _response2[i]['adDes'],
+                                'codice': _response2[i]['adCod'],
                                 'tipo': tipo,
                                 'adId': _response2[i]['chiaveADContestualizzata']['adId'],
                                 'adsceID': _response2[i]['adsceId'],

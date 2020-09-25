@@ -97,6 +97,8 @@ class getCourses(Resource):
         sede = ""
         adLogId = ""
 
+        #aaId = "2020"
+
         try:
             response = requests.request("GET", url + "calesa-service-v1/abilitazioni?aaOffAbilId=" + aaId,
                                         headers=headers)

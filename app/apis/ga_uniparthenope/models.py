@@ -20,6 +20,18 @@ class Reservations(db.Model):
     matricola = db.Column(db.String(32), nullable=False)
     time = db.Column(db.DateTime, index=True, default=datetime.utcnow, nullable=False)
     id_lezione =  db.Column(db.Integer, nullable=False)
+    reserved_by = db.Column(db.String(64), nullable=False)
 
     def __repr__(self):
         return '<Id Lezione{}>'.format(self.id_lezione) + '<Id Corso{}>'.format(self.id_corso) + '<username{}>'.format(self.username)
+
+
+class ReservableRoom(db.Model):
+    __bind_key__ = 'ga'
+    __tablename__ = 'reservableRoom'
+    
+    id_corso = db.Column(db.String(16), primary_key=True)
+
+    def __repr__(self):
+        return '<Id Corso{}>'.format(self.id_corso)
+
