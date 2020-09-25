@@ -372,64 +372,6 @@ class getTodayLecture(Resource):
                                 }
                             })
 
-
-            '''
-            res = Reservations.query.filter_by(username=username).filter(Reservations.start_time>=datetime.fromtimestamp(start)).filter(Reservations.end_time<=datetime.fromtimestamp(end)).all()
-
-            if len(array) == 0:
-                for r in res:
-                    rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id ='" + str(r.id_lezione) + "' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
-                    for row in rs:
-                        array.append({
-                            'id': row[0],
-                            'id_corso': r.id_corso,
-                            'start': str(datetime.fromtimestamp(row[1])),
-                            'end': str(datetime.fromtimestamp(row[2])),
-                            'room': {
-                                'name': row[38],
-                                'capacity': int(row[41]) / 2,
-                                'description': row[40],
-                                'availability': int(row[41]) / 2 - Reservations.query.with_for_update().filter_by(
-                                    id_lezione=row[0]).count()
-                            },
-                            'course_name': row[9],
-                            'prof': row[11],
-                            'reservation': {
-                                'reserved_id': r.id,
-                                'reserved': True,
-                                'reserved_by': r.reserved_by
-                            }
-                        })
-            else:
-                id_lez = []
-                for i in range(len(array)):
-                    id_lez.append(array[i]['id'])
-
-                print(id_lez)
-                for r in res:
-                    if r.id_lezione not in id_lez:
-                        rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id ='" + str(r.id_lezione) + "' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
-                        for row in rs:
-                            array.append({
-                                'id': row[0],
-                                'id_corso': r.id_corso,
-                                'start': str(datetime.fromtimestamp(row[1])),
-                                'end': str(datetime.fromtimestamp(row[2])),
-                                'room': {
-                                    'name': row[38],
-                                    'capacity': int(row[41]) / 2,
-                                    'description': row[40],
-                                    'availability': int(row[41]) / 2 - Reservations.query.with_for_update().filter_by(id_lezione=row[0]).count()
-                                },
-                                'course_name': row[9],
-                                'prof': row[11],
-                                'reservation': {
-                                    'reserved_id': r.id,
-                                    'reserved': True,
-                                    'reserved_by': r.reserved_by
-                                }
-                            })
-            '''         
             return array, 200
 
         else:
@@ -493,9 +435,9 @@ class getLectures(Resource):
                             'end': str(datetime.fromtimestamp(row[2])),
                             'room': {
                                 'name': row[38],
-                                'capacity': int(row[41]) / 2,
+                                'capacity': math.floor(int(row[41]) / 2),
                                 'description': row[40],
-                                'availability': int(row[41]) / 2 - Reservations.query.with_for_update().filter_by(
+                                'availability': math.floor(int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(
                                     id_lezione=row[0]).count()
                             },
                             'course_name': row[9],
@@ -521,9 +463,9 @@ class getLectures(Resource):
                             'end': str(datetime.fromtimestamp(row[2])),
                             'room': {
                                 'name': row[38],
-                                'capacity': int(row[41]) / 2,
+                                'capacity': math.floor(int(row[41]) / 2),
                                 'description': row[40],
-                                'availability': int(row[41]) / 2 - Reservations.query.with_for_update().filter_by(
+                                'availability': math.floor(int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(
                                     id_lezione=row[0]).count()
                             },
                             'course_name': row[9],
@@ -551,9 +493,9 @@ class getLectures(Resource):
                                 'end': str(datetime.fromtimestamp(row[2])),
                                 'room': {
                                     'name': row[38],
-                                    'capacity': int(row[41]) / 2,
+                                    'capacity': math.floor(int(row[41]) / 2),
                                     'description': row[40],
-                                    'availability': int(row[41]) / 2 - Reservations.query.with_for_update().filter_by(id_lezione=row[0]).count()
+                                    'availability': math.floor(int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(id_lezione=row[0]).count()
                                 },
                                 'course_name': row[9],
                                 'prof': row[11],
@@ -608,9 +550,9 @@ class getProfLectures(Resource):
                         'end': str(datetime.fromtimestamp(row[2])),
                         'room': {
                             'name': row[38],
-                            'capacity': int(row[41]) / 2,
+                            'capacity': math.floor(int(row[41]) / 2),
                             'description': row[40],
-                            'availability': int(row[41]) / 2 - Reservations.query.with_for_update().filter_by(
+                            'availability': math.floor(int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(
                                 id_lezione=row[0]).count()
                         },
                         'course_name': row[9],
