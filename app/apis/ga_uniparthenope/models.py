@@ -48,7 +48,7 @@ class Entry(db.Model):
 
 
 class Room(db.Model):
-    __bind_key__ = 'eating'
+    __bind_key__ = 'ga'
     __tablename__ = 'room'
     id = db.Column(db.Integer, primary_key=True)
     id_esse3 = db.Column(db.String(16), nullable=True)
@@ -62,7 +62,7 @@ class Room(db.Model):
 
 
 class Area(db.Model):
-    __bind_key__ = 'eating'
+    __bind_key__ = 'ga'
     __tablename__ = 'area'
     id = db.Column(db.Integer, primary_key=True)
     area_name = db.Column(db.String(64), nullable=False)
