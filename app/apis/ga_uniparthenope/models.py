@@ -57,7 +57,7 @@ class Room(db.Model):
     piano = db.Column(db.String(16), nullable=False)
     lato = db.Column(db.String(16), nullable=True)
     capacity = db.Column(db.Integer, nullable=False)
-    id_entry = db.Column(db.Integer, db.ForeignKey('entry.room_id'))
+    id_entry = db.Column(db.Integer, db.ForeignKey('entry.id'))
     area_id = db.relationship('Area', backref='room')
 
 
@@ -67,4 +67,4 @@ class Area(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     area_name = db.Column(db.String(64), nullable=False)
     cod_area = db.Column(db.String(16), nullable=True)
-    id_room = db.Column(db.Integer, db.ForeignKey('room.area_id'))
+    id_room = db.Column(db.Integer, db.ForeignKey('room.id'))
