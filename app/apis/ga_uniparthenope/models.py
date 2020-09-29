@@ -44,21 +44,19 @@ class Entry(db.Model):
     end_time = db.Column(db.DateTime, index=True, nullable=False)
     time = db.Column(db.DateTime, index=True, default=datetime.utcnow, nullable=False)
     name = db.Column(db.String(128), nullable=True)
-    room_id = db.relationship('Room', backref='entry')
-
+    room_id = db.Column(db.Integer, db.ForeignKey('room.id'))
 
 class Room(db.Model):
     __bind_key__ = 'ga'
     __tablename__ = 'room'
     id = db.Column(db.Integer, primary_key=True)
     id_esse3 = db.Column(db.String(16), nullable=True)
-    area_id = db.Column(db.Integer, nullable=False)
     room_name = db.Column(db.String(64), nullable=False)
     piano = db.Column(db.String(16), nullable=False)
     lato = db.Column(db.String(16), nullable=True)
     capacity = db.Column(db.Integer, nullable=False)
-    id_entry = db.Column(db.Integer, db.ForeignKey('entry.id'))
-    area_id = db.relationship('Area', backref='room')
+    room_id = db.relationship('Entry', backref='room')
+    area_id = db.Column(db.Integer, db.ForeignKey('area.id'))
 
 
 class Area(db.Model):
@@ -67,4 +65,4 @@ class Area(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     area_name = db.Column(db.String(64), nullable=False)
     cod_area = db.Column(db.String(16), nullable=True)
-    id_room = db.Column(db.Integer, db.ForeignKey('room.id'))
+    area_id = db.relationship('Room', backref='area')
