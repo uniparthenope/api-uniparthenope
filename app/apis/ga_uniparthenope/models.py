@@ -35,3 +35,36 @@ class ReservableRoom(db.Model):
     def __repr__(self):
         return '<Id Corso{}>'.format(self.id_corso)
 
+
+class Entry(db.Model):
+    __bind_key__ = 'ga'
+    __tablename__ = 'entry'
+    id = db.Column(db.Integer, primary_key=True)
+    start_time = db.Column(db.DateTime, index=True, nullable=False)
+    end_time = db.Column(db.DateTime, index=True, nullable=False)
+    time = db.Column(db.DateTime, index=True, default=datetime.utcnow, nullable=False)
+    name = db.Column(db.String(128), nullable=True)
+    room_id = db.relationship('Room', backref='entry')
+
+
+class Room(db.Model):
+    __bind_key__ = 'eating'
+    __tablename__ = 'room'
+    id = db.Column(db.Integer, primary_key=True)
+    id_esse3 = db.Column(db.String(16), nullable=True)
+    area_id = db.Column(db.Integer, nullable=False)
+    room_name = db.Column(db.String(64), nullable=False)
+    piano = db.Column(db.String(16), nullable=False)
+    lato = db.Column(db.String(16), nullable=True)
+    capacity = db.Column(db.Integer, nullable=False)
+    id_entry = db.Column(db.Integer, db.ForeignKey('entry.room_id'))
+    area_id = db.relationship('Area', backref='room')
+
+
+class Area(db.Model):
+    __bind_key__ = 'eating'
+    __tablename__ = 'area'
+    id = db.Column(db.Integer, primary_key=True)
+    area_name = db.Column(db.String(64), nullable=False)
+    cod_area = db.Column(db.String(16), nullable=True)
+    id_room = db.Column(db.Integer, db.ForeignKey('room.area_id'))
