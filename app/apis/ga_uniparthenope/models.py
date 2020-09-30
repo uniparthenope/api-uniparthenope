@@ -35,11 +35,15 @@ class ReservableRoom(db.Model):
     def __repr__(self):
         return '<Id Corso{}>'.format(self.id_corso)
 
+class EntrySeq(db.Model):
+    __bind_key__ = 'ga'
+    __tablename__ = 'entry_seq'
+    id = db.Column(db.Integer, primary_key=True)
 
 class Entry(db.Model):
     __bind_key__ = 'ga'
     __tablename__ = 'entry'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(64), primary_key=True, default='0', nullable=False)
     start_time = db.Column(db.DateTime, index=True, nullable=False)
     end_time = db.Column(db.DateTime, index=True, nullable=False)
     time = db.Column(db.DateTime, index=True, default=datetime.utcnow, nullable=False)

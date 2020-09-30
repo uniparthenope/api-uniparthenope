@@ -19,7 +19,7 @@ from app.apis.uniparthenope.v1.professor_v1 import getCourses
 from app.apis.uniparthenope.v2.students_v2 import MyExams
 from app.config import Config
 
-from app.apis.ga_uniparthenope.models import Reservations, ReservableRoom
+from app.apis.ga_uniparthenope.models import Reservations, ReservableRoom, Room, Area, Entry
 from app.apis.access.models import UserAccess
 
 ns = api.namespace('uniparthenope')
@@ -248,6 +248,96 @@ class ProfessorCourse(Resource):
                        }, 500
         else:
             return {'errMsg': 'Autenticazione fallita!'}, g.status
+
+
+# ------------- GET TODAY SERVICES -------------
+
+
+class getTodayServices(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    def get(self):
+        """Get Today Services"""
+        if g.status == 200:
+            base64_bytes = g.token.encode('utf-8')
+            message_bytes = base64.b64decode(base64_bytes)
+            token_string = message_bytes.decode('utf-8')
+
+            username = token_string.split(':')[0]
+
+            array = []
+
+            if g.response['user']['grpId'] == 6:
+                try:
+                    start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0)
+                    end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59)
+
+                    #start = datetime(2020, 9, 30, 0, 0)
+                    #end = datetime(2020, 9, 30, 23, 59)
+
+                    aree = Area.query.all()
+                    for area in aree:
+                        array_area = []
+                        service = []
+
+                        services = db.session.query(Entry, Room).filter(Room.id == Entry.room_id).filter(Entry.start_time>=start).filter(Entry.end_time<=end).filter(Room.area_id==area.id)
+
+                        for s in services:
+                            reserved = False
+                            resered_id = None
+                            reserved_by = None
+                            reservation = Reservations.query.filter_by(id_lezione=s.Entry.id).filter_by(
+                                username=username)
+
+                            if reservation.first() is not None:
+                                reserved = True
+                                resered_id = reservation.first().id
+                                reserved_by = reservation.first().reserved_by
+
+                            service.append({
+                                'id': s.Entry.id,
+                                'start': str(s.Entry.start_time),
+                                'end': str(s.Entry.end_time),
+                                'room': {
+                                    'name': s.Room.room_name,
+                                    'capacity': math.floor(s.Room.capacity/2),
+                                    'description': "Piano " + s.Room.piano + " Lato " + s.Room.lato,
+                                    'availability': math.floor(s.Room.capacity/2) - Reservations.query.with_for_update().filter_by(
+                                        id_lezione=s.Entry.id).count()
+                                },
+                                'reservation': {
+                                    'reserved_id': resered_id,
+                                    'reserved': reserved,
+                                    'reserved_by': reserved_by
+                                }
+                            })
+                        
+                        array.append({
+                            'area': area.area_name,
+                            'services': service
+                        })
+
+                    return array, 200
+
+                except:
+                    db.session.rollback()
+                    print("Unexpected error:")
+                    print("Title: " + sys.exc_info()[0].__name__)
+                    print("Description: " + traceback.format_exc())
+                    return {
+                               'errMsgTitle': sys.exc_info()[0].__name__,
+                               'errMsg': traceback.format_exc()
+                           }, 500
+
+            else:
+                return {
+                           'errMsgTitle': "Attenzione",
+                           'errMsg': "Il tipo di user non è di tipo Studente"
+                       }, 500
+
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
+
 
 
 # ------------- GET TODAY LECTURES -------------
@@ -820,7 +910,7 @@ class Reservation(Resource):
 
 
 # ------------- RESERVE STUDENT BY PROF -------------
-prenotazione = ns.model("reservation", {
+prenotazione_prof = ns.model("reservation_prof", {
     "id_lezione": fields.String(description="", required=True),
     "matricola": fields.String(description="", required=True),
     "username": fields.String(description="", required=True),
@@ -831,7 +921,7 @@ prenotazione = ns.model("reservation", {
 class ReservationByProf(Resource):
     @ns.doc(security='Basic Auth')
     @token_required
-    @ns.expect(prenotazione)
+    @ns.expect(prenotazione_prof)
     def post(self):
         """Set Reservation to student"""
         base64_bytes = g.token.encode('utf-8')
