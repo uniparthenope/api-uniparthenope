@@ -9,6 +9,8 @@ from functools import wraps
 from app.apis.eating.models import UserFood
 
 from app.apis.uniparthenope.demo import users_demo
+from app.log.log import time_log
+
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
@@ -80,6 +82,7 @@ def auth_token_required(f):
     return decorated
 
 
+@time_log(title="LOGIN_V1", filename="login_v1.log", funcName="ldap_auth")
 def ldap_auth(user, passwd):
     # define the server
     s = Server('ldap.uniparthenope.it', get_info=ALL)  # define an unsecure LDAP server, requesting info on DSE and schema
@@ -119,6 +122,7 @@ def ldap_auth(user, passwd):
         return c.result
 
 
+@time_log(title="LOGIN_V1", filename="login_v1.log", funcName="auth")
 def auth(token):
     headers = {
         'Content-Type': "application/json",

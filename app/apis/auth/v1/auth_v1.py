@@ -28,6 +28,7 @@ def token_required(f):
 
     return decorated
 
+
 def ldap_auth(user, passwd):
     # define the server
     s = Server('ldap.uniparthenope.it', get_info=ALL)  # define an unsecure LDAP server, requesting info on DSE and schema
@@ -61,7 +62,6 @@ def ldap_auth(user, passwd):
 
         print("LDAP studenti!")
         return c.result
-
 
 
 def auth(token):
@@ -137,6 +137,7 @@ class Login(Resource):
     @token_required
     def get(self):
         '''Server Login'''
+
         print("LOGIN ...")
 
 #LOGOUT

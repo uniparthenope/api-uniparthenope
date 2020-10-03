@@ -16,7 +16,7 @@ from app.apis.uniparthenope.v1.login_v1 import token_required_general
 from app.apis.badges.models import Badges, Scan
 from app.apis.access.models import UserAccess
 from app.apis.ga_uniparthenope.models import Reservations
-from app.models import User, Role
+from app.log.log import time_log
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
@@ -39,6 +39,7 @@ def returnMessage(message,duration,color,position):
 
 
 class QrCodeCheck_v2(Resource):
+    @time_log(title="BADGES_V2", filename="badges_v2.log", funcName="QrCodeCheck_v2")
     @ns.doc(security='Basic Auth')
     @token_required_general
     @ns.expect(insert_token)

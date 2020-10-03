@@ -14,6 +14,8 @@ from werkzeug import Response
 
 from app.models import User, Role
 from app.apis.access.models import UserAccess
+from app.log.log import time_log
+
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
@@ -26,6 +28,7 @@ access = ns.model("access", {
 
 
 class Access(Resource):
+    @time_log(title="ACCESS_V1", filename="access_v1.log", funcName="Access POST")
     @ns.doc(security='Basic Auth')
     @token_required_general
     @ns.expect(access)
@@ -117,6 +120,8 @@ class Access(Resource):
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
 
+
+    @time_log(title="ACCESS_V1", filename="access_v1.log", funcName="Access GET")
     @ns.doc(security='Basic Auth')
     @token_required_general
     def get(self):
@@ -138,7 +143,7 @@ class Access(Resource):
                         user = UserAccess.query.filter_by(username=r['user']['userId']).first()
 
                 if user is not None:
-                    if user.persId is "":
+                    if user.persId == "":
                         if r['user']['grpId'] == 6:
                             user.grpId = r['user']['grpId']
                             user.persId = r['user']['persId']
@@ -286,7 +291,7 @@ class Certification(Resource):
                         user = UserAccess.query.filter_by(username=r['user']['userId']).first()
 
                 if user is not None:
-                    if user.persId is "":
+                    if user.persId == "":
                         if r['user']['grpId'] == 6:
                             user.grpId = r['user']['grpId']
                             user.persId = r['user']['persId']

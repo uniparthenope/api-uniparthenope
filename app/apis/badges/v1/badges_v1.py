@@ -14,6 +14,8 @@ from app.apis.uniparthenope.v1.login_v1 import token_required_general
 from app.apis.badges.models import Badges, Scan
 from app.apis.access.models import UserAccess
 from app.models import User, Role
+from app.log.log import time_log
+
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
@@ -28,6 +30,7 @@ def randomword(length):
 
 
 class QrCode(Resource):
+    @time_log(title="BADGES_V1", filename="badges_v2.log", funcName="GetQrCode")
     @ns.doc(security='Basic Auth')
     @token_required_general
     @ns.produces(['image/png'])
