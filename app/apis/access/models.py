@@ -6,8 +6,8 @@ class UserAccess(db.Model):
     __tablename__ = 'userAccess'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True)
-    classroom = db.Column(db.String(16))
-    autocertification = db.Column(db.Boolean)
+    classroom = db.Column(db.String(16), default="undefined")
+    autocertification = db.Column(db.Boolean, default=False)
     grpId = db.Column(db.Integer)
     persId = db.Column(db.Integer)
     stuId = db.Column(db.Integer)

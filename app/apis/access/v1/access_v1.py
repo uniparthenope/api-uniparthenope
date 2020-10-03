@@ -34,7 +34,7 @@ class Access(Resource):
 
         content = request.json
 
-        if g.status == 200 or g.status == 202:
+        if g.status == 200:
             try:
                 base64_bytes = g.token.encode('utf-8')
                 message_bytes = base64.b64decode(base64_bytes)
@@ -55,26 +55,29 @@ class Access(Resource):
 
                         if user is None:
                             try:
-                                if r['user']['grpId'] == 6:
-                                    u = UserAccess(username=r['user']['userId'], classroom=content['accessType'],
+                                if content['accessType'] == "presence" and (user.autocertification == False or user.autocertification is None):
+                                    return {'errMsg': 'Permesso negato. Autocertificazione mancante!'}, 500
+
+                                else:
+                                    if r['user']['grpId'] == 6:
+                                        u = UserAccess(username=r['user']['userId'], classroom=content['accessType'],
                                                    grpId=r['user']['grpId'], persId=r['user']['persId'],
                                                    stuId=r['user']['trattiCarriera'][0]['stuId'],
                                                    matId=r['user']['trattiCarriera'][0]['matId'],
                                                    matricola=r['user']['trattiCarriera'][0]['matricola'],
                                                    cdsId=r['user']['trattiCarriera'][0]['cdsId'])
-                                elif r['user']['grpId'] == 7:
-                                    u = UserAccess(username=userId, classroom=content['accessType'],
+                                    elif r['user']['grpId'] == 7:
+                                        u = UserAccess(username=userId, classroom=content['accessType'],
                                                    grpId=r['user']['grpId'], persId=r['user']['docenteId'], stuId=None,
                                                    matId=None, matricola="", cdsId=None)
-                                else:
-                                    u = UserAccess(username=userId, classroom=content['accessType'],
+                                    else:
+                                        u = UserAccess(username=userId, classroom=content['accessType'],
                                                    grpId=None, persId=None,
                                                    stuId=None, matId=None, matricola="", cdsId=None)
-                                db.session.add(u)
-                                db.session.commit()
+                                    db.session.add(u)
+                                    db.session.commit()
 
-                                return {'message': 'Classroom modified'}, 200
-
+                                    return {'message': 'Classroom modified'}, 200
                             except:
                                 print("Unexpected error:")
                                 print("Title: " + sys.exc_info()[0].__name__)
@@ -85,9 +88,12 @@ class Access(Resource):
                                        }, 500
                         else:
                             try:
-                                user.classroom = content['accessType']
-                                db.session.commit()
-                                return {'message': 'Classroom modified'}, 200
+                                if content['accessType'] == "presence" and (user.autocertification == False or user.autocertification is None):
+                                    return {'errMsg': 'Permesso negato. Autocertificazione mancante!'}, 500
+                                else:
+                                    user.classroom = content['accessType']
+                                    db.session.commit()
+                                    return {'message': 'Classroom modified'}, 200
                             except:
                                 print("Unexpected error:")
                                 print("Title: " + sys.exc_info()[0].__name__)
@@ -230,9 +236,12 @@ class Certification(Resource):
                                        }, 500
                         else:
                             try:
-                                user.autocertification = content['covidStatement']
-                                db.session.commit()
-                                return {'message': 'Covid Statement modified'}, 200
+                                if user.classroom == "presence" and content['covidStatement'] == False:
+                                    return {'errMsg': 'Operazione non consetita. Si è scelto di seguire in presenza!'}, 500
+                                else:
+                                    user.autocertification = content['covidStatement']
+                                    db.session.commit()
+                                    return {'message': 'Covid Statement modified'}, 200
                             except:
                                 print("Unexpected error:")
                                 print("Title: " + sys.exc_info()[0].__name__)

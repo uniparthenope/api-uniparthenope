@@ -32,6 +32,49 @@ class MyExams(Resource):
         }
 
         try:
+            response = requests.request("GET", url + "libretto-service-v2/libretti/" + matId + "/righe",
+                                            headers=headers)
+            _response = response.json()
+
+            if response.status_code == 200:
+                for i in range(len(_response)):
+                    if _response[i]['esito']['modValCod'] is None:
+                        tipo = 'G'
+                    else:
+                        tipo = _response[i]['esito']['modValCod']['value']
+
+                    actual_exam = ({
+                                'nome': _response[i]['adDes'],
+                                'codice': _response[i]['adCod'],
+                                'tipo': tipo,
+                                'adId': _response[i]['chiaveADContestualizzata']['adId'],
+                                'adsceID': _response[i]['adsceId'],
+                                'docente': "",
+                                'docenteID': "",
+                                'semestre': "",
+                                'semestreDes': "",
+                                'adLogId': "",
+                                'domPartCod': "",
+                                'status': {
+                                    'esito': _response[i]['stato']['value'],
+                                    'voto': _response[i]['esito']['voto'],
+                                    'lode': _response[i]['esito']['lodeFlg'],
+                                    'data': _response[i]['esito']['dataEsa']
+                                },
+                                'CFU': _response[i]['peso'],
+                                'annoId': _response[i]['annoCorso'],
+                                'numAppelliPrenotabili': _response[i]['numAppelliPrenotabili'],
+                                'tipoInsDes': _response[i]['tipoInsDes'],
+                                'tipoInsCod': _response[i]['tipoInsCod'],
+                                'tipoEsaDes': _response[i]['tipoEsaDes']
+                            })
+                    my_exams.append(actual_exam)
+                return my_exams, 200
+
+            else:
+                return {'errMsg': _response['retErrMsg']}, response.status_code
+
+            '''
             response = requests.request("GET", url + "libretto-service-v2/libretti/" + matId + "/partizioni",
                                          headers=headers)
             _response = response.json()
@@ -110,6 +153,7 @@ class MyExams(Resource):
 
             else:
                 return {'errMsg': _response['retErrMsg']}, response.status_code
+            '''
         except requests.exceptions.HTTPError as e:
             return {'errMsg': e}, 500
         except requests.exceptions.ConnectionError as e:

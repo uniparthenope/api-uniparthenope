@@ -280,7 +280,7 @@ class getTodayServices(Resource):
                         array_area = []
                         service = []
 
-                        services = db.session.query(Entry, Room).filter(Room.id == Entry.room_id).filter(Entry.start_time>=start).filter(Entry.end_time<=end).filter(Room.area_id==area.id)
+                        services = db.session.query(Entry, Room).filter(Room.id == Entry.room_id).filter(Entry.start_time>=start).filter(Entry.end_time<=end).filter(Entry.end_time>datetime.now()).filter(Room.area_id==area.id)
 
                         for s in services:
                             reserved = False

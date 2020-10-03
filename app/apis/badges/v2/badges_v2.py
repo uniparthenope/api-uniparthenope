@@ -72,9 +72,13 @@ class QrCodeCheck_v2(Resource):
                                                 con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
                                                 string = ""
                                                 for r in reserv:
+                                                    ##TODO SISTEMARE LA QUERY SULLE RESERVATIONS
                                                     rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND E.id ='" + str(r.id_lezione) + "'")
                                                     result = rs.fetchall()
-                                                    string += result[0][38] + " " + str(r.start_time.hour) + ":00 " + str(r.end_time.hour) + ":00 \n"
+                                                    if len(result) != 0:
+                                                        string += result[0][38] + " " + str(r.start_time.hour) + ":00 " + str(r.end_time.hour) + ":00 \n"
+                                                    else:
+                                                        string += ""
 
                                                 u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
                                                      username=username, grpId=grpId, matricola=matricola, result="OK", scan_by=g.response['user']['userId'])
