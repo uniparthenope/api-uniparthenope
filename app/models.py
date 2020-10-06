@@ -1,4 +1,5 @@
 from app import db
+from datetime import datetime
 
 class User(db.Model):
     __bind_key__ = 'users_roles'
@@ -19,3 +20,12 @@ class Role(db.Model):
 
     def __repr__(self):
         return '<Role {}>'.format(self.role)
+
+
+class TokenAuth(db.Model):
+    __bind_key__ = 'users_roles'
+    __tablename__ = 'token'
+    id = db.Column(db.Integer, primary_key=True)
+    token_MD5 = db.Column(db.String(128), nullable=False)
+    result = db.Column(db.Text, nullable=False)
+    expire_time = db.Column(db.DateTime, index=True, default=datetime.utcnow)
