@@ -1,4 +1,3 @@
-import json
 import sys
 import traceback
 
@@ -17,6 +16,7 @@ from app.models import TokenAuth
 
 from app.apis.uniparthenope.demo import users_demo
 from app.log.log import time_log
+from app.config import Config
 
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
@@ -92,7 +92,7 @@ def auth_token_required(f):
 @time_log(title="LOGIN_V1", filename="login_v1.log", funcName="ldap_auth")
 def ldap_auth(user, passwd):
     # define the server
-    s = Server('ldap.uniparthenope.it', get_info=ALL)  # define an unsecure LDAP server, requesting info on DSE and schema
+    s = Server(Config.LDAP_SERVER, get_info=ALL)  # define an unsecure LDAP server, requesting info on DSE and schema
 
     # the following is the user_dn format provided by the ldap server
     user_dn = "uid=" + user + ",ou=people,dc=uniparthenope,dc=it"
@@ -111,7 +111,7 @@ def ldap_auth(user, passwd):
         return c.result
     else:
         # define the server
-        s = Server('ldap-studenti.uniparthenope.it', get_info=ALL)  # define an unsecure LDAP server, requesting info on DSE and schema
+        s = Server(Config.LDAP_SERVER_STUD, get_info=ALL)  # define an unsecure LDAP server, requesting info on DSE and schema
 
         # the following is the user_dn format provided by the ldap server
         user_dn = "uid=" + user + ",ou=studenti,dc=uniparthenope,dc=it"
