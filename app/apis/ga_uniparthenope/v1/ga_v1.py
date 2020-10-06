@@ -388,8 +388,8 @@ class getTodayLecture(Resource):
             start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
             end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59).timestamp()
 
-            #start = datetime(2020, 9, 28, 0, 0).timestamp()
-            #end = datetime(2020, 9, 28, 23, 59).timestamp()
+            #start = datetime(2020, 10, 9, 0, 0).timestamp()
+            #end = datetime(2020, 10, 9, 23, 59).timestamp()
 
             for i in range(len(codici)):
                 codice = codici[i]
@@ -404,8 +404,6 @@ class getTodayLecture(Resource):
                         reserved_by = None
                         reservation = Reservations.query.filter_by(id_lezione=row[0]).filter_by(
                             username=username)
-
-                        print(row[0])
 
                         if reservation.first() is not None:
                             reserved = True
@@ -433,7 +431,6 @@ class getTodayLecture(Resource):
                             }
                         })
                 else:
-                    print(codice)
                     res = Reservations.query.filter_by(id_corso=codice).filter_by(username=username).filter(Reservations.start_time>=datetime.fromtimestamp(start)).filter(Reservations.end_time<=datetime.fromtimestamp(end)).first()
                     if res is not None:
                         rs = con.execute(
@@ -712,7 +709,7 @@ class Reservation(Resource):
                             #now = datetime(2020, 9, 28, 23, 59)
                             print(datetime.fromtimestamp(result[0][1]), now)
 
-                            if datetime.fromtimestamp(result[0][1]) > now or content['id_corso'] not in codici_res:
+                            if datetime.fromtimestamp(result[0][1]) > now or content['id_corso'] not in codici_res or datetime.fromtimestamp(result[0][2]) < now:
                                 return {
                                            'errMsgTitle': 'Attenzione',
                                            'errMsg': 'Prenotazione non consentita.'
