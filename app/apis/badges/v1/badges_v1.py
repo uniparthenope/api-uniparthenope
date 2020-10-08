@@ -11,10 +11,12 @@ from flask_restplus import Resource, fields
 
 from app import api, db
 from app.apis.uniparthenope.v1.login_v1 import token_required_general
-from app.apis.badges.models import Badges, Scan
+from app.apis.badges.models import Badges, Scan, Tablets
 from app.apis.access.models import UserAccess
 from app.models import User, Role
 from app.log.log import time_log
+
+from app.config import Config
 
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
@@ -230,3 +232,87 @@ class QrCodeStatus(Resource):
                 print("Description: " + traceback.format_exc())
 
                 return {'status': 'error', 'errMsg': traceback.format_exc()}, 500
+
+
+inf_token = ns.model("Machine", {
+    "machine_id": fields.String(description="Machine ID", required=True),
+    "position": fields.String(description="Machine Position", required=True),
+    "version": fields.String(description="Machine Version", required=True),
+})
+
+
+class SyncMachine(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    @ns.expect(inf_token)
+    def post(self):
+        """Synchronize Scanner"""
+
+        content = request.json
+
+        base64_bytes = g.token.encode('utf-8')
+        message_bytes = base64.b64decode(base64_bytes)
+        token_string = message_bytes.decode('utf-8')
+        userId = token_string.split(':')[0]
+
+        if g.status == 200:
+            admin = User.query.filter_by(username=userId).join(Role, Role.user_id == User.id).filter(
+                Role.role == 'admin').first()
+
+            if 'machine_id' in content and 'position' in content and 'version' in content:
+
+                if content['position'] in Config.SEDI_UNP:
+
+                    try:
+                        if g.response['user']['grpId'] == 99 or admin is not None:
+
+                            machine = Tablets.query.filter_by(machine_id=content['machine_id']).first()
+                            pos = Tablets.query.filter(Tablets.position.like('%' + content['position'] + '%'))
+                            current_name = content['position'] + '-' + str(pos.count()+1)
+                            arr = ","
+                            for y in pos:
+                                name = y.current_name.split("-")[1] + ","
+                                arr = arr + name
+
+                            for x in range(1,len(arr)):
+                                search_x = "," + str(x) + ","
+                                if search_x not in arr:
+                                    current_name = content['position'] + '-' + str(x)
+                                    break
+
+                            if machine is not None:
+                                if machine.position != content['position']:
+
+                                    machine.current_name = current_name
+                                    machine.position = content['position']
+                                    machine.version = content['version']
+
+                                    db.session.commit()
+
+                                    return {'current_name': current_name}, 200
+                                else:
+
+                                    return {'errMsg': 'Position has not changed!'}, 500
+                            else:
+
+                                x = Tablets(machine_id=content['machine_id'], default_name='CHANGE',
+                                              current_name=current_name, position=content['position'], version=str(content['version']))
+                                db.session.add(x)
+                                db.session.commit()
+
+                                return {'current_name': current_name}, 200
+
+                        else:
+                            return {'errMsg': 'User not authorized!'}, 401
+
+                    except:
+                        print("Unexpected error:")
+                        print("Title: " + sys.exc_info()[0].__name__)
+                        print("Description: " + traceback.format_exc())
+                        return {'errMsg': 'Sync Tablet Error'}, 500
+                else:
+                    return {'errMsg': 'Sede non corretta!'}, 500
+            else:
+                return {'errMsg': 'Error payload'}, 500
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
