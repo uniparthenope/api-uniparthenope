@@ -708,7 +708,7 @@ class ServicesReservation(Resource):
                         now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59)
                         # now = datetime(2020, 9, 28, 23, 59)
 
-                        if rs.Entry.start_time > now or rs.Entry.end_time > now or Entry.end_time < datetime.now():
+                        if rs.Entry.start_time > now or rs.Entry.end_time > now or rs.Entry.end_time < datetime.now():
                             return {
                                        'errMsgTitle': 'Attenzione',
                                        'errMsg': 'Prenotazione non consentita.'
