@@ -619,6 +619,12 @@ class getProfLectures(Resource):
         con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
 
         if status == 200:
+            base64_bytes = g.token.encode('utf-8')
+            message_bytes = base64.b64decode(base64_bytes)
+            token_string = message_bytes.decode('utf-8')
+
+            username = token_string.split(':')[0]
+
             array = []
 
             for i in range(len(_result)):
@@ -627,7 +633,7 @@ class getProfLectures(Resource):
                 start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
 
                 rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso LIKE '%%" + str(
-                    codice) + "%%' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
+                    codice) + "%%' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id AND E.description LIKE '%%" + username.split(".")[1] + "%%'")
 
                 courses = []
                 for row in rs:
