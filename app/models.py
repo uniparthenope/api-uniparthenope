@@ -29,3 +29,21 @@ class TokenAuth(db.Model):
     token_MD5 = db.Column(db.String(128), nullable=False)
     result = db.Column(db.Text, nullable=False)
     expire_time = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+
+
+class UserNotifications(db.Model):
+    __bind_key__ = 'users_roles'
+    __tablename__ = 'user_notifications'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), index=True, unique=True)
+    devices = db.relationship('Devices', backref='user_notifications')
+
+
+class Devices(db.Model):
+    __bind_key__ = 'users_roles'
+    __tablename__ = 'devices'
+    token = db.Column(db.String(256), primary_key=True)
+    device_model = db.Column(db.String(32), nullable=True)
+    os_version = db.Column(db.String(16), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user_notifications.id'))
+

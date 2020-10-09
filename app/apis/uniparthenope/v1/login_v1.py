@@ -174,7 +174,7 @@ def auth(token):
                         g.response = r
 
                         if r['result'] == 0:
-                            x = TokenAuth(token_MD5=token_hash, result=str(r), expire_time = datetime.now() + timedelta(minutes=1))
+                            x = TokenAuth(token_MD5=token_hash, result=str(r), expire_time = datetime.now() + timedelta(minutes=60))
                             db.session.add(x)
                             db.session.commit()
 
