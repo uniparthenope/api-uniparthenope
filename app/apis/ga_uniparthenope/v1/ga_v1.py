@@ -678,7 +678,7 @@ class getProfLectures(Resource):
 
 # ------------- SERVICES RESERVATIONS -------------
 prenotazione_servizi = ns.model("services_reservation", {
-    "id_lezione": fields.String(description="", required=True),
+    "id_entry": fields.String(description="", required=True),
     "matricola": fields.String(description="", required=True)
 })
 
@@ -697,37 +697,33 @@ class ServicesReservation(Resource):
 
         content = request.json
 
-        if g.status == 200:
+        if g.status == 200 and g.response['user']['grpId'] == 6:
             try:
-                if 'id_lezione' in content and 'matricola' in content:
+                if 'id_entry' in content and 'matricola' in content:
                     user = UserAccess.query.filter_by(username=username).first()
                     if user.autocertification and user.classroom == "presence":
-                        rs = db.session.query(Entry, Room).filter(Room.id == Entry.room_id).filter(Entry.id == content['id_lezione']).first()
-                        print(rs)
-
-                        '''
+                        rs = db.session.query(Entry, Room).filter(Room.id == Entry.room_id).filter(Entry.id == content['id_entry']).first()
+                        capacity = math.floor(rs.Room.capacity / 2)
 
                         now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59)
                         # now = datetime(2020, 9, 28, 23, 59)
-                        print(datetime.fromtimestamp(result[0][1]), now)
 
-                        if datetime.fromtimestamp(result[0][1]) > now or content[
-                            'id_corso'] not in codici_res or datetime.fromtimestamp(result[0][2]) < now:
+                        if rs.Entry.start_time > now or rs.Entry.end_time > now:
                             return {
                                        'errMsgTitle': 'Attenzione',
                                        'errMsg': 'Prenotazione non consentita.'
                                    }, 500
 
-                        r = Reservations(id_corso=content['id_corso'], course_name=result[0][9],
-                                         start_time=datetime.fromtimestamp(result[0][1]),
-                                         end_time=datetime.fromtimestamp(result[0][2]),
+                        r = Reservations(id_corso="SERVICE", course_name=rs.Entry.name,
+                                         start_time=rs.Entry.start_time,
+                                         end_time=rs.Entry.end_time,
                                          username=username, matricola=content['matricola'],
-                                         time=datetime.now(), id_lezione=content['id_lezione'],
+                                         time=datetime.now(), id_lezione=content['id_entry'],
                                          reserved_by=username)
                         db.session.add(r)
 
                         count = Reservations.query.with_for_update().filter_by(
-                            id_lezione=content['id_lezione']).count()
+                            id_lezione=content['id_entry']).count()
                         if count > capacity:
                             db.session.rollback()
                             return {
@@ -744,10 +740,7 @@ class ServicesReservation(Resource):
                     else:
                         return {'status': 'error',
                                 'errMsg': 'Impossibile prenotarsi in mancanza di autocertificazione/accesso in presenza.'}, 500
-                    '''
-                    else:
-                        return {'status': 'error',
-                            'errMsg': 'Impossibile prenotarsi in mancanza di autocertificazione/accesso in presenza.'}, 500
+                
                 else:
                     return {'errMsg': 'Payload error!'}, 500
 
@@ -768,91 +761,8 @@ class ServicesReservation(Resource):
                        }, 500
 
         else:
-            return {'errMsg': 'Wrong username/pass'}, g.status
+            return {'errMsg': 'Errore username/pass or utente non abilitato'}, g.status
 
-    @ns.doc(security='Basic Auth')
-    @token_required_general
-    def delete(self, id_prenotazione):
-        """Delete Service Reservation"""
-        if g.status == 200:
-            base64_bytes = g.token.encode('utf-8')
-            message_bytes = base64.b64decode(base64_bytes)
-            token_string = message_bytes.decode('utf-8')
-
-            username = token_string.split(':')[0]
-
-            if g.response['user']['grpId'] == 6:
-                try:
-                    reservation = Reservations.query.filter_by(id=id_prenotazione).filter_by(
-                        username=username)
-
-                    if reservation.first() is not None:
-                        reservation.delete()
-                        db.session.commit()
-
-                        return {
-                                   "status": "Cancellazione effettuata con successo."
-                               }, 200
-                    else:
-                        return {
-                                   'errMsgTitle': "Attenzione",
-                                   'errMsg': "Operazione non consentita."
-                               }, 500
-
-                except AttributeError as error:
-                    return {
-                               'errMsgTitle': "Attenzione",
-                               'errMsg': "Operazione non consentita."
-                           }, 500
-                except:
-                    db.session.rollback()
-                    print("Unexpected error:")
-                    print("Title: " + sys.exc_info()[0].__name__)
-                    print("Description: " + traceback.format_exc())
-                    return {
-                               'errMsgTitle': sys.exc_info()[0].__name__,
-                               'errMsg': traceback.format_exc()
-                           }, 500
-            elif g.response['user']['grpId'] == 7:
-                result = getCourses(Resource).get(request.args.get('aaId'))
-
-                status = json.loads(json.dumps(result))[1]
-                _result = json.loads(json.dumps(result))[0]
-
-                print(_result)
-
-                if status == 200:
-                    codici = []
-                    for i in range(len(_result)):
-                        codici.append(_result[i]['adDefAppCod'])
-
-                    reservation = Reservations.query.filter_by(id=id_prenotazione)
-
-                    if reservation.first().id_corso in codici:
-                        reservation.delete()
-                        db.session.commit()
-
-                        return {
-                                   "status": "Cancellazione effettuata con successo."
-                               }, 200
-                    else:
-                        return {
-                                   'errMsgTitle': "Attenzione",
-                                   'errMsg': "Operazione non consentita."
-                               }, 500
-                else:
-                    return {
-                               'errMsgTitle': "Attenzione",
-                               'errMsg': "Anno di corso non valido!"
-                           }, 500
-            else:
-                return {
-                           'errMsgTitle': "Attenzione",
-                           'errMsg': "Il tipo di user non è di tipo Studente"
-                       }, 500
-
-        else:
-            return {'errMsg': 'Wrong username/pass'}, g.status
 
 
 # ------------- RESERVATIONS -------------
