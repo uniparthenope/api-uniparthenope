@@ -616,6 +616,7 @@ class getProfLectures(Resource):
         status = json.loads(json.dumps(result))[1]
         _result = json.loads(json.dumps(result))[0]
 
+
         con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
 
 
