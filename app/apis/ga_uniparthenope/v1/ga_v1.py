@@ -272,15 +272,17 @@ class getTodayServices(Resource):
                     start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0)
                     end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59)
 
-                    #start = datetime(2020, 9, 30, 0, 0)
-                    #end = datetime(2020, 9, 30, 23, 59)
+                    # start = datetime(2020, 9, 30, 0, 0)
+                    # end = datetime(2020, 9, 30, 23, 59)
 
                     aree = Area.query.all()
                     for area in aree:
                         array_area = []
                         service = []
 
-                        services = db.session.query(Entry, Room).filter(Room.id == Entry.room_id).filter(Entry.start_time>=start).filter(Entry.end_time<=end).filter(Entry.end_time>datetime.now()).filter(Room.area_id==area.id)
+                        services = db.session.query(Entry, Room).filter(Room.id == Entry.room_id).filter(
+                            Entry.start_time >= start).filter(Entry.end_time <= end).filter(
+                            Entry.end_time > datetime.now()).filter(Room.area_id == area.id)
 
                         for s in services:
                             reserved = False
@@ -300,9 +302,10 @@ class getTodayServices(Resource):
                                 'end': str(s.Entry.end_time),
                                 'room': {
                                     'name': s.Room.room_name,
-                                    'capacity': math.floor(s.Room.capacity/2),
+                                    'capacity': math.floor(s.Room.capacity / 2),
                                     'description': "Piano " + s.Room.piano + " Lato " + s.Room.lato,
-                                    'availability': math.floor(s.Room.capacity/2) - Reservations.query.with_for_update().filter_by(
+                                    'availability': math.floor(
+                                        s.Room.capacity / 2) - Reservations.query.with_for_update().filter_by(
                                         id_lezione=s.Entry.id).count()
                                 },
                                 'reservation': {
@@ -311,7 +314,7 @@ class getTodayServices(Resource):
                                     'reserved_by': reserved_by
                                 }
                             })
-                        
+
                         array.append({
                             'area': area.area_name,
                             'services': service
@@ -337,7 +340,6 @@ class getTodayServices(Resource):
 
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
-
 
 
 # ------------- GET TODAY LECTURES -------------
@@ -388,8 +390,8 @@ class getTodayLecture(Resource):
             start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
             end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59).timestamp()
 
-            #start = datetime(2020, 10, 9, 0, 0).timestamp()
-            #end = datetime(2020, 10, 9, 23, 59).timestamp()
+            # start = datetime(2020, 10, 9, 0, 0).timestamp()
+            # end = datetime(2020, 10, 9, 23, 59).timestamp()
 
             for i in range(len(codici)):
                 codice = codici[i]
@@ -419,7 +421,8 @@ class getTodayLecture(Resource):
                                 'name': row[38],
                                 'capacity': math.floor(row[41] / 2),
                                 'description': row[40],
-                                'availability': math.floor(int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(
+                                'availability': math.floor(
+                                    int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(
                                     id_lezione=row[0]).count()
                             },
                             'course_name': row[9],
@@ -431,11 +434,14 @@ class getTodayLecture(Resource):
                             }
                         })
                 else:
-                    res = Reservations.query.filter_by(id_corso=codice).filter_by(username=username).filter(Reservations.start_time>=datetime.fromtimestamp(start)).filter(Reservations.end_time<=datetime.fromtimestamp(end)).first()
+                    res = Reservations.query.filter_by(id_corso=codice).filter_by(username=username).filter(
+                        Reservations.start_time >= datetime.fromtimestamp(start)).filter(
+                        Reservations.end_time <= datetime.fromtimestamp(end)).first()
                     if res is not None:
                         rs = con.execute(
-                        "SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND E.id LIKE '%%" + str(
-                            res.id_lezione) + "%%' AND start_time >= '" + str(start) + "' AND end_time <= '" + str(end) + "'")
+                            "SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND E.id LIKE '%%" + str(
+                                res.id_lezione) + "%%' AND start_time >= '" + str(start) + "' AND end_time <= '" + str(
+                                end) + "'")
 
                         for row in rs:
                             array.append({
@@ -447,7 +453,8 @@ class getTodayLecture(Resource):
                                     'name': row[38],
                                     'capacity': math.floor(row[41] / 2),
                                     'description': row[40],
-                                    'availability': math.floor(int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(
+                                    'availability': math.floor(
+                                        int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(
                                         id_lezione=row[0]).count()
                                 },
                                 'course_name': row[9],
@@ -524,7 +531,8 @@ class getLectures(Resource):
                                 'name': row[38],
                                 'capacity': math.floor(int(row[41]) / 2),
                                 'description': row[40],
-                                'availability': math.floor(int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(
+                                'availability': math.floor(
+                                    int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(
                                     id_lezione=row[0]).count()
                             },
                             'course_name': row[9],
@@ -536,12 +544,14 @@ class getLectures(Resource):
                             }
                         })
 
-            res = Reservations.query.filter_by(username=username).filter(Reservations.start_time>=datetime.fromtimestamp(start)).all()
+            res = Reservations.query.filter_by(username=username).filter(
+                Reservations.start_time >= datetime.fromtimestamp(start)).all()
             print(res)
-            
+
             if len(array) == 0:
                 for r in res:
-                    rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id ='" + str(r.id_lezione) + "' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
+                    rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id ='" + str(
+                        r.id_lezione) + "' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
                     for row in rs:
                         array.append({
                             'id': row[0],
@@ -552,7 +562,8 @@ class getLectures(Resource):
                                 'name': row[38],
                                 'capacity': math.floor(int(row[41]) / 2),
                                 'description': row[40],
-                                'availability': math.floor(int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(
+                                'availability': math.floor(
+                                    int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(
                                     id_lezione=row[0]).count()
                             },
                             'course_name': row[9],
@@ -571,7 +582,8 @@ class getLectures(Resource):
                 print(id_lez)
                 for r in res:
                     if r.id_lezione not in id_lez:
-                        rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id ='" + str(r.id_lezione) + "' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
+                        rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id ='" + str(
+                            r.id_lezione) + "' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
                         for row in rs:
                             array.append({
                                 'id': row[0],
@@ -582,7 +594,9 @@ class getLectures(Resource):
                                     'name': row[38],
                                     'capacity': math.floor(int(row[41]) / 2),
                                     'description': row[40],
-                                    'availability': math.floor(int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(id_lezione=row[0]).count()
+                                    'availability': math.floor(
+                                        int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(
+                                        id_lezione=row[0]).count()
                                 },
                                 'course_name': row[9],
                                 'prof': row[11],
@@ -616,9 +630,7 @@ class getProfLectures(Resource):
         status = json.loads(json.dumps(result))[1]
         _result = json.loads(json.dumps(result))[0]
 
-
         con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
-
 
         if status == 200:
             base64_bytes = g.token.encode('utf-8')
@@ -635,7 +647,8 @@ class getProfLectures(Resource):
                 start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
 
                 rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso LIKE '%%" + str(
-                    codice) + "%%' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id AND E.description LIKE '%%" + username.split(".")[1] + "%%'")
+                    codice) + "%%' AND E.start_time >= '" + str(
+                    start) + "' AND R.id = E.room_id AND E.description LIKE '%%" + username.split(".")[1] + "%%'")
 
                 courses = []
                 for row in rs:
@@ -647,7 +660,8 @@ class getProfLectures(Resource):
                             'name': row[38],
                             'capacity': math.floor(int(row[41]) / 2),
                             'description': row[40],
-                            'availability': math.floor(int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(
+                            'availability': math.floor(
+                                int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(
                                 id_lezione=row[0]).count()
                         },
                         'course_name': row[9],
@@ -660,6 +674,185 @@ class getProfLectures(Resource):
             return array, 200
         else:
             return {'errMsg': _result['errMsg']}, status
+
+
+# ------------- SERVICES RESERVATIONS -------------
+prenotazione_servizi = ns.model("services_reservation", {
+    "id_lezione": fields.String(description="", required=True),
+    "matricola": fields.String(description="", required=True)
+})
+
+
+class ServicesReservation(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    @ns.expect(prenotazione_servizi)
+    def post(self):
+        """Set Service Reservation"""
+        base64_bytes = g.token.encode('utf-8')
+        message_bytes = base64.b64decode(base64_bytes)
+        token_string = message_bytes.decode('utf-8')
+
+        username = token_string.split(':')[0]
+
+        content = request.json
+
+        if g.status == 200:
+            try:
+                if 'id_lezione' in content and 'matricola' in content:
+                    user = UserAccess.query.filter_by(username=username).first()
+                    if user.autocertification and user.classroom == "presence":
+                        rs = db.session.query(Entry, Room).filter(Room.id == Entry.room_id).filter(Entry.id == content['id_lezione']).first()
+                        print(rs)
+
+                        '''
+
+                        now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59)
+                        # now = datetime(2020, 9, 28, 23, 59)
+                        print(datetime.fromtimestamp(result[0][1]), now)
+
+                        if datetime.fromtimestamp(result[0][1]) > now or content[
+                            'id_corso'] not in codici_res or datetime.fromtimestamp(result[0][2]) < now:
+                            return {
+                                       'errMsgTitle': 'Attenzione',
+                                       'errMsg': 'Prenotazione non consentita.'
+                                   }, 500
+
+                        r = Reservations(id_corso=content['id_corso'], course_name=result[0][9],
+                                         start_time=datetime.fromtimestamp(result[0][1]),
+                                         end_time=datetime.fromtimestamp(result[0][2]),
+                                         username=username, matricola=content['matricola'],
+                                         time=datetime.now(), id_lezione=content['id_lezione'],
+                                         reserved_by=username)
+                        db.session.add(r)
+
+                        count = Reservations.query.with_for_update().filter_by(
+                            id_lezione=content['id_lezione']).count()
+                        if count > capacity:
+                            db.session.rollback()
+                            return {
+                                       'errMsgTitle': 'Attenzione',
+                                       'errMsg': 'Raggiunta la capacità massima consentita.'
+                                   }, 500
+
+                        db.session.commit()
+
+                        return {
+                                   "status": "Prenotazione effettuata con successo."
+                               }, 200
+                        
+                    else:
+                        return {'status': 'error',
+                                'errMsg': 'Impossibile prenotarsi in mancanza di autocertificazione/accesso in presenza.'}, 500
+                    '''
+                    else:
+                        return {'status': 'error',
+                            'errMsg': 'Impossibile prenotarsi in mancanza di autocertificazione/accesso in presenza.'}, 500
+                else:
+                    return {'errMsg': 'Payload error!'}, 500
+
+            except exc.IntegrityError:
+                db.session.rollback()
+                return {
+                           'errMsgTitle': 'Attenzione',
+                           'errMsg': 'Prenotazione già effettuata per questa lezione.'
+                       }, 500
+            except:
+                db.session.rollback()
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
+                return {
+                           'errMsgTitle': sys.exc_info()[0].__name__,
+                           'errMsg': traceback.format_exc()
+                       }, 500
+
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
+
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    def delete(self, id_prenotazione):
+        """Delete Service Reservation"""
+        if g.status == 200:
+            base64_bytes = g.token.encode('utf-8')
+            message_bytes = base64.b64decode(base64_bytes)
+            token_string = message_bytes.decode('utf-8')
+
+            username = token_string.split(':')[0]
+
+            if g.response['user']['grpId'] == 6:
+                try:
+                    reservation = Reservations.query.filter_by(id=id_prenotazione).filter_by(
+                        username=username)
+
+                    if reservation.first() is not None:
+                        reservation.delete()
+                        db.session.commit()
+
+                        return {
+                                   "status": "Cancellazione effettuata con successo."
+                               }, 200
+                    else:
+                        return {
+                                   'errMsgTitle': "Attenzione",
+                                   'errMsg': "Operazione non consentita."
+                               }, 500
+
+                except AttributeError as error:
+                    return {
+                               'errMsgTitle': "Attenzione",
+                               'errMsg': "Operazione non consentita."
+                           }, 500
+                except:
+                    db.session.rollback()
+                    print("Unexpected error:")
+                    print("Title: " + sys.exc_info()[0].__name__)
+                    print("Description: " + traceback.format_exc())
+                    return {
+                               'errMsgTitle': sys.exc_info()[0].__name__,
+                               'errMsg': traceback.format_exc()
+                           }, 500
+            elif g.response['user']['grpId'] == 7:
+                result = getCourses(Resource).get(request.args.get('aaId'))
+
+                status = json.loads(json.dumps(result))[1]
+                _result = json.loads(json.dumps(result))[0]
+
+                print(_result)
+
+                if status == 200:
+                    codici = []
+                    for i in range(len(_result)):
+                        codici.append(_result[i]['adDefAppCod'])
+
+                    reservation = Reservations.query.filter_by(id=id_prenotazione)
+
+                    if reservation.first().id_corso in codici:
+                        reservation.delete()
+                        db.session.commit()
+
+                        return {
+                                   "status": "Cancellazione effettuata con successo."
+                               }, 200
+                    else:
+                        return {
+                                   'errMsgTitle': "Attenzione",
+                                   'errMsg': "Operazione non consentita."
+                               }, 500
+                else:
+                    return {
+                               'errMsgTitle': "Attenzione",
+                               'errMsg': "Anno di corso non valido!"
+                           }, 500
+            else:
+                return {
+                           'errMsgTitle': "Attenzione",
+                           'errMsg': "Il tipo di user non è di tipo Studente"
+                       }, 500
+
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
 
 
 # ------------- RESERVATIONS -------------
@@ -701,7 +894,7 @@ class Reservation(Resource):
             res_room = ReservableRoom.query.all()
             for rr in res_room:
                 codici_res.append(rr.id_corso)
-            
+
             try:
                 if content['id_corso'] in codici:
                     user = UserAccess.query.filter_by(username=username).first()
@@ -714,10 +907,11 @@ class Reservation(Resource):
                             capacity = int(result[0][41]) / 2
 
                             now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59)
-                            #now = datetime(2020, 9, 28, 23, 59)
+                            # now = datetime(2020, 9, 28, 23, 59)
                             print(datetime.fromtimestamp(result[0][1]), now)
 
-                            if datetime.fromtimestamp(result[0][1]) > now or content['id_corso'] not in codici_res or datetime.fromtimestamp(result[0][2]) < now:
+                            if datetime.fromtimestamp(result[0][1]) > now or content[
+                                'id_corso'] not in codici_res or datetime.fromtimestamp(result[0][2]) < now:
                                 return {
                                            'errMsgTitle': 'Attenzione',
                                            'errMsg': 'Prenotazione non consentita.'
@@ -727,7 +921,8 @@ class Reservation(Resource):
                                              start_time=datetime.fromtimestamp(result[0][1]),
                                              end_time=datetime.fromtimestamp(result[0][2]),
                                              username=username, matricola=content['matricola'],
-                                             time=datetime.now(), id_lezione=content['id_lezione'], reserved_by=username)
+                                             time=datetime.now(), id_lezione=content['id_lezione'],
+                                             reserved_by=username)
                             db.session.add(r)
 
                             count = Reservations.query.with_for_update().filter_by(
@@ -752,9 +947,9 @@ class Reservation(Resource):
                                 'errMsg': 'Impossibile prenotarsi in mancanza di autocertificazione/accesso in presenza.'}, 500
                 else:
                     return {
-                        'errMsgTitle': 'Attenzione',
-                        'errMsg': 'Non è possibile prenotarsi ad una lezione non presente nel proprio piano di studi/già superata.'
-                    }, 500
+                               'errMsgTitle': 'Attenzione',
+                               'errMsg': 'Non è possibile prenotarsi ad una lezione non presente nel proprio piano di studi/già superata.'
+                           }, 500
 
             except exc.IntegrityError:
                 db.session.rollback()
@@ -783,8 +978,8 @@ class Reservation(Resource):
         message_bytes = base64.b64decode(base64_bytes)
         token_string = message_bytes.decode('utf-8')
 
-        username = token_string.split(':')[0]    
-    
+        username = token_string.split(':')[0]
+
         if g.status == 200:
             if g.response['user']['grpId'] == 6:
                 try:
@@ -795,7 +990,7 @@ class Reservation(Resource):
                     # end = datetime(2020, 9, 21, 23, 59)
 
                     reservations = Reservations.query.filter_by(username=username).filter(
-                        Reservations.start_time>=datetime.fromtimestamp(start)).all()
+                        Reservations.start_time >= datetime.fromtimestamp(start)).all()
                     array = []
                     for r in reservations:
                         array.append({
@@ -876,14 +1071,14 @@ class Reservation(Resource):
 
                 status = json.loads(json.dumps(result))[1]
                 _result = json.loads(json.dumps(result))[0]
-        
+
                 print(_result)
-    
+
                 if status == 200:
                     codici = []
                     for i in range(len(_result)):
                         codici.append(_result[i]['adDefAppCod'])
-                    
+
                     reservation = Reservations.query.filter_by(id=id_prenotazione)
 
                     if reservation.first().id_corso in codici:
@@ -900,9 +1095,9 @@ class Reservation(Resource):
                                }, 500
                 else:
                     return {
-                        'errMsgTitle': "Attenzione",
-                        'errMsg': "Anno di corso non valido!"
-                    }, 500
+                               'errMsgTitle': "Attenzione",
+                               'errMsg': "Anno di corso non valido!"
+                           }, 500
             else:
                 return {
                            'errMsgTitle': "Attenzione",
@@ -911,7 +1106,6 @@ class Reservation(Resource):
 
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
-
 
 
 # ------------- RESERVE STUDENT BY PROF -------------
@@ -952,7 +1146,8 @@ class ReservationByProf(Resource):
                         codici.append(_result[i]['adDefAppCod'])
 
                     con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
-                    rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN mrbs_room R WHERE E.id = '" + str(content['id_lezione']) + "' AND E.room_id = R.id").fetchall()
+                    rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN mrbs_room R WHERE E.id = '" + str(
+                        content['id_lezione']) + "' AND E.room_id = R.id").fetchall()
                     capacity = int(rs[0][41]) / 2
                     if len(rs) != 0:
                         if rs[0][32] in codici:
@@ -960,60 +1155,61 @@ class ReservationByProf(Resource):
                                              start_time=datetime.fromtimestamp(rs[0][1]),
                                              end_time=datetime.fromtimestamp(rs[0][2]),
                                              username=content['username'], matricola=content['matricola'],
-                                             time=datetime.now(), id_lezione=content['id_lezione'], reserved_by=username)
+                                             time=datetime.now(), id_lezione=content['id_lezione'],
+                                             reserved_by=username)
                             db.session.add(r)
 
-                            count = Reservations.query.with_for_update().filter_by(id_lezione=content['id_lezione']).count()
+                            count = Reservations.query.with_for_update().filter_by(
+                                id_lezione=content['id_lezione']).count()
                             if count > capacity:
                                 db.session.rollback()
                                 return {
-                                    'errMsgTitle': 'Attenzione',
-                                    'errMsg': 'Raggiunta la capacità massima consentita.'
-                                }, 500
+                                           'errMsgTitle': 'Attenzione',
+                                           'errMsg': 'Raggiunta la capacità massima consentita.'
+                                       }, 500
 
                             db.session.commit()
 
                             return {
-                                "status": "Prenotazione effettuata con successo."
-                            }, 200
+                                       "status": "Prenotazione effettuata con successo."
+                                   }, 200
                         else:
                             return {
-                                'errMsgTitle': "Attenzione",
-                                'errMsg': "Operazione non consentita!"
-                            }, 500
+                                       'errMsgTitle': "Attenzione",
+                                       'errMsg': "Operazione non consentita!"
+                                   }, 500
                     else:
                         return {
-                            'errMsgTitle': "Attenzione",
-                            'errMsg': "ID lezione errato"
-                        }, 500
+                                   'errMsgTitle': "Attenzione",
+                                   'errMsg': "ID lezione errato"
+                               }, 500
 
                 except exc.IntegrityError:
                     db.session.rollback()
                     return {
-                           'errMsgTitle': 'Attenzione',
-                           'errMsg': 'Prenotazione già effettuata per questa lezione.'
-                    }, 500
+                               'errMsgTitle': 'Attenzione',
+                               'errMsg': 'Prenotazione già effettuata per questa lezione.'
+                           }, 500
                 except:
                     db.session.rollback()
                     print("Unexpected error:")
                     print("Title: " + sys.exc_info()[0].__name__)
                     print("Description: " + traceback.format_exc())
                     return {
-                        'errMsgTitle': sys.exc_info()[0].__name__,
-                        'errMsg': traceback.format_exc()
-                    }, 500
+                               'errMsgTitle': sys.exc_info()[0].__name__,
+                               'errMsg': traceback.format_exc()
+                           }, 500
             else:
                 return {
-                'errMsgTitle': "Attenzione",
-                'errMsg': "Errore nel caricamento degli esami!!"
-            }, 500
+                           'errMsgTitle': "Attenzione",
+                           'errMsg': "Errore nel caricamento degli esami!!"
+                       }, 500
 
         else:
             return {
-                'errMsgTitle': "Attenzione",
-                'errMsg': "Errore Payload/Studente non immatricolato!"
-            }, 500
-
+                       'errMsgTitle': "Attenzione",
+                       'errMsg': "Errore Payload/Studente non immatricolato!"
+                   }, 500
 
 
 # ------------- GET STUDENTS LIST -------------
