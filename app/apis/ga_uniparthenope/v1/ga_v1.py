@@ -724,7 +724,7 @@ class ServicesReservation(Resource):
                             Reservations.end_time <= end).all()
 
                         for res in today_reservations:
-                            if res.start_time <= rs.Entry.start_time <= res.end_time or res.start_time <= rs.Entry.end_time <= res.end_time:
+                            if res.start_time < rs.Entry.start_time < res.end_time or res.start_time < rs.Entry.end_time < res.end_time:
                                 return {
                                            'errMsgTitle': 'Attenzione',
                                            'errMsg': 'Già presente una prenotazione in questo lasso di tempo.'
