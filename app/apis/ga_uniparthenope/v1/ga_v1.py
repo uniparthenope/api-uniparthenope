@@ -618,6 +618,7 @@ class getProfLectures(Resource):
 
         con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
 
+
         if status == 200:
             base64_bytes = g.token.encode('utf-8')
             message_bytes = base64.b64decode(base64_bytes)
