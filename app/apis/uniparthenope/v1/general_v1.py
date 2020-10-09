@@ -264,20 +264,29 @@ class CurrentAA(Resource):
                             print("Oggi: " + str(curr_day))
 
                             curr_sem = _response[i]['des']
-                            academic_year = str(_response[i]['aaSesId']) + " - " + str(_response[i]['aaSesId'] + 1)
 
-                            if curr_sem == "Sessione Estiva" or curr_sem == "Sessione Anticipata" or curr_sem == "Sessione Straordinaria":
-                                return {
-                                           'curr_sem': _response[i]['des'],
-                                           'semestre': "Secondo Semestre",
-                                           'aa_accad': academic_year
-                                       }, 200
+                            response_aa = requests.request("GET",
+                                                        url + "servizi-service-v1/annoRif/DR_SUA", headers=headers)
+                            _response_aa = response_aa.json()
+
+                            if response_aa.status_code == 200:
+
+                                if curr_sem == "Sessione Estiva" or curr_sem == "Sessione Anticipata" or curr_sem == "Sessione Straordinaria":
+
+                                    return {
+                                               'curr_sem': _response[i]['des'],
+                                               'semestre': "Secondo Semestre",
+                                               'aa_accad': str(_response_aa['aaId'])
+                                           }, 200
+                                else:
+                                    return {
+                                               'curr_sem': _response[i]['des'],
+                                               'semestre': "Primo Semestre",
+                                               'aa_accad': str(_response_aa['aaId'])
+                                           }, 200
                             else:
-                                return {
-                                           'curr_sem': _response[i]['des'],
-                                           'semestre': "Primo Semestre",
-                                           'aa_accad': academic_year
-                                       }, 200
+                                return {'errMsg': _response_aa['retErrMsg']}, response_aa.status_code
+
             else:
                 return {'errMsg': _response['retErrMsg']}, response.status_code
 

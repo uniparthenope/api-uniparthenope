@@ -104,7 +104,7 @@ class getCourses(Resource):
                                         headers=headers)
             _response = response.json()
 
-            if response.status_code is 200:
+            if response.status_code == 200:
                 for x in range(0, len(_response)):
                     if _response[x]['aaAbilDocId'] == int(aaId):
                         adId_new = _response[x]['adId']
@@ -114,9 +114,9 @@ class getCourses(Resource):
                         response2 = requests.request("GET", url + "offerta-service-v1/offerte/" + aaId + "/" + str(
                             _response[x]['cdsId']) + "/segmenti?adId=" + str(_response[x]['adId']) + "&order=-aaOrdId",
                                                      headers=headers)
-                        if response2.status_code is 200:
+                        if response2.status_code == 200:
                             _response2 = response2.json()
-                            if len(_response2) is not 0:
+                            if len(_response2) != 0:
 
                                 cfu = _response2[0]['peso']
                                 durata = _response2[0]['durUniVal']
@@ -129,10 +129,10 @@ class getCourses(Resource):
                                                              url + "logistica-service-v1/logistica?aaOffId=" + aaId + "&adId=" + str(
                                                                  _response[x]['adId']), headers=headers)
 
-                                if response3.status_code is 200:
+                                if response3.status_code == 200:
                                     _response3 = response3.json()
 
-                                    if len(_response3) is not 0:
+                                    if len(_response3) != 0:
 
                                         adDes = _response3[0]['chiaveADFisica']['adDes']
                                         cdsDes = _response3[0]['chiaveADFisica']['cdsDes']
@@ -166,7 +166,7 @@ class getCourses(Resource):
                     else:
                         return {'errMsg': 'generic error 1'}, 500
 
-                    if adDes is not "":
+                    if adDes != "":
                         item = ({
                             'adDes': adDes,
                             'adId': adId_new,
@@ -218,28 +218,44 @@ class getSession(Resource):
     def get(self):
         """Get Session"""
 
+        headers = {
+            'Content-Type': "application/json",
+            "Authorization": "Basic " + g.token
+        }
+
         if g.status == 200:
             try:
                 response = requests.request("GET", url + "calesa-service-v1/sessioni?order=-aaSesId")
                 _response = response.json()
                 # today = (datetime.today() + timedelta(1 * 365 / 12))
 
-                if response.status_code is 200:
+                if response.status_code == 200:
                     for i in range(0, len(_response)):
 
                         inizio = datetime.strptime(_response[i]['dataInizio'], "%d/%m/%Y %H:%M:%S")
                         fine = datetime.strptime(_response[i]['dataFine'], "%d/%m/%Y %H:%M:%S")
-                        if inizio <= datetime.today() <= fine:
 
-                            array = ({
-                                'aa_curr': str(_response[i]['aaSesId']) + " - " + str(_response[i]['aaSesId'] + 1),
-                                'semId': _response[i]['sesId'],
-                                'semDes': _response[i]['des'],
-                                'aaId': _response[i]['aaSesId'],
-                            })
 
-                            if i > 0:
-                                break
+                        response_aa = requests.request("GET",
+                                                       url + "servizi-service-v1/annoRif/DR_SUA", headers=headers)
+                        _response_aa = response_aa.json()
+                        aa = str(_response_aa['aaId'])
+
+                        if response_aa.status_code == 200:
+
+                            if inizio <= datetime.today() <= fine:
+
+                                array = ({
+                                    'aa_curr': aa + " - " + str(int(aa) + 1),
+                                    'semId': _response[i]['sesId'],
+                                    'semDes': _response[i]['des'],
+                                    'aaId':  aa,
+                                })
+
+                                if i > 0:
+                                    break
+                        else:
+                            return {'errMsg': _response_aa['retErrMsg']}, response_aa.status_code
 
                     return array, 200
                 else:
