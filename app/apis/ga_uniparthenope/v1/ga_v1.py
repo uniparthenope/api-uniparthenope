@@ -708,11 +708,27 @@ class ServicesReservation(Resource):
                         now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59)
                         # now = datetime(2020, 9, 28, 23, 59)
 
-                        if rs.Entry.start_time > now or rs.Entry.end_time > now:
+                        if rs.Entry.start_time > now or rs.Entry.end_time > now or Entry.end_time < datetime.now():
                             return {
                                        'errMsgTitle': 'Attenzione',
                                        'errMsg': 'Prenotazione non consentita.'
-                                   }, 500
+                            }, 500
+
+                        start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0,
+                                         0)
+                        end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23,
+                                       59)
+
+                        today_reservations = Reservations.query.filter_by(username=username).filter(
+                            Reservations.start_time >= start).filter(
+                            Reservations.end_time <= end).all()
+
+                        for res in today_reservations:
+                            if res.start_time <= rs.Entry.start_time <= res.end_time or res.start_time <= rs.Entry.end_time <= res.end_time:
+                                return {
+                                           'errMsgTitle': 'Attenzione',
+                                           'errMsg': 'Già presente una prenotazione in questo lasso di tempo.'
+                                }, 500
 
                         r = Reservations(id_corso="SERVICE", course_name=rs.Entry.name,
                                          start_time=rs.Entry.start_time,
