@@ -5,11 +5,8 @@ ver = "v1"
 
 ns = api.namespace('GAUniparthenope', description='Calendar')
 
-from app.apis.ga_uniparthenope.v1.ga_v1 import SearchCourse, OtherCourses, ProfessorCourse, getTodayLecture, getLectures, getProfLectures,getStudentsList, Reservation, getEvents, ReservationByProf, getTodayServices, ServicesReservation
+from app.apis.ga_uniparthenope.v1.ga_v1 import getTodayLecture, getLectures, getProfLectures,getStudentsList, Reservation, getEvents, ReservationByProf, getTodayServices, ServicesReservation
 
-ns.add_resource(SearchCourse, '/v1/searchCourse/<nome_area>/<nome_corso>/<nome_prof>/<nome_studio>/<periodo>', methods=['GET'])
-ns.add_resource(OtherCourses, '/v1/otherCourses/<periodo>', methods=['GET'])
-ns.add_resource(ProfessorCourse, '/v1/professorCourse/<periodo>/<cognome>', methods=['GET'])
 ns.add_resource(getTodayLecture, '/v1/getTodayLecture/<matId>', methods=['GET'])
 ns.add_resource(getLectures, '/v1/getLectures/<matId>', methods=['GET'])
 ns.add_resource(getProfLectures, '/v1/getProfLectures/<aaId>', methods=['GET'])

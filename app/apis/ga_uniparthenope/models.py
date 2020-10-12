@@ -70,3 +70,11 @@ class Area(db.Model):
     area_name = db.Column(db.String(64), nullable=False)
     cod_area = db.Column(db.String(16), nullable=True)
     area_id = db.relationship('Room', backref='area')
+
+
+class UserTemp(db.Model):
+    __bind_key__ = 'ga'
+    __tablename__ = 'user_temp'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), index=True, unique=True)
+    matricola = db.Column(db.String(16), unique=True)
