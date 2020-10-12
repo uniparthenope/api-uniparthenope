@@ -167,7 +167,7 @@ def auth(token):
                 g.response = r
                 return r, 200
             else:
-                response = requests.request("GET", url + "login", headers=headers)
+                response = requests.request("GET", url + "login", headers=headers, timeout=5)
                 if response.status_code == 401:
                     try:
                         r = ldap_auth(username, password)
@@ -217,15 +217,15 @@ def auth(token):
 
     except requests.exceptions.Timeout as e:
         print(e)
-        return {'errMsg': e}, 500
+        return {'errMsg': 'Timeout Error!'}, 500
 
     except requests.exceptions.TooManyRedirects as e:
         print(e)
-        return {'errMsg': e}, 500
+        return {'errMsg': str(e)}, 500
 
     except requests.exceptions.RequestException as e:
         print(e)
-        return {'errMsg': e}, 500
+        return {'errMsg': str(e)}, 500
 
 
 # ------------- LOGIN -------------

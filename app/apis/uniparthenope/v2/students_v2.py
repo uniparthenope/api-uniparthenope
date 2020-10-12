@@ -33,7 +33,7 @@ class MyExams(Resource):
 
         try:
             response = requests.request("GET", url + "libretto-service-v2/libretti/" + matId + "/righe",
-                                            headers=headers)
+                                            headers=headers, timeout=5)
             _response = response.json()
 
             if response.status_code == 200:
@@ -155,13 +155,14 @@ class MyExams(Resource):
                 return {'errMsg': _response['retErrMsg']}, response.status_code
             '''
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
+        #TODO CHECK!!!
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': 'Timeout Error!'}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
