@@ -81,6 +81,13 @@ class Access(Resource):
                                     db.session.commit()
 
                                     return {'message': 'Classroom modified'}, 200
+
+                            except AttributeError:
+                                return {
+                                           'errMsgTitle': 'Attenzione',
+                                           'errMsg': 'Non è possibile scegliere la modalità "in presenza" senza aver accettato l\'autocertificazione obbligatoria!'
+                                       }, 500
+
                             except:
                                 print("Unexpected error:")
                                 print("Title: " + sys.exc_info()[0].__name__)
