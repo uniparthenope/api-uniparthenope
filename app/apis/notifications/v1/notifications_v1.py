@@ -201,7 +201,9 @@ class NotificationByCdsId(Resource):
 
 
 notification_username = ns.model("notification_username", {
-    "username": fields.String(description="username separati dalla virgola", required=True)
+    "username": fields.String(description="username separati dalla virgola", required=True),
+    "title": fields.String(description="titolo della notifica", required=True),
+    "body": fields.String(description="messaggio della notifica", required=True)
 })
 
 
@@ -212,60 +214,67 @@ class NotificationByUsername(Resource):
     def post(self):
         """Send notification by username"""
 
+        status_array = []
+
         content = request.json
 
         if g.status == 200:
             admin = User.query.filter_by(username=g.response['user']['userId']).join(Role, Role.user_id == User.id).filter(
                 Role.role == 'admin').first()
             if admin is not None:
-                if 'username' in content:
+                if 'username' in content and 'title' in content and 'body' in content:
                     user = UserNotifications.query.filter_by(username=content['username']).first()
 
                     if user is not None:
-                        print(user.devices)
-                        '''
-                        try:
-                            headers = {
-                                'Content-Type': "application/json",
-                                "Authorization": "key=" + Config.API_KEY_FIREBASE
-                            }
+                        for device in user.devices:
+                            try:
+                                headers = {
+                                    'Content-Type': "application/json",
+                                    "Authorization": "key=" + Config.API_KEY_FIREBASE
+                                }
 
-                            body = {
-                                "notification": {
-                                    "title": content['title'],
-                                    "body": content['body'],
-                                    "badge": "1",
-                                    "sound": "default",
-                                    "showWhenInForeground": "true",
-                                },
-                                "content_avaible": True,
-                                "priority": "High",
-                                "to": "/topics/CDS_" + content['cdsId']
-                            }
+                                body = {
+                                    "notification": {
+                                        "title": content['title'],
+                                        "body": content['body'],
+                                        "badge": "1",
+                                        "sound": "default",
+                                        "showWhenInForeground": "true",
+                                    },
+                                    "content_avaible": True,
+                                    "priority": "High",
+                                    "to": device.token
+                                }
 
-                            firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body, headers=headers, timeout=5)
-                            if firebase_response.status_code == 200:
-                                return {"status": "OK"}, 200
-                            else:
-                                return {"errMsg": firebase_response.content}, firebase_response.status_code
+                                firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body, headers=headers, timeout=5)
+                                if firebase_response.status_code == 200:
+                                    status_array.append({
+                                        "status": "OK",
+                                        "message": "Success!"
+                                    })
+                                else:
+                                    status_array.append({
+                                        "status": "Error",
+                                        "message": firebase_response.content
+                                    })
 
-                        except requests.exceptions.HTTPError as e:
-                            return {'errMsg': str(e)}, 500
-                        except requests.exceptions.ConnectionError as e:
-                            return {'errMsg': str(e)}, 500
-                        except requests.exceptions.Timeout as e:
-                            return {'errMsg': str(e)}, 500
-                        except requests.exceptions.RequestException as e:
-                            return {'errMsg': str(e)}, 500
-                        except:
-                            print("Unexpected error:")
-                            print("Title: " + sys.exc_info()[0].__name__)
-                            print("Description: " + traceback.format_exc())
-                            return {
+                            except requests.exceptions.HTTPError as e:
+                                return {'errMsg': str(e)}, 500
+                            except requests.exceptions.ConnectionError as e:
+                                return {'errMsg': str(e)}, 500
+                            except requests.exceptions.Timeout as e:
+                                return {'errMsg': str(e)}, 500
+                            except requests.exceptions.RequestException as e:
+                                return {'errMsg': str(e)}, 500
+                            except:
+                                print("Unexpected error:")
+                                print("Title: " + sys.exc_info()[0].__name__)
+                                print("Description: " + traceback.format_exc())
+                                return {
                                        'errMsgTitle': sys.exc_info()[0].__name__,
                                        'errMsg': traceback.format_exc()
-                                   }, 500
-                        '''
+                                }, 500
+                        return status_array, 200
                     else:
                         return {'errMsg': "L'username non ha dispositivi registrati!"}, 500
                 else:
