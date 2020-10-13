@@ -225,10 +225,10 @@ class GetTotalExams(Resource):
                     }
                 else:
                     output = {
-                        'totAdSuperate': "N/A",
-                        'numAdSuperate': "N/A",
-                        'cfuPar': "N/A",
-                        'cfuTot': "N/A"
+                        'totAdSuperate': "--",
+                        'numAdSuperate': "--",
+                        'cfuPar': "--",
+                        'cfuTot': "--"
                     }
 
                 return output, 200

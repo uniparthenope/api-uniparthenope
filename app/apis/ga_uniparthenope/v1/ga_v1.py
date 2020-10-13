@@ -152,6 +152,8 @@ class getTodayLecture(Resource):
     def get(self, matId):
         """Get Today Lectures"""
 
+        con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
+
         base64_bytes = g.token.encode('utf-8')
         message_bytes = base64.b64decode(base64_bytes)
         token_string = message_bytes.decode('utf-8')
@@ -162,12 +164,6 @@ class getTodayLecture(Resource):
 
         status = json.loads(json.dumps(result))[1]
         _result = json.loads(json.dumps(result))[0]
-
-        user_info = UserTemp.query.filter_by(username=username).first()
-        if len(_result) == 0 and user_info is not None:
-            print("Sono di info 1 anno")
-
-        con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
 
         if status == 200:
             codici = []
@@ -192,6 +188,49 @@ class getTodayLecture(Resource):
 
             # start = datetime(2020, 10, 9, 0, 0).timestamp()
             # end = datetime(2020, 10, 9, 23, 59).timestamp()
+
+            user_info = UserTemp.query.filter_by(username=username).first()
+            if len(_result) == 0 and user_info is not None:
+                for cod in codici_res:
+                    rs = con.execute(
+                        "SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND `id_corso` LIKE '%%" + str(
+                            cod) + "%%' AND start_time >= '" + str(start) + "' AND end_time <= '" + str(end) + "'")
+
+                    for row in rs:
+                        reserved = False
+                        resered_id = None
+                        reserved_by = None
+                        reservation = Reservations.query.filter_by(id_lezione=row[0]).filter_by(
+                            username=username)
+
+                        if reservation.first() is not None:
+                            reserved = True
+                            resered_id = reservation.first().id
+                            reserved_by = reservation.first().reserved_by
+
+                        array.append({
+                            'id': row[0],
+                            'id_corso': cod,
+                            'start': str(datetime.fromtimestamp(row[1])),
+                            'end': str(datetime.fromtimestamp(row[2])),
+                            'room': {
+                                'name': row[38],
+                                'capacity': math.floor(row[41] / 2),
+                                'description': row[40],
+                                'availability': math.floor(
+                                    int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(
+                                    id_lezione=row[0]).count()
+                            },
+                            'course_name': row[9],
+                            'prof': row[11],
+                            'reservation': {
+                                'reserved_id': resered_id,
+                                'reserved': reserved,
+                                'reserved_by': reserved_by
+                            }
+                        })
+                return array, 200
+
 
             for i in range(len(codici)):
                 codice = codici[i]
@@ -623,7 +662,8 @@ class Reservation(Resource):
                     codici_res.append(rr.id_corso)
 
                 try:
-                    if content['id_corso'] in codici:
+                    user_info = UserTemp.query.filter_by(username=username).first()
+                    if content['id_corso'] in codici or user_info is not None:
                         user = UserAccess.query.filter_by(username=username).first()
                         if user is not None:
                             if user.autocertification and user.classroom == "presence":
@@ -653,7 +693,7 @@ class Reservation(Resource):
                                     Reservations.end_time <= end).all()
 
                                 for res in today_reservations:
-                                    if res.start_time < rs.Entry.start_time < res.end_time or res.start_time < rs.Entry.end_time < res.end_time:
+                                    if res.start_time < datetime.fromtimestamp(result[0][1]) < res.end_time or res.start_time < datetime.fromtimestamp(result[0][2]) < res.end_time:
                                         return {
                                            'errMsgTitle': 'Attenzione',
                                            'errMsg': 'Già presente una prenotazione in questo lasso di tempo.'
