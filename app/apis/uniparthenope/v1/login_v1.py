@@ -216,15 +216,12 @@ def auth(token):
                         return r, 200
 
     except requests.exceptions.Timeout as e:
-        print(e)
         return {'errMsg': 'Timeout Error!'}, 500
 
     except requests.exceptions.TooManyRedirects as e:
-        print(e)
         return {'errMsg': str(e)}, 500
 
     except requests.exceptions.RequestException as e:
-        print(e)
         return {'errMsg': str(e)}, 500
 
 
@@ -239,10 +236,6 @@ class Login(Resource):
         token = g.pop('token')
 
         r = auth(token)
-
-        # token_JWT = (jwt.encode({'userId': token, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)}, app.config['SECRET_KEY']).decode('UTF-8'))
-
-        # r[0]['token_JWT'] = token_JWT
 
         return r
 
@@ -260,7 +253,7 @@ class Logout(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "logout/;jsessionid=" + g.pop('auth_token'), headers=headers)
+            response = requests.request("GET", url + "logout/;jsessionid=" + g.pop('auth_token'), headers=headers, timeout=5)
 
             if response.status_code == 200:
                 return {"logout": "ok"}, 200
@@ -268,12 +261,10 @@ class Logout(Resource):
                 return {"logout": "error"}, 500
 
         except requests.exceptions.Timeout as e:
-            print(e)
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
 
         except requests.exceptions.RequestException as e:
-            print(e)
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
 
         except:
             return {'errMsg': 'generic error'}, 500

@@ -65,7 +65,7 @@ class Anagrafica(Resource):
         }
 
         try:
-            res = requests.request("GET", url + "anagrafica-service-v2/persone/" + Id, headers=headers)
+            res = requests.request("GET", url + "anagrafica-service-v2/persone/" + Id, headers=headers, timeout=5)
             _response = res.json()
 
             if res.status_code == 200:
@@ -78,7 +78,7 @@ class Anagrafica(Resource):
                     'telRes': _response['telRes']
                 }, 200
             elif res.status_code == 403:
-                res = requests.request("GET", url + "anagrafica-service-v2/docenti/" + Id, headers=headers)
+                res = requests.request("GET", url + "anagrafica-service-v2/docenti/" + Id, headers=headers, timeout=5)
                 _response = res.json()
 
                 if res.status_code == 200:
@@ -95,13 +95,13 @@ class Anagrafica(Resource):
             else:
                 return {'errMsg': _response["retErrMsg"]}, res.status_code
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
@@ -132,7 +132,7 @@ class PersonalImage(Resource):
         }
 
         try:
-            res = requests.get(url + "anagrafica-service-v2/persone/" + personId + "/foto", headers=headers,
+            res = requests.get(url + "anagrafica-service-v2/persone/" + personId + "/foto", headers=headers, timeout=5,
                                stream=True)
             if res.status_code == 200:
                 return send_file(
@@ -150,13 +150,13 @@ class PersonalImage(Resource):
                 )
 
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
@@ -187,7 +187,7 @@ class ProfImage(Resource):
                 # res = requests.get("https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + idAb + ".jpg?itok=" + random_seq, stream=True)
                 img_url = "https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + str(
                     idAb) + ".jpg"
-                res = requests.request("GET", img_url, verify=False)
+                res = requests.request("GET", img_url, verify=False, timeout=5)
 
                 if res.status_code == 200:
                     return send_file(
@@ -205,13 +205,13 @@ class ProfImage(Resource):
                     )
 
             except requests.exceptions.HTTPError as e:
-                return {'errMsg': e}, 500
+                return {'errMsg': str(e)}, 500
             except requests.exceptions.ConnectionError as e:
-                return {'errMsg': e}, 500
+                return {'errMsg': str(e)}, 500
             except requests.exceptions.Timeout as e:
-                return {'errMsg': e}, 500
+                return {'errMsg': str(e)}, 500
             except requests.exceptions.RequestException as e:
-                return {'errMsg': e}, 500
+                return {'errMsg': str(e)}, 500
             except:
                 print("Unexpected error:")
                 print("Title: " + sys.exc_info()[0].__name__)
@@ -244,7 +244,7 @@ class CurrentAA(Resource):
 
         try:
             response = requests.request("GET", url + "calesa-service-v1/sessioni?cdsId=" + cdsId + "&order=-aaSesId",
-                                        headers=headers)
+                                        headers=headers, timeout=5)
             _response = response.json()
 
             if response.status_code == 200:
@@ -258,15 +258,11 @@ class CurrentAA(Resource):
                         startDate = extractData(_response[i]['dataInizio'])
                         endDate = extractData(_response[i]['dataFine'])
 
-                        if (curr_day >= startDate and curr_day <= endDate):
-                            print("Inizio: " + str(startDate))
-                            print("Fine: " + str(endDate))
-                            print("Oggi: " + str(curr_day))
-
+                        if startDate <= curr_day <= endDate:
                             curr_sem = _response[i]['des']
 
                             response_aa = requests.request("GET",
-                                                        url + "servizi-service-v1/annoRif/DR_SUA", headers=headers)
+                                                        url + "servizi-service-v1/annoRif/DR_SUA", headers=headers, timeout=5)
                             _response_aa = response_aa.json()
 
                             if response_aa.status_code == 200:
@@ -291,13 +287,13 @@ class CurrentAA(Resource):
                 return {'errMsg': _response['retErrMsg']}, response.status_code
 
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
@@ -326,7 +322,7 @@ class RecentAD(Resource):
             "Authorization": "Basic " + g.token
         }
         try:
-            response = requests.request("GET", url + "logistica-service-v1/logistica?adId=" + adId, headers=headers)
+            response = requests.request("GET", url + "logistica-service-v1/logistica?adId=" + adId, headers=headers, timeout=5)
             _response = response.json()
 
             max_year = 0
@@ -346,13 +342,13 @@ class RecentAD(Resource):
                 return {'stsErr': "N"}, 500
 
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
@@ -383,7 +379,7 @@ class InfoCourse(Resource):
 
         try:
             response = requests.request("GET", url + "logistica-service-v1/logistica/" + adLogId + "/adLogConSyllabus",
-                                        headers=headers)
+                                        headers=headers, timeout=5)
             _response = response.json()
 
             if response.status_code == 200:
@@ -399,13 +395,13 @@ class InfoCourse(Resource):
                 return {'errMsg': _response['retErrMsg']}, response.status_code
 
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             return {'errMsg': 'generic error'}, 500
 

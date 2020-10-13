@@ -36,7 +36,7 @@ class DepInfo(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "anagrafica-service-v2/carriere/" + stuId, headers=headers)
+            response = requests.request("GET", url + "anagrafica-service-v2/carriere/" + stuId, headers=headers, timeout=5)
             _response = response.json()
 
             if response.status_code == 200:
@@ -54,13 +54,13 @@ class DepInfo(Resource):
                 return {'errMsg': _response['retErrMsg']}, response.status_code
 
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
@@ -89,7 +89,7 @@ class GetPianoId(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "piani-service-v1/piani/" + stuId, headers=headers)
+            response = requests.request("GET", url + "piani-service-v1/piani/" + stuId, headers=headers, timeout=5)
             _response = response.json()
 
             if response.status_code == 200:
@@ -103,13 +103,13 @@ class GetPianoId(Resource):
                 return {'errMsg': _response['retErrMsg']}, response.status_code
 
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
@@ -145,7 +145,7 @@ class GetAverage(Resource):
 
         try:
             response = requests.request("GET", url + "libretto-service-v1/libretti/" + matId + "/medie",
-                                        headers=headers)
+                                        headers=headers, timeout=5)
             _response = response.json()
 
             if response.status_code == 200:
@@ -175,13 +175,13 @@ class GetAverage(Resource):
                 return {'errMsg': _response['retErrMsg']}, response.status_code
 
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
@@ -211,7 +211,7 @@ class GetTotalExams(Resource):
 
         try:
             response = requests.request("GET", url + "libretto-service-v2/libretti/" + matId + "/stats",
-                                        headers=headers)
+                                        headers=headers, timeout=5)
             _response = response.json()
 
             if response.status_code == 200:
@@ -236,13 +236,13 @@ class GetTotalExams(Resource):
                 return {'errMsg': _response['retErrMsg']}, response.status_code
 
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
@@ -274,7 +274,7 @@ class GetExams(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "piani-service-v1/piani/" + stuId + "/" + pianoId, headers=headers)
+            response = requests.request("GET", url + "piani-service-v1/piani/" + stuId + "/" + pianoId, headers=headers, timeout=5)
             _response = response.json()
 
             if response.status_code == 200:
@@ -297,13 +297,13 @@ class GetExams(Resource):
                 return {'errMsg': _response['retErrMsg']}, response.status_code
 
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
@@ -335,7 +335,7 @@ class CheckExam(Resource):
 
         try:
             response = requests.request("GET", url + "libretto-service-v1/libretti/" + matId + "/righe/" + adsceId,
-                                        headers=headers)
+                                        headers=headers, timeout=5)
 
             if response.status_code == 500:
                 return {
@@ -383,13 +383,13 @@ class CheckExam(Resource):
                            }, 200
 
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
@@ -422,7 +422,7 @@ class CheckAppello(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "calesa-service-v1/appelli/" + cdsId + "/" + adId, headers=headers)
+            response = requests.request("GET", url + "calesa-service-v1/appelli/" + cdsId + "/" + adId, headers=headers, timeout=5)
             _response = response.json()
 
             if response.status_code == 200:
@@ -456,13 +456,13 @@ class CheckAppello(Resource):
                 return {'errMsg': _response['retErrMsg']}, response.status_code
 
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
@@ -498,7 +498,7 @@ class CheckPrenotazione(Resource):
         try:
             response = requests.request("GET",
                                         url + "calesa-service-v1/appelli/" + cdsId + "/" + adId + "/" + appId + "/iscritti/" + stuId,
-                                        headers=headers)
+                                        headers=headers, timeout=5)
             _response = response.json()
 
             if response.status_code == 200:
@@ -514,13 +514,13 @@ class CheckPrenotazione(Resource):
                 return {'prenotato': False}, 200
 
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
@@ -553,14 +553,14 @@ class getReservations(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "calesa-service-v1/prenotazioni/" + matId, headers=headers)
+            response = requests.request("GET", url + "calesa-service-v1/prenotazioni/" + matId, headers=headers, timeout=5)
             _response = response.json()
 
             if response.status_code == 200:
                 for i in range(0, len(_response)):
                     response2 = requests.request("GET", url + "calesa-service-v1/appelli/" + str(
                         _response[i]['cdsId']) + "/" + str(_response[i]['adId']) + "/" + str(_response[i]['appId']),
-                                                 headers=headers)
+                                                 headers=headers, timeout=5)
                     _response2 = response2.json()
 
                     adId = _response[i]['adId']
@@ -595,177 +595,13 @@ class getReservations(Resource):
             else:
                 return {'errMsg': _response['retErrMsg']}, response.status_code
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
-        except:
-            print("Unexpected error:")
-            print("Title: " + sys.exc_info()[0].__name__)
-            print("Description: " + traceback.format_exc())
-            return {
-                       'errMsgTitle': sys.exc_info()[0].__name__,
-                       'errMsg': traceback.format_exc()
-                   }, 500
-
-
-# ------------- EXAMS TO FREQ -------------
-##TODO DA ELIMINARE
-
-parser = api.parser()
-parser.add_argument('stuId', type=str, required=True, help='User stuId')
-parser.add_argument('pianoId', type=str, required=True, help='User pianoId')
-parser.add_argument('matId', type=str, required=True, help='User matId')
-
-
-@ns.doc(parser=parser)
-class ExamsToFreq(Resource):
-    @ns.doc(security='Basic Auth')
-    @token_required
-    def get(self, stuId, pianoId, matId):
-        """Get exams to frequent"""
-
-        my_exams = []
-
-        headers = {
-            'Content-Type': "application/json",
-            "Authorization": "Basic " + g.token
-        }
-
-        try:
-            response = requests.request("GET", url + "piani-service-v1/piani/" + stuId + "/" + pianoId, headers=headers)
-            _response = response.json()
-
-            if response.status_code == 200:
-                for i in range(0, len(_response['attivita'])):
-                    if _response['attivita'][i]['sceltaFlg'] == 1:
-                        adId = str(_response['attivita'][i]['chiaveADContestualizzata']['adId'])
-                        adSceId = _response['attivita'][i]['adsceAttId']
-
-                        response_2 = requests.request("GET",
-                                                      url + "libretto-service-v1/libretti/" + matId + "/righe/" + str(
-                                                          adSceId), headers=headers)
-
-                        if response_2.status_code == 500 or response_2.status_code == 404:
-                            print('ERRORE --> 2')
-                        else:
-                            _response2 = response_2.json()
-
-                            if _response2['statoDes'] != "Superata" and len(_response2) != 0:
-                                response_3 = requests.request("GET",
-                                                              url + "libretto-service-v1/libretti/" + matId + "/righe/" + str(
-                                                                  adSceId) + "/partizioni", headers=headers)
-
-                                if response_3.status_code == 500 or response_3.status_code == 404:
-                                    print('Response 3 non idoneo!skip')
-                                else:
-                                    _response3 = response_3.json()
-
-                                    if len(_response3) == 0:
-                                        response_4 = requests.request("GET",
-                                                                      url + "logistica-service-v1/logistica?adId=" + adId,
-                                                                      headers=headers)
-                                        _response4 = response_4.json()
-
-                                        max_year_offId = 0
-                                        max_year_ordId = 0
-                                        if response_4.status_code == 200:
-                                            for x in range(0, len(_response4)):
-                                                if _response4[x]['chiaveADFisica']['aaOffId'] > max_year_offId:
-                                                    max_year_offId = _response4[x]['chiaveADFisica']['aaOffId']
-
-                                            temp_arr = []
-                                            for x in range(0, len(_response4)):
-                                                if _response4[x]['chiaveADFisica']['aaOffId'] == max_year_offId:
-                                                    temp_arr.append(_response4[x])
-
-                                            for k in range(0, len(temp_arr)):
-                                                if temp_arr[k]['chiaveADFisica']['aaOrdId'] > max_year_ordId:
-                                                    max_year_ordId = temp_arr[k]['chiaveADFisica']['aaOrdId']
-
-                                            for x in range(0, len(temp_arr)):
-                                                if temp_arr[x]['chiaveADFisica']['aaOrdId'] == max_year_ordId:
-                                                    nome = unicodedata.normalize('NFKD', _response['attivita'][i]['adLibDes']).encode('ASCII', 'ignore')
-                                                    actual_exam = ({
-                                                        'nome': nome.decode('utf-8'),
-                                                        'codice': _response['attivita'][i]['adLibCod'],
-                                                        'adId': _response['attivita'][i]['chiaveADContestualizzata'][
-                                                            'adId'],
-                                                        'adsceID': adSceId,
-                                                        'CFU': _response['attivita'][i]['peso'],
-                                                        'annoId': _response['attivita'][i]['scePianoId'],
-                                                        'docente': "N/A",
-                                                        'docenteID': "N/A",
-                                                        'semestre': "N/A",
-                                                        'adLogId': _response4[x]['chiavePartizione']['adLogId'],
-                                                        'inizio': _response4[x]['dataInizio'].split()[0],
-                                                        'fine': _response4[x]['dataFine'].split()[0],
-                                                        'ultMod': _response4[x]['dataModLog'].split()[0],
-                                                        'domPartCod': temp_arr[x]['chiavePartizione']['domPartCod']
-                                                    })
-                                                    my_exams.append(actual_exam)
-
-                                    else:
-                                        response_4 = requests.request("GET",
-                                                                      url + "logistica-service-v1/logistica?adId=" + adId,
-                                                                      headers=headers)
-                                        _response4 = response_4.json()
-                                        # print("JSON (examsToFreq --> 4) (ELSE): " + str(response_4.json()))
-
-                                        max_year_offId = 0
-                                        max_year_ordId = 0
-                                        if response_4.status_code == 200:
-                                            for x in range(0, len(_response4)):
-                                                if _response4[x]['chiaveADFisica']['aaOffId'] > max_year_offId:
-                                                    max_year_offId = _response4[x]['chiaveADFisica']['aaOffId']
-
-                                            temp_arr = []
-                                            for x in range(0, len(_response4)):
-                                                if _response4[x]['chiaveADFisica']['aaOffId'] == max_year_offId:
-                                                    temp_arr.append(_response4[x])
-
-                                            for k in range(0, len(temp_arr)):
-                                                if temp_arr[k]['chiaveADFisica']['aaOrdId'] > max_year_ordId:
-                                                    max_year_ordId = temp_arr[k]['chiaveADFisica']['aaOrdId']
-
-                                            for x in range(0, len(temp_arr)):
-                                                print(temp_arr[x])
-                                                if temp_arr[x]['chiaveADFisica']['aaOrdId'] == max_year_ordId:
-                                                    nome = unicodedata.normalize('NFKD', _response['attivita'][i][
-                                                        'adLibDes']).encode('ASCII', 'ignore')
-                                                    actual_exam = ({
-                                                        'nome': nome.decode('utf-8'),
-                                                        'codice': _response['attivita'][i]['adLibCod'],
-                                                        'adId': _response['attivita'][i]['chiaveADContestualizzata'][
-                                                            'adId'],
-                                                        'adsceID': adSceId,
-                                                        'CFU': _response['attivita'][i]['peso'],
-                                                        'annoId': _response['attivita'][i]['scePianoId'],
-                                                        'docente': _response3[0]['cognomeDocTit'].capitalize() + " " +
-                                                                   _response3[0]['nomeDoctit'].capitalize(),
-                                                        'docenteID': _response3[0]['docenteId'],
-                                                        'semestre': _response3[0]['partEffCod'],
-                                                        'adLogId': temp_arr[x]['chiavePartizione']['adLogId'],
-                                                        'inizio': temp_arr[x]['dataInizio'].split()[0],
-                                                        'fine': temp_arr[x]['dataFine'].split()[0],
-                                                        'ultMod': temp_arr[x]['dataModLog'].split()[0],
-                                                        'domPartCod': temp_arr[x]['chiavePartizione']['domPartCod']
-                                                    })
-                                                    my_exams.append(actual_exam)
-                return my_exams, 200
-            else:
-                return {'errMsg': _response['retErrMsg']}, response.status_code
-        except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
-        except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
-        except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
-        except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
@@ -800,7 +636,7 @@ def fetch(_response):
             tel_f = tel.find('span', attrs={'class': 'field-content'})
             tel_finale = tel_f.text
         else:
-            tel_finale = "N/A"
+            tel_finale = "--"
 
         email = ul.find('div', attrs={'class': 'views-field views-field-contatto-email'})
         email_finale = email.find('span', attrs={'class': 'field-content'})
@@ -870,7 +706,7 @@ class getProfessors(Resource):
             try:
                 response = requests.request("GET",
                                             url + "offerta-service-v1/offerte/" + aaId + "/" + cdsId + "/docentiPerUD",
-                                            headers=headers)
+                                            headers=headers, timeout=5)
                 _response = response.json()
 
                 arr_id = []
@@ -907,13 +743,13 @@ class getProfessors(Resource):
                 return array, 200
 
             except requests.exceptions.HTTPError as e:
-                return {'errMsg': e}, 500
+                return {'errMsg': str(e)}, 500
             except requests.exceptions.ConnectionError as e:
-                return {'errMsg': e}, 500
+                return {'errMsg': str(e)}, 500
             except requests.exceptions.Timeout as e:
-                return {'errMsg': e}, 500
+                return {'errMsg': str(e)}, 500
             except requests.exceptions.RequestException as e:
-                return {'errMsg': e}, 500
+                return {'errMsg': str(e)}, 500
             except:
                 return {'errMsg': 'generic error'}, 500
         else:
@@ -950,7 +786,7 @@ class Taxes(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "tasse-service-v1/lista-fatture?persId=" + persId, headers=headers)
+            response = requests.request("GET", url + "tasse-service-v1/lista-fatture?persId=" + persId, headers=headers, timeout=5)
             _response = response.json()
 
             if response.status_code == 200:
@@ -999,13 +835,13 @@ class Taxes(Resource):
                 return {'errMsg': _response['retErrMsg']}, _response['statusCode']
 
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
@@ -1048,7 +884,7 @@ class BookExam(Resource):
             if "adsceId" in data and data['adsceId'] is not None:
                 response = requests.request("POST",
                                             url + "calesa-service-v1/appelli/" + cdsId + "/" + adId + "/" + appId + "/iscritti",
-                                            headers=headers, json=data)
+                                            headers=headers, json=data, timeout=5)
                 if response.status_code == 201:
                     return {'message': 'Ok'}, response.status_code
                 else:
@@ -1057,13 +893,13 @@ class BookExam(Resource):
             else:
                 return {'errMsg': 'Error payload'}, 500
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
@@ -1096,7 +932,7 @@ class DeleteReservation(Resource):
         }
 
         try:
-            response = requests.request("DELETE", url + "calesa-service-v1/appelli/" + cdsId + "/" + adId + "/" + appId + "/iscritti/" + stuId, headers=headers)
+            response = requests.request("DELETE", url + "calesa-service-v1/appelli/" + cdsId + "/" + adId + "/" + appId + "/iscritti/" + stuId, headers=headers, timeout=5)
             print(response.status_code)
             if response.status_code == 200:
                 return {'message': 'Ok'}, response.status_code
@@ -1104,13 +940,13 @@ class DeleteReservation(Resource):
                 r = response.json()
                 return {'errMsg': r['retErrMsg']}, response.status_code
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)

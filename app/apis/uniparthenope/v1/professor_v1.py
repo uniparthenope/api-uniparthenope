@@ -29,7 +29,7 @@ class DetInfo(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "anagrafica-service-v2/docenti/" + docenteId, headers=headers)
+            response = requests.request("GET", url + "anagrafica-service-v2/docenti/" + docenteId, headers=headers, timeout=5)
             _response = response.json()
 
             if response.status_code == 200:
@@ -43,13 +43,13 @@ class DetInfo(Resource):
             else:
                 return {'errMsg': _response['retErrMsg']}, response.status_code
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
@@ -101,7 +101,7 @@ class getCourses(Resource):
 
         try:
             response = requests.request("GET", url + "calesa-service-v1/abilitazioni?aaOffAbilId=" + aaId,
-                                        headers=headers)
+                                        headers=headers, timeout=5)
             _response = response.json()
 
             if response.status_code == 200:
@@ -113,7 +113,7 @@ class getCourses(Resource):
 
                         response2 = requests.request("GET", url + "offerta-service-v1/offerte/" + aaId + "/" + str(
                             _response[x]['cdsId']) + "/segmenti?adId=" + str(_response[x]['adId']) + "&order=-aaOrdId",
-                                                     headers=headers)
+                                                     headers=headers, timeout=5)
                         if response2.status_code == 200:
                             _response2 = response2.json()
                             if len(_response2) != 0:
@@ -127,7 +127,7 @@ class getCourses(Resource):
 
                                 response3 = requests.request("GET",
                                                              url + "logistica-service-v1/logistica?aaOffId=" + aaId + "&adId=" + str(
-                                                                 _response[x]['adId']), headers=headers)
+                                                                 _response[x]['adId']), headers=headers, timeout=5)
 
                                 if response3.status_code == 200:
                                     _response3 = response3.json()
@@ -194,13 +194,13 @@ class getCourses(Resource):
                 return {'errMsg': _response['retErrMsg']}, response.status_code
 
         except requests.exceptions.HTTPError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.ConnectionError as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.Timeout as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except requests.exceptions.RequestException as e:
-            return {'errMsg': e}, 500
+            return {'errMsg': str(e)}, 500
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
@@ -225,7 +225,7 @@ class getSession(Resource):
 
         if g.status == 200:
             try:
-                response = requests.request("GET", url + "calesa-service-v1/sessioni?order=-aaSesId")
+                response = requests.request("GET", url + "calesa-service-v1/sessioni?order=-aaSesId", timeout=5)
                 _response = response.json()
                 # today = (datetime.today() + timedelta(1 * 365 / 12))
 
@@ -262,13 +262,13 @@ class getSession(Resource):
                     return {'errMsg': _response['retErrMsg']}, response.status_code
 
             except requests.exceptions.HTTPError as e:
-                return {'errMsg': e}, 500
+                return {'errMsg': str(e)}, 500
             except requests.exceptions.ConnectionError as e:
-                return {'errMsg': e}, 500
+                return {'errMsg': str(e)}, 500
             except requests.exceptions.Timeout as e:
-                return {'errMsg': e}, 500
+                return {'errMsg': str(e)}, 500
             except requests.exceptions.RequestException as e:
-                return {'errMsg': e}, 500
+                return {'errMsg': str(e)}, 500
             except:
                 print("Unexpected error:")
                 print("Title: " + sys.exc_info()[0].__name__)
