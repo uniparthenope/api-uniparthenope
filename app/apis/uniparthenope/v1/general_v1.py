@@ -10,11 +10,9 @@ import urllib.parse
 import urllib.request
 from datetime import datetime
 from app.config import Config
-from shutil import copyfileobj
-from tempfile import NamedTemporaryFile
+from bs4 import BeautifulSoup
 
 import feedparser
-import html2text
 
 
 if (not os.environ.get('PYTHONHTTPSVERIFY', '') and
@@ -509,15 +507,22 @@ class RSSNews(Resource):
 
             for i in range(0, size):
                 notizia = {}
+
+                parsed_html = BeautifulSoup(feed['entries'][i]['summary'], features="html.parser")
+                if 'image' in parsed_html.find('div', attrs={'class': 'field-name-field-video'}).find('a').attrs['type']:
+                    image = parsed_html.find('div', attrs={'class': 'field-name-field-video'}).find('a').attrs['href']
+                else:
+                    image = "~/images/image1.jpg"
+
                 notizia.update({
                     'titolo': feed['entries'][i]['title'],
                     'link': feed['entries'][i]['link'],
                     'data': feed['entries'][i]['published'],
-                    'HTML': feed['entries'][i]['summary'],
+                    'HTML': str(parsed_html.find('div', attrs={'class': 'field-name-field-descrizione'}).find_all('p')).strip('[]'),
+                    'image': image
                 })
                 notizie.append(notizia)
             return notizie, 200
-
         except:
             print("Unexpected error:")
             print("Title: " + sys.exc_info()[0].__name__)
@@ -549,11 +554,13 @@ class RSSAvvisi(Resource):
 
             for i in range(0, size):
                 avviso = {}
+
+                parsed_html = BeautifulSoup(feed['entries'][i]['summary'], features="html.parser")
                 avviso.update({
                     'titolo': feed['entries'][i]['title'],
                     'link': feed['entries'][i]['link'],
                     'data': feed['entries'][i]['published'],
-                    'HTML': feed['entries'][i]['summary'],
+                    'HTML': str(parsed_html.find('div', attrs={'class': 'field-name-field-descrizione'}).find_all('p')).strip('[]')
                 })
                 avvisi.append(avviso)
             return avvisi, 200
