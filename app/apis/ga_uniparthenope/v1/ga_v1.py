@@ -563,7 +563,9 @@ class ServicesReservation(Resource):
                             Reservations.end_time <= end).all()
 
                         for res in today_reservations:
-                            if res.start_time < rs.Entry.start_time < res.end_time or res.start_time < rs.Entry.end_time < res.end_time:
+                            print(res.start_time, rs.Entry.start_time, res.end_time)
+                            print(res.start_time, rs.Entry.end_time, res.end_time)
+                            if res.start_time <= rs.Entry.start_time < res.end_time or res.start_time < rs.Entry.end_time <= res.end_time:
                                 return {
                                            'errMsgTitle': 'Attenzione',
                                            'errMsg': 'Già presente una prenotazione in questo lasso di tempo.'
@@ -693,7 +695,7 @@ class Reservation(Resource):
                                     Reservations.end_time <= end).all()
 
                                 for res in today_reservations:
-                                    if res.start_time < datetime.fromtimestamp(result[0][1]) < res.end_time or res.start_time < datetime.fromtimestamp(result[0][2]) < res.end_time:
+                                    if res.start_time <= datetime.fromtimestamp(result[0][1]) < res.end_time or res.start_time < datetime.fromtimestamp(result[0][2]) <= res.end_time:
                                         return {
                                            'errMsgTitle': 'Attenzione',
                                            'errMsg': 'Già presente una prenotazione in questo lasso di tempo.'
