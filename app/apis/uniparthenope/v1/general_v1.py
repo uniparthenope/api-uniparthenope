@@ -491,58 +491,32 @@ class InfoPersone(Resource):
 # ------------- NEWS RSS -------------
 
 
+parser = api.parser()
+parser.add_argument('size', type=int, required=True, help='Numero di notizie')
+
+
 class RSSNews(Resource):
-    def get(self):
+    def get(self, size):
         """Get news"""
 
         try:
             feed = feedparser.parse("https://www.uniparthenope.it/rss/tutte-le-news")
-            h = html2text.HTML2Text()
-            h.ignore_links = True
-            h.ignore_images = True
 
-            start = '<a href="'
-            end = '" type='
+            notizie = []
 
-            news = []
+            if size > len(feed['entries']):
+                size = len(feed['entries'])
 
-            for i in range(0, len(feed['entries'])):
-                img = ""
-                text_string = (BeautifulSoup(feed['entries'][i]['summary'], features="html.parser")).get_text()
-                text_string = text_string.split("Foto/Video:")[0]
-    
-                '''
-                if "Foto/Video" in feed['entries'][i]['summary']:
-                    text = feed['entries'][i]['summary']
-
-                    while start in text and end in text:
-                        s_index = text.find(start)
-                        e_index = text.find(end) + len(end)
-
-                        img = text[s_index:e_index]
-                        title = h.handle(img).strip()
-                        text = text.replace(img, title)
-
-                    img = img.replace(start, "")
-                    img = img.replace(end, "")
-                '''
-                if "Testo:" in text_string:
-                    text_string = text_string.split("Testo:")[1]
-
-                article = {}
-                article.update({
+            for i in range(0, size):
+                notizia = {}
+                notizia.update({
                     'titolo': feed['entries'][i]['title'],
                     'link': feed['entries'][i]['link'],
                     'data': feed['entries'][i]['published'],
-                    #'image': img,
-                    'image': "",
                     'HTML': feed['entries'][i]['summary'],
-                    'TEXT': text_string
                 })
-
-                news.append(article)
-            
-            return news, 200
+                notizie.append(notizia)
+            return notizie, 200
 
         except:
             print("Unexpected error:")
@@ -557,16 +531,23 @@ class RSSNews(Resource):
 # ------------- AVVISI RSS -------------
 
 
+parser = api.parser()
+parser.add_argument('size', type=int, required=True, help='Numero di avvisi')
+
+
 class RSSAvvisi(Resource):
-    def get(self):
-        """Get news"""
+    def get(self, size):
+        """Get avvisi"""
 
         try:
             feed = feedparser.parse("https://www.uniparthenope.it/rss/tutti-gli-avvisi")
 
             avvisi = []
 
-            for i in range(0, len(feed['entries'])):
+            if size > len(feed['entries']):
+                size = len(feed['entries'])
+
+            for i in range(0, size):
                 avviso = {}
                 avviso.update({
                     'titolo': feed['entries'][i]['title'],
