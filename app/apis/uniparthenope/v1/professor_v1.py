@@ -103,6 +103,11 @@ class getCourses(Resource):
             response = requests.request("GET", url + "calesa-service-v1/abilitazioni?aaOffAbilId=" + aaId,
                                         headers=headers, timeout=5)
             _response = response.json()
+            
+            if len(_response) == 0:
+                aaId = str(int(aaId)-1)
+                response = requests.request("GET", url + "calesa-service-v1/abilitazioni?aaOffAbilId=" + aaId, headers=headers, timeout=5)
+                _response = response.json()
 
             if response.status_code == 200:
                 for x in range(0, len(_response)):
