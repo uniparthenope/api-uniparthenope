@@ -514,11 +514,15 @@ class RSSNews(Resource):
                 else:
                     image = "~/images/image1.jpg"
 
+                html = ""
+                for p in parsed_html.find('div', attrs={'class': 'field-name-field-descrizione'}).find_all('p'):
+                    html += str(p)
+
                 notizia.update({
                     'titolo': feed['entries'][i]['title'],
                     'link': feed['entries'][i]['link'],
                     'data': feed['entries'][i]['published'],
-                    'HTML': str(parsed_html.find('div', attrs={'class': 'field-name-field-descrizione'}).find_all('p')).strip('[]'),
+                    'HTML': html,
                     'image': image
                 })
                 notizie.append(notizia)
@@ -554,13 +558,16 @@ class RSSAvvisi(Resource):
 
             for i in range(0, size):
                 avviso = {}
+                html = ""
 
                 parsed_html = BeautifulSoup(feed['entries'][i]['summary'], features="html.parser")
+                for p in parsed_html.find('div', attrs={'class': 'field-name-field-descrizione'}).find_all('p'):
+                    html += str(p)
                 avviso.update({
                     'titolo': feed['entries'][i]['title'],
                     'link': feed['entries'][i]['link'],
                     'data': feed['entries'][i]['published'],
-                    'HTML': str(parsed_html.find('div', attrs={'class': 'field-name-field-descrizione'}).find_all('p')).strip('[]')
+                    'HTML': html
                 })
                 avvisi.append(avviso)
             return avvisi, 200
