@@ -3,7 +3,7 @@ import traceback
 
 from app.apis.uniparthenope.v1.login_v1 import token_required, token_required_general
 from flask import g
-from app import api
+from app import api, Config
 from flask_restplus import Resource
 import requests
 from datetime import datetime, timedelta
@@ -68,10 +68,46 @@ parser.add_argument('aaId', type=str, required=True, help='User aaId')
 @ns.doc(parser=parser)
 class getCourses(Resource):
     @ns.doc(security='Basic Auth')
-    @token_required
+    @token_required_general
     def get(self, aaId):
         """Get Courses"""
 
+        if g.status == 200:
+            if g.response['user']['grpId'] == 7:
+                try:
+                    headers = {
+                        'Content-Type': "application/json",
+                        "Authorization": "Basic " + Config.USER_ROOT
+                    }
+
+                    response = requests.request("GET", url + "logistica-service-v1/logisticaPerDocente?docenteId=" + g.response['user']['docenteId'] + "&" + "aaOffId=" + aaId,
+                                                headers=headers, timeout=5)
+                    _response = response.json()
+
+                    print(_response)
+                except requests.exceptions.HTTPError as e:
+                    return {'errMsg': str(e)}, 500
+                except requests.exceptions.ConnectionError as e:
+                    return {'errMsg': str(e)}, 500
+                except requests.exceptions.Timeout as e:
+                    return {'errMsg': str(e)}, 500
+                except requests.exceptions.RequestException as e:
+                    return {'errMsg': str(e)}, 500
+                except:
+                    print("Unexpected error:")
+                    print("Title: " + sys.exc_info()[0].__name__)
+                    print("Description: " + traceback.format_exc())
+                    return {
+                               'errMsgTitle': sys.exc_info()[0].__name__,
+                               'errMsg': traceback.format_exc()
+                           }, 500
+            else:
+                return {'errMsg': 'Tipo di utente non abilitato!'}, 403
+        else:
+            return {'errMsg': 'Autenticazione fallita!'}, g.status
+
+
+        '''
         headers = {
             'Content-Type': "application/json",
             "Authorization": "Basic " + g.token
@@ -214,6 +250,7 @@ class getCourses(Resource):
                        'errMsgTitle': sys.exc_info()[0].__name__,
                        'errMsg': traceback.format_exc()
                    }, 500
+        '''
 
 
 # ------------- GET SESSION -------------
