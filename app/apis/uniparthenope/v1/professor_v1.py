@@ -284,3 +284,65 @@ class getSession(Resource):
                        }, 500
         else:
             return {'errMsg': 'Autenticazione fallita!'}, g.status
+
+
+# ------------- GET EXAMS STUDENTS LIST -------------
+
+
+parser = api.parser()
+parser.add_argument('cdsId', type=str, required=True, help='Exam cdsId')
+parser.add_argument('adId', type=str, required=True, help='Exam aaId')
+parser.add_argument('appId', type=str, required=True, help='Exam appId')
+
+
+@ns.doc(parser=parser)
+class getStudentList(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required
+    def get(self, cdsId, adId, appId):
+        """Get Courses"""
+
+        headers = {
+            'Content-Type': "application/json",
+            "Authorization": "Basic " + g.token
+        }
+
+        array = []
+
+        try:
+            response = requests.request("GET", url + "calesa-service-v1/appelli/" + cdsId +"/" + adId + "/" + appId + "/iscritti",
+                                        headers=headers, timeout=5)
+            _response = response.json()
+
+            if response.status_code == 200:
+                for i in range(len(_response)):
+                    array.append({
+                        "adregId": _response[i]['adregId'],
+                        "adsceId": _response[i]['adsceId'],
+                        "codFisStudente": _response[i]['codFisStudente'],
+                        "cognomeStudente": _response[i]['cognomeStudente'],
+                        "matricola": _response[i]['matricola'],
+                        "nomeStudente": _response[i]['nomeStudente'],
+                        "stuId": _response[i]['stuId'],
+                        "userId": _response[i]['userId']
+                    })
+                return array, 200
+            else:
+                return {'errMsg': _response['retErrMsg']}, response.status_code
+
+        except requests.exceptions.HTTPError as e:
+            return {'errMsg': str(e)}, 500
+        except requests.exceptions.ConnectionError as e:
+            return {'errMsg': str(e)}, 500
+        except requests.exceptions.Timeout as e:
+            return {'errMsg': str(e)}, 500
+        except requests.exceptions.RequestException as e:
+            return {'errMsg': str(e)}, 500
+        except:
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {
+                       'errMsgTitle': sys.exc_info()[0].__name__,
+                       'errMsg': traceback.format_exc()
+                   }, 500

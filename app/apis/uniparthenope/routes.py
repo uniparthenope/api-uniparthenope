@@ -8,7 +8,7 @@ ns = api.namespace('UniparthenopeApp', description='UniParthenope App operations
 
 from app.apis.uniparthenope.v1.login_v1 import Login, Logout
 from app.apis.uniparthenope.v1.students_v1 import DepInfo, GetPianoId, GetAverage, GetTotalExams, GetExams, CheckExam, CheckAppello, CheckPrenotazione, getReservations, getProfessors, Taxes, BookExam, DeleteReservation
-from app.apis.uniparthenope.v1.professor_v1 import getCourses, getSession, DetInfo
+from app.apis.uniparthenope.v1.professor_v1 import getCourses, getSession, DetInfo, getStudentList
 from app.apis.uniparthenope.v1.general_v1 import Sedi, CurrentAA, RecentAD, InfoCourse, InfoPersone, PersonalImage, ProfImage, RSSNews, RSSAvvisi, Privacy, Anagrafica
 from app.apis.uniparthenope.v2.students_v2 import MyExams
 
@@ -35,6 +35,7 @@ ns.add_resource(MyExams, '/v2/students/myExams/<matId>', methods=['GET'])
 ns.add_resource(DetInfo, '/v1/professor/detailedInfo/<docenteId>', methods=['GET'])
 ns.add_resource(getCourses, '/v1/professor/getCourses/<aaId>', methods=['GET'])
 ns.add_resource(getSession, '/v1/professor/getSession', methods=['GET'])
+ns.add_resource(getStudentList, '/v1/professor/getStudentList/<cdsId>/<adId>/<appId>', methods=['GET'])
 
 ns.add_resource(CurrentAA, '/v1/general/current_aa/<cdsId>', methods=['GET'])
 ns.add_resource(RecentAD, '/v1/general/recentAD/<adId>', methods=['GET'])
