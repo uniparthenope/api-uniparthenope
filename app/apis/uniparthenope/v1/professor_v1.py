@@ -64,6 +64,8 @@ class DetInfo(Resource):
 parser = api.parser()
 parser.add_argument('aaId', type=str, required=True, help='User aaId')
 
+def getAdId(arr):
+    return arr['adId']
 
 @ns.doc(parser=parser)
 class getCourses(Resource):
@@ -124,7 +126,7 @@ class getCourses(Resource):
                                         'sede': sede,
                                         'adLogId': _response[i]['adLogId']
                                     })
-                        return array.sort(key=array.get('adId')), 200
+                        return sorted(array, key=lambda k: k['adDes']), 200
                     else:
                         return {'errMsg': _response['retErrMsg']}, response.status_code
 
