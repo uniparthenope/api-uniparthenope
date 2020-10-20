@@ -124,7 +124,7 @@ class getCourses(Resource):
                                         'sede': sede,
                                         'adLogId': _response[i]['adLogId']
                                     })
-                        return array, 200
+                        return array.sort(key=array.get('adId')), 200
                     else:
                         return {'errMsg': _response['retErrMsg']}, response.status_code
 
