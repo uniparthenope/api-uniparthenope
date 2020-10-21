@@ -499,6 +499,7 @@ class RSSNews(Resource):
 
         try:
             feed = feedparser.parse("https://www.uniparthenope.it/rss/tutte-le-news")
+            print(feed['entries'][2]['summary'])
 
             notizie = []
 
@@ -559,14 +560,19 @@ class RSSAvvisi(Resource):
             for i in range(0, size):
                 avviso = {}
                 html = ""
+                abstract = ""
 
                 parsed_html = BeautifulSoup(feed['entries'][i]['summary'], features="html.parser")
                 for p in parsed_html.find('div', attrs={'class': 'field-name-field-descrizione'}).find_all('p'):
                     html += str(p)
+                if parsed_html.find('div', attrs={'class': 'field-name-body'}) is not None:
+                    for p in parsed_html.find('div', attrs={'class': 'field-name-body'}).find_all('p'):
+                        abstract += str(p)
                 avviso.update({
                     'titolo': feed['entries'][i]['title'],
                     'link': feed['entries'][i]['link'],
                     'data': feed['entries'][i]['published'],
+                    'abstract': abstract,
                     'HTML': html
                 })
                 avvisi.append(avviso)
