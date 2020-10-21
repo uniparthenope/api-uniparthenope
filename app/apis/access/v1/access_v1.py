@@ -67,7 +67,7 @@ class Access(Resource):
                                                            cdsId=r['user']['trattiCarriera'][0]['cdsId'])
                                         else:
                                             u = UserAccess(username=userId, classroom=content['accessType'],
-                                                           grpId=None, persId=None,
+                                                           grpId=r['user']['grpId'], persId=None,
                                                            stuId=None, matId=None, matricola="", cdsId=None)
                                         db.session.add(u)
                                         db.session.commit()
