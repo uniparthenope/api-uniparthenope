@@ -499,7 +499,6 @@ class RSSNews(Resource):
 
         try:
             feed = feedparser.parse("https://www.uniparthenope.it/rss/tutte-le-news")
-            print(feed['entries'][2]['summary'])
 
             notizie = []
 
