@@ -167,7 +167,7 @@ def auth(token):
                 g.response = r
                 return r, 200
             else:
-                response = requests.request("GET", url + "login", headers=headers, timeout=5)
+                response = requests.request("GET", url + "login", headers=headers, timeout=60)
                 if response.status_code == 401:
                     try:
                         r = ldap_auth(username, password)
@@ -253,7 +253,7 @@ class Logout(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "logout/;jsessionid=" + g.pop('auth_token'), headers=headers, timeout=5)
+            response = requests.request("GET", url + "logout/;jsessionid=" + g.pop('auth_token'), headers=headers, timeout=60)
 
             if response.status_code == 200:
                 return {"logout": "ok"}, 200
