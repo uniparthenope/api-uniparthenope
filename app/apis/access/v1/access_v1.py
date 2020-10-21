@@ -248,8 +248,9 @@ class Certification(Resource):
                                        }, 500
                         else:
                             try:
-                                if user.classroom == "presence" and content['covidStatement'] == False:
-                                    return {'errMsg': 'Operazione non consetita. Si è scelto di seguire in presenza!'}, 500
+                                if r['user']['grpId'] != 7 or r['user']['grpId'] != 99 or r['user']['grpId'] != 97:
+                                    if user.classroom == "presence" and content['covidStatement'] == False:
+                                        return {'errMsg': 'Operazione non consetita. Si è scelto di seguire in presenza!'}, 500
                                 else:
                                     user.autocertification = content['covidStatement']
                                     db.session.commit()
