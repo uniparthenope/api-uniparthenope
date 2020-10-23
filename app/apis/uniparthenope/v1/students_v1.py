@@ -1,17 +1,11 @@
 from flask import g, request
-from app import api
+from app import api, Config
 from flask_restplus import Resource, fields
 import requests
-from datetime import datetime, timedelta
-import base64
-import json
+from datetime import datetime
 import sys
 import traceback
-import urllib
-from concurrent.futures import ThreadPoolExecutor
-from bs4 import BeautifulSoup
 from babel.numbers import format_currency
-import unicodedata
 
 from app.apis.uniparthenope.v1.login_v1 import token_required, token_required_general
 
@@ -618,83 +612,12 @@ parser.add_argument('aaId', type=str, required=True, help='User stuId')
 parser.add_argument('cdsId', type=str, required=True, help='User pianoId')
 
 
-def fetch(_response):
-    _nome = _response['docenteCognome'] + "%20" + _response['docenteNome']
-    nome = _nome.replace(" ", "+")
-    url = 'https://www.uniparthenope.it/rubrica?nome_esteso_1=' + nome
-    response = urllib.request.urlopen(url)
-    webContent = response.read()
-
-    parsed = BeautifulSoup(webContent, 'html.parser')
-
-    div = parsed.find('div', attrs={'class': 'region region-content'})
-
-    ul = div.find('ul', attrs={'class': 'rubrica-list'})
-    if ul is not None:
-        tel = ul.find('div', attrs={'class': 'views-field views-field-contatto-tfu'})
-        if tel is not None:
-            tel_f = tel.find('span', attrs={'class': 'field-content'})
-            tel_finale = tel_f.text
-        else:
-            tel_finale = "--"
-
-        email = ul.find('div', attrs={'class': 'views-field views-field-contatto-email'})
-        email_finale = email.find('span', attrs={'class': 'field-content'})
-
-        scheda = ul.find('div', attrs={'class': 'views-field views-field-view-uelement'})
-        scheda_finale = scheda.find('span', attrs={'class': 'field-content'})
-
-        for a in scheda_finale.find_all('a', href=True):
-            link = a['href']
-
-        link_pers = str(link).split("/")[-1]
-
-        response = urllib.request.urlopen(link)
-        webContent = response.read()
-
-        parsed = BeautifulSoup(webContent, 'html.parser')
-        div = parsed.find('div', attrs={'class': 'views-field views-field-field-ugov-foto'})
-        img = div.find('img', attrs={'class': 'img-responsive'})
-
-        prof = ({
-            'docenteNome': _response['docenteNome'],
-            'docenteCognome': _response['docenteCognome'],
-            'docenteId': _response['docenteId'],
-            'docenteMat': _response['docenteMatricola'],
-            'corso': _response['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adDes'],
-            'adId': _response['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adId'],
-            'telefono': str(tel_finale),
-            'email': str(email_finale.text.rstrip()),
-            'link': str(link),
-            'ugov_id': link_pers,
-            'url_pic': str(img['src'])
-        })
-    else:
-        prof = ({
-            'docenteNome': _response['docenteNome'],
-            'docenteCognome': _response['docenteCognome'],
-            'docenteId': _response['docenteId'],
-            'docenteMat': _response['docenteMatricola'],
-            'corso': _response['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adDes'],
-            'adId': _response['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adId'],
-            'telefono': "",
-            'email': "",
-            'link': "",
-            'ugov_id': "",
-            'url_pic': "https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/default_images/ugov_fotopersona.jpg"
-        })
-
-    return prof, 200
-
-
 @ns.doc(parser=parser)
 class getProfessors(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
     def get(self, aaId, cdsId):
         """Get professor's list"""
-
-        pool = ThreadPoolExecutor(max_workers=50)
 
         headers = {
             'Content-Type': "application/json",
@@ -709,38 +632,34 @@ class getProfessors(Resource):
                                             headers=headers, timeout=5)
                 _response = response.json()
 
-                arr_id = []
-                temp_prof = []
-
                 if response.status_code == 200:
                     for i in range(len(_response)):
-                        if _response[i]['docenteId'] not in arr_id:
-                            arr_id.append(_response[i]['docenteId'])
-                            temp_prof.append(_response[i])
+                        headers = {
+                            'Content-Type': "application/json",
+                            "Authorization": "Basic " + Config.USER_ROOT
+                        }
 
-                    for res in pool.map(fetch, temp_prof):
-                        info_json = json.loads(json.dumps(res))[0]
-                        info_img = info_json['url_pic']
-                        img = base64.b64encode(requests.get(info_img, verify=False).content)
+                        response_prof = requests.request("GET", url + "anagrafica-service-v2/docenti/" + str(_response[i]['docenteId']), headers=headers, timeout=5)
+                        _response_prof = response_prof.json()
 
-                        item = ({
-                            'docenteNome': info_json['docenteNome'],
-                            'docenteCognome': info_json['docenteCognome'],
-                            'docenteId': info_json['docenteId'],
-                            'docenteMat': info_json['docenteMat'],
-                            'corso': info_json['corso'],
-                            'adId': info_json['adId'],
-                            'telefono': info_json['telefono'],
-                            'email': info_json['email'],
-                            'link': info_json['link'],
-                            'ugov_id': info_json['ugov_id'],
-                            'url_pic': img.decode('utf-8')
-                        })
-                        array.append(item)
+                        if response_prof.status_code == 200:
+                            array.append({
+                                'docenteNome': _response_prof['docenteNome'],
+                                'docenteCognome': _response_prof['docenteCognome'],
+                                'docenteId': _response_prof['docenteId'],
+                                'docenteMat': _response_prof['docenteMatricola'],
+                                'corso': _response[i]['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adDes'],
+                                'adId': _response[i]['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adId'],
+                                'telefono': _response_prof['cellulare'],
+                                'email': _response_prof['eMail'],
+                                'link': _response_prof['hyperlink'],
+                                'ugov_id': _response_prof['idAb'],
+                                'url_pic': ''
+                            })
+                    return array, 200
+
                 else:
                     return {'errMsg': _response['retErrMsg']}, response.status_code
-
-                return array, 200
 
             except requests.exceptions.HTTPError as e:
                 return {'errMsg': str(e)}, 500
