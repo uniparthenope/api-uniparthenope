@@ -4,9 +4,13 @@ from flask_restplus import Resource, fields
 import requests
 from datetime import datetime
 import sys
+import json
+import base64
 import traceback
 from babel.numbers import format_currency
+from concurrent.futures import ThreadPoolExecutor
 
+from app.apis.uniparthenope.v1.general_v1 import ProfImage
 from app.apis.uniparthenope.v1.login_v1 import token_required, token_required_general
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
@@ -612,18 +616,50 @@ parser.add_argument('aaId', type=str, required=True, help='User stuId')
 parser.add_argument('cdsId', type=str, required=True, help='User pianoId')
 
 
+def fetch(prof):
+    headers = {
+        'Content-Type': "application/json",
+        "Authorization": "Basic " + Config.USER_ROOT
+    }
+
+    response_prof = requests.request("GET", url + "anagrafica-service-v2/docenti/" + str(prof['docenteId']), headers=headers, timeout=5)
+    _response_prof = response_prof.json()
+
+    if response_prof.status_code == 200:
+        item = ({
+            'docenteNome': _response_prof[0]['docenteNome'],
+            'docenteCognome': _response_prof[0]['docenteCognome'],
+            'docenteId': _response_prof[0]['docenteId'],
+            'docenteMat': _response_prof[0]['docenteMatricola'],
+            'corso': prof['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adDes'],
+            'adId': prof['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adId'],
+            'telefono': _response_prof[0]['cellulare'],
+            'email': _response_prof[0]['eMail'],
+            'link': _response_prof[0]['hyperlink'],
+            'ugov_id': _response_prof[0]['idAb'],
+            'url_pic': 'https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/default_images/ugov_fotopersona.jpg',
+            'biography': _response_prof[0]['noteBiografiche'],
+            'notes': _response_prof[0]['noteDocente']
+        })
+
+        return item
+
+
 @ns.doc(parser=parser)
 class getProfessors(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
     def get(self, aaId, cdsId):
         """Get professor's list"""
+        
+        pool = ThreadPoolExecutor(max_workers=50)
+
+        array = []
+        array_docenteId = []
 
         headers = {
             'Content-Type': "application/json",
         }
-
-        array = []
 
         if g.status == 200:
             try:
@@ -633,30 +669,19 @@ class getProfessors(Resource):
                 _response = response.json()
 
                 if response.status_code == 200:
-                    for i in range(len(_response)):
-                        headers = {
-                            'Content-Type': "application/json",
-                            "Authorization": "Basic " + Config.USER_ROOT
-                        }
-
-                        response_prof = requests.request("GET", url + "anagrafica-service-v2/docenti/" + str(_response[i]['docenteId']), headers=headers, timeout=5)
-                        _response_prof = response_prof.json()
-
-                        if response_prof.status_code == 200:
-                            array.append({
-                                'docenteNome': _response_prof['docenteNome'],
-                                'docenteCognome': _response_prof['docenteCognome'],
-                                'docenteId': _response_prof['docenteId'],
-                                'docenteMat': _response_prof['docenteMatricola'],
-                                'corso': _response[i]['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adDes'],
-                                'adId': _response[i]['chiaveUdContestualizzata']['chiaveAdContestualizzata']['adId'],
-                                'telefono': _response_prof['cellulare'],
-                                'email': _response_prof['eMail'],
-                                'link': _response_prof['hyperlink'],
-                                'ugov_id': _response_prof['idAb'],
-                                'url_pic': ''
-                            })
-                    return array, 200
+                    for res in pool.map(fetch, _response):
+                        info_json = json.loads(json.dumps(res))
+                        if info_json['docenteId'] not in array_docenteId:
+                            #info_img = info_json['url_pic']
+                            #img = base64.b64encode(requests.get(info_img, verify=False).content)
+                            #info_json['url_pic'] = img.decode('utf-8')
+                            array_docenteId.append(info_json['docenteId'])
+                            array.append(info_json)
+                        else:
+                            docente = next((item for item in array if item["docenteId"] == info_json['docenteId']), None)
+                            docente['corso'] += ", " + info_json['corso']
+                    
+                    return sorted(array, key=lambda k: k['docenteCognome']), 200
 
                 else:
                     return {'errMsg': _response['retErrMsg']}, response.status_code
@@ -669,16 +694,16 @@ class getProfessors(Resource):
                 return {'errMsg': str(e)}, 500
             except requests.exceptions.RequestException as e:
                 return {'errMsg': str(e)}, 500
-            except:
-                return {'errMsg': 'generic error'}, 500
+            except: 
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
+                return {
+                    'errMsgTitle': sys.exc_info()[0].__name__,
+                    'errMsg': traceback.format_exc()
+                }, 500
         else:
-            print("Unexpected error:")
-            print("Title: " + sys.exc_info()[0].__name__)
-            print("Description: " + traceback.format_exc())
-            return {
-                       'errMsgTitle': sys.exc_info()[0].__name__,
-                       'errMsg': traceback.format_exc()
-                   }, 500
+            return {'errMsg': 'Autenticazione fallita!'}, g.status
 
 
 # ------------- TAXES -------------
