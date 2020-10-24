@@ -1,3 +1,5 @@
+from functools import partial
+
 from flask import g, request
 from app import api, Config
 from flask_restplus import Resource, fields
@@ -91,7 +93,7 @@ class GetPianoId(Resource):
             _response = response.json()
 
             if response.status_code == 200:
-                if len(_response) is not 0:
+                if len(_response) != 0:
                     pianoId = _response[0]['pianoId']
                 else:
                     pianoId = None
@@ -536,12 +538,57 @@ parser = api.parser()
 parser.add_argument('matId', type=str, required=True, help='User matId')
 
 
+def fetch_appelli(token, appelli):
+    headers = {
+        'Content-Type': "application/json",
+        "Authorization": "Basic " + token
+    }
+
+    response2 = requests.request("GET", url + "calesa-service-v1/appelli/" + str(
+        appelli['cdsId']) + "/" + str(appelli['adId']) + "/" + str(appelli['appId']),
+                                 headers=headers, timeout=5)
+    _response2 = response2.json()
+
+    adId = appelli['adId']
+    appId = appelli['appId']
+
+    item = []
+
+    for x in range(0, len(_response2['turni'])):
+        if _response2['turni'][x]['appLogId'] == appelli['appLogId']:
+            if _response2['stato'] != "C":
+                item.append({
+                    'adId': adId,
+                    'appId': appId,
+                    'nomeAppello': _response2['adDes'],
+                    'nome_pres': _response2['presidenteNome'],
+                    'cognome_pres': _response2['presidenteCognome'],
+                    'numIscritti': _response2['numIscritti'],
+                    'note': _response2['note'],
+                    'statoDes': _response2['statoDes'],
+                    'statoEsito': _response2['statoInsEsiti']['value'],
+                    'statoVerb': _response2['statoVerb']['value'],
+                    'statoPubbl': _response2['statoPubblEsiti']['value'],
+                    'tipoApp': _response2['tipoGestAppDes'],
+                    'aulaId': _response2['turni'][x]['aulaId'],
+                    'edificioId': _response2['turni'][x]['edificioCod'],
+                    'edificioDes': _response2['turni'][x]['edificioDes'],
+                    'aulaDes': _response2['turni'][x]['aulaDes'],
+                    'desApp': _response2['turni'][x]['des'],
+                    'dataEsa': _response2['turni'][x]['dataOraEsa']
+                })
+
+    return item
+
+
 @ns.doc(parser=parser)
 class getReservations(Resource):
     @ns.doc(security='Basic Auth')
     @token_required
     def get(self, matId):
         """Get reservations"""
+
+        pool = ThreadPoolExecutor(max_workers=50)
 
         array = []
 
@@ -555,41 +602,12 @@ class getReservations(Resource):
             _response = response.json()
 
             if response.status_code == 200:
-                for i in range(0, len(_response)):
-                    response2 = requests.request("GET", url + "calesa-service-v1/appelli/" + str(
-                        _response[i]['cdsId']) + "/" + str(_response[i]['adId']) + "/" + str(_response[i]['appId']),
-                                                 headers=headers, timeout=5)
-                    _response2 = response2.json()
+                func = partial(fetch_appelli, g.token)
+                for res in pool.map(func, _response):
+                    info_json = json.loads(json.dumps(res))
+                    array += info_json
 
-                    adId = _response[i]['adId']
-                    appId = _response[i]['appId']
-
-                    for x in range(0, len(_response2['turni'])):
-                        if _response2['turni'][x]['appLogId'] == _response[i]['appLogId']:
-                            if _response2['stato'] is not "C":
-                                item = ({
-                                    'adId': adId,
-                                    'appId': appId,
-                                    'nomeAppello': _response2['adDes'],
-                                    'nome_pres': _response2['presidenteNome'],
-                                    'cognome_pres': _response2['presidenteCognome'],
-                                    'numIscritti': _response2['numIscritti'],
-                                    'note': _response2['note'],
-                                    'statoDes': _response2['statoDes'],
-                                    'statoEsito': _response2['statoInsEsiti']['value'],
-                                    'statoVerb': _response2['statoVerb']['value'],
-                                    'statoPubbl': _response2['statoPubblEsiti']['value'],
-                                    'tipoApp': _response2['tipoGestAppDes'],
-                                    'aulaId': _response2['turni'][x]['aulaId'],
-                                    'edificioId': _response2['turni'][x]['edificioCod'],
-                                    'edificioDes': _response2['turni'][x]['edificioDes'],
-                                    'aulaDes': _response2['turni'][x]['aulaDes'],
-                                    'desApp': _response2['turni'][x]['des'],
-                                    'dataEsa': _response2['turni'][x]['dataOraEsa']
-                                })
-                                array.append(item)
-
-                return array
+                return array, 200
             else:
                 return {'errMsg': _response['retErrMsg']}, response.status_code
         except requests.exceptions.HTTPError as e:
@@ -616,7 +634,7 @@ parser.add_argument('aaId', type=str, required=True, help='User stuId')
 parser.add_argument('cdsId', type=str, required=True, help='User pianoId')
 
 
-def fetch(prof):
+def fetch_professors(prof):
     headers = {
         'Content-Type': "application/json",
         "Authorization": "Basic " + Config.USER_ROOT
@@ -669,7 +687,7 @@ class getProfessors(Resource):
                 _response = response.json()
 
                 if response.status_code == 200:
-                    for res in pool.map(fetch, _response):
+                    for res in pool.map(fetch_professors, _response):
                         info_json = json.loads(json.dumps(res))
                         if info_json['docenteId'] not in array_docenteId:
                             #info_img = info_json['url_pic']
