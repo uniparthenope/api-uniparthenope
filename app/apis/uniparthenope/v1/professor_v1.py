@@ -64,8 +64,6 @@ class DetInfo(Resource):
 parser = api.parser()
 parser.add_argument('aaId', type=str, required=True, help='User aaId')
 
-def getAdId(arr):
-    return arr['adId']
 
 @ns.doc(parser=parser)
 class getCourses(Resource):
@@ -150,7 +148,6 @@ class getCourses(Resource):
                 return {'errMsg': 'Tipo di utente non abilitato!'}, 403
         else:
             return {'errMsg': 'Autenticazione fallita!'}, g.status
-
 
 
 # ------------- GET SESSION -------------

@@ -12,7 +12,6 @@ import traceback
 from babel.numbers import format_currency
 from concurrent.futures import ThreadPoolExecutor
 
-from app.apis.uniparthenope.v1.general_v1 import ProfImage
 from app.apis.uniparthenope.v1.login_v1 import token_required, token_required_general
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
@@ -72,6 +71,8 @@ class DepInfo(Resource):
 
 
 # ------------- PIANO ID -------------
+# TODO DA ELIMINARE???
+
 parser = api.parser()
 parser.add_argument('stuId', type=str, required=True, help='User stuId')
 
@@ -254,6 +255,9 @@ class GetTotalExams(Resource):
 
 
 # ------------- EXAMS -------------
+# TODO DA ELIMINARE???
+
+
 parser = api.parser()
 parser.add_argument('stuId', type=str, required=True, help='User stuId')
 parser.add_argument('pianoId', type=str, required=True, help='User pianoId')

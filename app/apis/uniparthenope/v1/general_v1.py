@@ -303,7 +303,7 @@ class CurrentAA(Resource):
 
 
 # ------------- AD RECENTE -------------
-
+# TODO DA ELIMINARE???
 
 parser = api.parser()
 parser.add_argument('adId', type=str, required=True, help='User adId')
@@ -405,7 +405,7 @@ class InfoCourse(Resource):
 
 
 # ------------- INFO PERSONE -------------
-
+# TODO DA ELIMINARE???
 
 parser = api.parser()
 parser.add_argument('nome_completo', type=str, required=True, help='Nome e Cognome professore')
@@ -598,7 +598,8 @@ class Privacy(Resource):
 
         return {'privacy': text}, 200
 
-# ------------- PRIVACY -------------
+
+# ------------- PLACES -------------
 
 
 class Sedi(Resource):
