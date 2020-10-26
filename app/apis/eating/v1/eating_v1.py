@@ -226,7 +226,7 @@ class addMenu(Resource):
 
         content = request.json
 
-        if g.status == 202:
+        if g.status == 200 and g.response['user']['grpId'] == 98:
             try:
                 if 'nome' in content and 'descrizione' in content and 'tipologia' in content and 'prezzo' in content and 'attivo' in content and 'img' in content:
                     if content['nome'] == "" or content['descrizione'] == "" or content['tipologia'] == "" or content['prezzo'] == "" or content['attivo'] == "":
@@ -276,7 +276,7 @@ class getMenuBar(Resource):
 
         array = []
 
-        if g.status == 202:
+        if g.status == 200 and g.response['user']['grpId'] == 98:
             try:
                 base64_bytes = g.token.encode('utf-8')
                 message_bytes = base64.b64decode(base64_bytes)
@@ -330,7 +330,7 @@ class removeMenu(Resource):
     def get(self, id):
         """Remove menu by Id"""
 
-        if g.status == 202:
+        if g.status == 200 and g.response['user']['grpId'] == 98:
             try:
                 base64_bytes = g.token.encode('utf-8')
                 message_bytes = base64.b64decode(base64_bytes)
