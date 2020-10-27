@@ -1,5 +1,7 @@
+import urllib
 from functools import partial
 
+from bs4 import BeautifulSoup
 from flask import g, request
 from app import api, Config
 from flask_restplus import Resource, fields
@@ -7,7 +9,6 @@ import requests
 from datetime import datetime
 import sys
 import json
-import base64
 import traceback
 from babel.numbers import format_currency
 from concurrent.futures import ThreadPoolExecutor
@@ -659,7 +660,7 @@ def fetch_professors(prof):
             'email': _response_prof[0]['eMail'],
             'link': _response_prof[0]['hyperlink'],
             'ugov_id': _response_prof[0]['idAb'],
-            'url_pic': 'https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/default_images/ugov_fotopersona.jpg',
+            'url_pic': (BeautifulSoup(urllib.request.urlopen('https://www.uniparthenope.it/ugov/person/' + _response_prof[0]['idAb']).read(), features="html.parser")).find('div', attrs={'class': 'views-field-field-ugov-foto'}).find('img').attrs['src'],
             'biography': _response_prof[0]['noteBiografiche'],
             'notes': _response_prof[0]['noteDocente'],
             'publications': _response_prof[0]['notePubblicazioni'],
@@ -698,9 +699,6 @@ class getProfessors(Resource):
                     for res in pool.map(fetch_professors, _response):
                         info_json = json.loads(json.dumps(res))
                         if info_json['docenteId'] not in array_docenteId:
-                            #info_img = info_json['url_pic']
-                            #img = base64.b64encode(requests.get(info_img, verify=False).content)
-                            #info_json['url_pic'] = img.decode('utf-8')
                             array_docenteId.append(info_json['docenteId'])
                             array.append(info_json)
                         else:
