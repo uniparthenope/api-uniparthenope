@@ -661,7 +661,11 @@ def fetch_professors(prof):
             'ugov_id': _response_prof[0]['idAb'],
             'url_pic': 'https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/default_images/ugov_fotopersona.jpg',
             'biography': _response_prof[0]['noteBiografiche'],
-            'notes': _response_prof[0]['noteDocente']
+            'notes': _response_prof[0]['noteDocente'],
+            'publications': _response_prof[0]['notePubblicazioni'],
+            'curriculum': _response_prof[0]['noteCurriculum'],
+            'ruolo': _response_prof[0]['ruoloDocDes'],
+            'settore': _response_prof[0]['settDes']
         })
 
         return item

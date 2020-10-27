@@ -161,8 +161,9 @@ def auth(token):
                     "grpId": user.grpId,
                     "telefono": user.telefono,
                     "sesso": user.sesso,
-                    "email": user.email
-                    }, "userId": username
+                    "email": user.email,
+                    "userId": username
+                    }
                 }
                 g.response = r
                 return r, 200
