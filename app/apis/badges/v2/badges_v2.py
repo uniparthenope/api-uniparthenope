@@ -13,6 +13,7 @@ import sqlalchemy
 from flask import g, send_file, Response, request
 from flask_restplus import Resource, fields
 
+from app.apis.uniparthenope.v1.general_v1 import Anagrafica
 from app.config import Config
 from app import api, db
 from app.apis.uniparthenope.v1.login_v1 import token_required_general
@@ -345,6 +346,21 @@ class sendInfo(Resource):
             if 'receivedToken' in content:
                 #TODO inserire esito in una tabella
                 try:
+                    if g.response['user']['grpId'] == 6:
+                        id = str(g.response['user']['persId'])
+                    elif g.response['user']['grpId'] == 7:
+                        id = str(g.response['user']['docenteId'])
+
+                    info = Anagrafica(Resource).get(id)
+                    info_json = json.loads(json.dumps(info))[0]
+
+                    if g.response['user']['grpId'] == 6:
+                        info_json['matricola'] = g.response['user']['trattiCarriera'][0]['matricola']
+                    info_json['username'] = g.response['user']['userId']
+                    info_json['ruolo'] = g.response['user']['grpDes']
+
+                    print(info_json)
+
                     headers = {
                         'Content-Type': "application/json",
                         "Authorization": "key=" + Config.API_KEY_FIREBASE
@@ -361,7 +377,7 @@ class sendInfo(Resource):
                         },
                         "data": {
                             "page": "info_received",
-                            "info": g.response
+                            "info": info_json
                         },
                         "content_avaible": True,
                         "priority": "High",
