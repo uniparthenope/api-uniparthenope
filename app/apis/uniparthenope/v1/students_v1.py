@@ -649,6 +649,11 @@ def fetch_professors(prof):
     _response_prof = response_prof.json()
 
     if response_prof.status_code == 200:
+        try:
+            url_pic = (BeautifulSoup(urllib.request.urlopen('https://www.uniparthenope.it/ugov/person/' + str(_response_prof[0]['idAb'])).read(), features="html.parser")).find('div', attrs={'class': 'views-field-field-ugov-foto'}).find('img').attrs['src']
+        except urllib.error.HTTPError:
+            url_pic = 'https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/default_images/ugov_fotopersona.jpg' 
+
         item = ({
             'docenteNome': _response_prof[0]['docenteNome'],
             'docenteCognome': _response_prof[0]['docenteCognome'],
@@ -660,14 +665,14 @@ def fetch_professors(prof):
             'email': _response_prof[0]['eMail'],
             'link': _response_prof[0]['hyperlink'],
             'ugov_id': _response_prof[0]['idAb'],
-            'url_pic': (BeautifulSoup(urllib.request.urlopen('https://www.uniparthenope.it/ugov/person/' + _response_prof[0]['idAb']).read(), features="html.parser")).find('div', attrs={'class': 'views-field-field-ugov-foto'}).find('img').attrs['src'],
             'biography': _response_prof[0]['noteBiografiche'],
+            'url_pic': url_pic,
             'notes': _response_prof[0]['noteDocente'],
             'publications': _response_prof[0]['notePubblicazioni'],
             'curriculum': _response_prof[0]['noteCurriculum'],
             'ruolo': _response_prof[0]['ruoloDocDes'],
             'settore': _response_prof[0]['settDes']
-        })
+            })
 
         return item
 
