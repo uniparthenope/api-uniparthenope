@@ -1,4 +1,5 @@
 import base64
+import json
 import sys
 import traceback
 from io import BytesIO
@@ -236,9 +237,9 @@ insert_token_notification = ns.model("TokenNotification", {
 class sendRequestInfo(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
-    @ns.expect(insert_token)
+    @ns.expect(insert_token_notification)
     def post(self):
-        """Check QrCode"""
+        """Send request Info"""
         content = request.json
 
         if g.status == 200:
@@ -271,11 +272,100 @@ class sendRequestInfo(Resource):
                             "showWhenInForeground": "true",
                         },
                         "data": {
-                          "receivedToken": content['myToken']
+                            "receivedToken": content['myToken'],
+                            "page": "info"
                         },
                         "content_avaible": True,
                         "priority": "High",
                         "to": receivedToken
+                    }
+
+                    firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
+                                                         headers=headers, timeout=5)
+
+                    print(firebase_response.content)
+
+                    if firebase_response.status_code == 200:
+                        return {
+                            "status": "success",
+                            "message": "Notifica inviata con successo!"
+                        }, 200
+
+                except requests.exceptions.HTTPError as e:
+                    return {
+                               "status": "Error",
+                               "message": str(e)
+                           }, 500
+                except requests.exceptions.ConnectionError as e:
+                    return {
+                               "status": "Error",
+                               "message": str(e)
+                           }, 500
+                except requests.exceptions.Timeout as e:
+                    return {
+                               "status": "Error",
+                               "message": str(e)
+                           }, 500
+                except requests.exceptions.RequestException as e:
+                    return {
+                        "status": "Error",
+                        "message": str(e)
+                    }, 500
+                except:
+                    print("Unexpected error:")
+                    print("Title: " + sys.exc_info()[0].__name__)
+                    print("Description: " + traceback.format_exc())
+                    return {
+                        "status": "Error",
+                        "message": traceback.format_exc()
+                    }, 500
+            else:
+                return {'errMsg': 'Error payload'}, 500
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
+
+
+# ------------- SEND INFO -------------
+
+
+insert_token_notification_info = ns.model("TokenNotificationInfo", {
+    "receivedToken": fields.String(description="token", required=True)
+})
+
+
+class sendInfo(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    @ns.expect(insert_token_notification)
+    def post(self):
+        """Send Info"""
+        content = request.json
+
+        if g.status == 200:
+            if 'receivedToken' in content:
+                #TODO inserire esito in una tabella
+                try:
+                    headers = {
+                        'Content-Type': "application/json",
+                        "Authorization": "key=" + Config.API_KEY_FIREBASE
+                    }
+
+                    #TODO dare titolo a notifica
+                    body = {
+                        "notification": {
+                            "title": 'Informazioni ottenute',
+                            "body": g.response['user']['userId'] + " ha condiviso le sue informazioni.",
+                            "badge": "1",
+                            "sound": "default",
+                            "showWhenInForeground": "true",
+                        },
+                        "data": {
+                            "page": "info_received",
+                            "info": g.response
+                        },
+                        "content_avaible": True,
+                        "priority": "High",
+                        "to": content['receivedToken']
                     }
 
                     firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
