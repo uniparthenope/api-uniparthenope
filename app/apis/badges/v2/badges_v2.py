@@ -5,6 +5,8 @@ from io import BytesIO
 import qrcode
 from datetime import datetime, timedelta
 import random, string
+
+import requests
 import sqlalchemy
 
 from flask import g, send_file, Response, request
@@ -21,6 +23,59 @@ from app.log.log import time_log
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
 
+# ------------- QR-CODE -------------
+
+
+def randomword(length):
+    letters = string.ascii_lowercase + string.digits
+    return ''.join(random.choice(letters) for i in range(length))
+
+
+class QrCode_v2(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    @ns.produces(['image/png'])
+    def get(self):
+        """Get qr-code image"""
+
+        if g.status == 200:
+            try:
+                if 'Token-notification' in request.headers:
+                    if g.response['user']['grpId'] == 6:
+                        token_qr = g.response['user']['userId'] + ";" + randomword(30) + ";" + str(
+                            g.response['user']['grpId']) + ";" + g.response['user']['trattiCarriera'][0]['matricola']
+                    else:
+                        token_qr = g.response['user']['userId'] + ";" + randomword(30) + ";" + str(
+                            g.response['user']['grpId'])
+
+                    token_qr_notification = token_qr + ";" + request.headers['Token-notification']
+
+                    token_qr_final = (base64.b64encode(bytes(str(token_qr).encode("utf-8")))).decode('utf-8')
+                    token_qr_final_notification = (base64.b64encode(bytes(str(token_qr_notification).encode("utf-8")))).decode('utf-8')
+
+                    expire_data = datetime.now() + timedelta(minutes=10)
+
+                    badge = Badges(token=token_qr_final, expire_time=expire_data)
+                    db.session.add(badge)
+                    db.session.commit()
+
+                    pil_img = qrcode.make(token_qr_final_notification)
+                    img_io = BytesIO()
+                    pil_img.save(img_io, 'PNG')
+                    img_io.seek(0)
+                    return send_file(img_io, mimetype='image/png', cache_timeout=-1)
+                else:
+                    return {'errMsg': 'Payload error!'}, 500
+            except:
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
+                return {'errMsg': 'Image creation error'}, 500
+
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
+
+
 # ------------- QR-CODE CHECK -------------
 
 
@@ -29,7 +84,8 @@ insert_token = ns.model("Token", {
     "id_tablet": fields.String(description="identificativo tablet", required=True)
 })
 
-def returnMessage(message,duration,color,position):
+
+def returnMessage(message, duration, color, position):
     return {
         'message': message,
         'duration': int(duration),
@@ -53,8 +109,8 @@ class QrCodeCheck_v2(Resource):
                     base64_bytes = content['token'].encode('utf-8')
                     message_bytes = base64.b64decode(base64_bytes)
                     token_string = message_bytes.decode('utf-8')
-                    username = token_string.split(':')[0]
-                    grpId = token_string.split(':')[2]
+                    username = token_string.split(';')[0]
+                    grpId = token_string.split(';')[2]
 
                     badge = Badges.query.filter_by(token=content['token']).first()
                     if badge is not None:
@@ -63,84 +119,204 @@ class QrCodeCheck_v2(Resource):
                             if user is not None:
                                 if user.autocertification:
                                     if grpId == '6':
-                                        matricola = token_string.split(':')[3]
+                                        matricola = token_string.split(';')[3]
                                         if user.classroom == "presence":
-                                            start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
-                                            end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59).timestamp()
-                                            reserv = Reservations.query.filter_by(username=username).filter(Reservations.start_time>=datetime.fromtimestamp(start)).filter(Reservations.end_time<=datetime.fromtimestamp(end))
+                                            start = datetime(datetime.now().year, datetime.now().month,
+                                                             datetime.now().day, 0, 0).timestamp()
+                                            end = datetime(datetime.now().year, datetime.now().month,
+                                                           datetime.now().day, 23, 59).timestamp()
+                                            reserv = Reservations.query.filter_by(username=username).filter(
+                                                Reservations.start_time >= datetime.fromtimestamp(start)).filter(
+                                                Reservations.end_time <= datetime.fromtimestamp(end))
 
                                             if reserv.count() > 0:
                                                 con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
                                                 string = ""
                                                 for r in reserv:
                                                     ##TODO SISTEMARE LA QUERY SULLE RESERVATIONS
-                                                    rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND E.id ='" + str(r.id_lezione) + "'")
+                                                    rs = con.execute(
+                                                        "SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND E.id ='" + str(
+                                                            r.id_lezione) + "'")
                                                     result = rs.fetchall()
                                                     if len(result) != 0:
-                                                        string += result[0][38] + " " + str(r.start_time.hour) + ":00 " + str(r.end_time.hour) + ":00 \n"
+                                                        string += result[0][38] + " " + str(
+                                                            r.start_time.hour) + ":00 " + str(
+                                                            r.end_time.hour) + ":00 \n"
                                                     else:
                                                         string += ""
 
                                                 u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
-                                                     username=username, grpId=grpId, matricola=matricola, result="OK", scan_by=g.response['user']['userId'])
+                                                         username=username, grpId=grpId, matricola=matricola,
+                                                         result="OK", scan_by=g.response['user']['userId'])
                                                 db.session.add(u)
                                                 db.session.commit()
-                                                return returnMessage("\n\nAUTORIZZATO !\n\n" + string,1,"#00AA00",3), 200
+                                                return returnMessage("\n\nAUTORIZZATO !\n\n" + string, 1, "#00AA00",
+                                                                     3), 200
                                             else:
                                                 u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
-                                                     username=username, grpId=grpId, matricola=matricola, result="OK", scan_by=g.response['user']['userId'])
+                                                         username=username, grpId=grpId, matricola=matricola,
+                                                         result="OK", scan_by=g.response['user']['userId'])
                                                 db.session.add(u)
                                                 db.session.commit()
-                                                return returnMessage("\n\nAUTORIZZATO !\n\n",1,"#00AA00",3), 200
+                                                return returnMessage("\n\nAUTORIZZATO !\n\n", 1, "#00AA00", 3), 200
                                         else:
                                             u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
-                                                     username=username, grpId=grpId, matricola=matricola, result="Tipo di accesso non in presenza!", scan_by=g.response['user']['userId'])
+                                                     username=username, grpId=grpId, matricola=matricola,
+                                                     result="Tipo di accesso non in presenza!",
+                                                     scan_by=g.response['user']['userId'])
                                             db.session.add(u)
                                             db.session.commit()
-                                            return returnMessage("\n\nNON AUTORIZZATO !\n\nTipo di accesso non in presenza!",1,"#AA0000",3), 500
+                                            return returnMessage(
+                                                "\n\nNON AUTORIZZATO !\n\nTipo di accesso non in presenza!", 1,
+                                                "#AA0000", 3), 500
                                     else:
                                         u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
                                                  username=username, grpId=grpId,
                                                  result="OK", scan_by=g.response['user']['userId'])
                                         db.session.add(u)
                                         db.session.commit()
-                                        return returnMessage("\n\nAUTORIZZATO !\n\n",1,"#00AA00",3), 200
+                                        return returnMessage("\n\nAUTORIZZATO !\n\n", 1, "#00AA00", 3), 200
                                 else:
                                     u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
                                              username=username, grpId=grpId,
-                                             result="Autocertificazione mancante!", scan_by=g.response['user']['userId'])
+                                             result="Autocertificazione mancante!",
+                                             scan_by=g.response['user']['userId'])
                                     db.session.add(u)
                                     db.session.commit()
-                                    return returnMessage("\n\nNON AUTORIZZATO !\n\nAutocertificazione mancante!",1,"#AA0000",3), 500
+                                    return returnMessage("\n\nNON AUTORIZZATO !\n\nAutocertificazione mancante!", 1,
+                                                         "#AA0000", 3), 500
                             else:
                                 u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
                                          username=username, grpId=grpId,
                                          result="Utente non presente nel db.", scan_by=g.response['user']['userId'])
                                 db.session.add(u)
                                 db.session.commit()
-                                return returnMessage("\n\nNON AUTORIZZATO !\n\nUtente non presente nel db. Provare con il proprio username al posto del CF!",1,"#AA0000",3), 500
+                                return returnMessage(
+                                    "\n\nNON AUTORIZZATO !\n\nUtente non presente nel db. Provare con il proprio username al posto del CF!",
+                                    1, "#AA0000", 3), 500
                         else:
                             u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
                                      username=username, grpId=grpId,
                                      result="Token scaduto", scan_by=g.response['user']['userId'])
                             db.session.add(u)
                             db.session.commit()
-                            return returnMessage("\n\nNON AUTORIZZATO !\n\nToken scaduto!",1,"#AA0000",3), 500
+                            return returnMessage("\n\nNON AUTORIZZATO !\n\nToken scaduto!", 1, "#AA0000", 3), 500
                     else:
-                        u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),  result="Token non valido!", scan_by=g.response['user']['userId'])
+                        u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(), result="Token non valido!",
+                                 scan_by=g.response['user']['userId'])
                         db.session.add(u)
                         db.session.commit()
-                        return returnMessage("\n\nNON AUTORIZZATO !\n\nToken non valido!",1,"#AA0000",3), 500
+                        return returnMessage("\n\nNON AUTORIZZATO !\n\nToken non valido!", 1, "#AA0000", 3), 500
                 except:
                     print("Unexpected error:")
                     print("Title: " + sys.exc_info()[0].__name__)
                     print("Description: " + traceback.format_exc())
 
-                    u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(), result="Qr-code non valido!", scan_by=g.response['user']['userId'])
+                    u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(), result="Qr-code non valido!",
+                             scan_by=g.response['user']['userId'])
                     db.session.add(u)
                     db.session.commit()
-                    
-                    return returnMessage("\n\nNON AUTORIZZATO !\n\nQr-code non valido!",1,"#AA0000",3), 500
+
+                    return returnMessage("\n\nNON AUTORIZZATO !\n\nQr-code non valido!", 1, "#AA0000", 3), 500
+            else:
+                return {'errMsg': 'Error payload'}, 500
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
+
+
+# ------------- SEND REQUEST INFO -------------
+
+
+insert_token_notification = ns.model("TokenNotification", {
+    "myToken": fields.String(description="token", required=True),
+    "receivedToken": fields.String(description="token", required=True)
+})
+
+
+class sendRequestInfo(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    @ns.expect(insert_token)
+    def post(self):
+        """Check QrCode"""
+        content = request.json
+
+        if g.status == 200:
+            if 'myToken' in content and 'receivedToken' in content:
+                #TODO inserire esito in una tabella
+                try:
+                    base64_bytes = content['receivedToken'].encode('utf-8')
+                    message_bytes = base64.b64decode(base64_bytes)
+                    token_string = message_bytes.decode('utf-8')
+
+                    grpId = token_string.split(';')[2]
+
+                    if grpId == '6':
+                        receivedToken = token_string.split(';')[4]
+                    else:
+                        receivedToken = token_string.split(';')[3]
+
+                    headers = {
+                        'Content-Type': "application/json",
+                        "Authorization": "key=" + Config.API_KEY_FIREBASE
+                    }
+
+                    #TODO dare titolo a notifica
+                    body = {
+                        "notification": {
+                            "title": 'Richiesta informazioni',
+                            "body": g.response['user']['userId'] + " vorrebbe ottenere le tue informazioni.",
+                            "badge": "1",
+                            "sound": "default",
+                            "showWhenInForeground": "true",
+                        },
+                        "data": {
+                          "receivedToken": content['myToken']
+                        },
+                        "content_avaible": True,
+                        "priority": "High",
+                        "to": receivedToken
+                    }
+
+                    firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
+                                                         headers=headers, timeout=5)
+
+                    print(firebase_response.content)
+
+                    if firebase_response.status_code == 200:
+                        return {
+                            "status": "success",
+                            "message": "Notifica inviata con successo!"
+                        }, 200
+
+                except requests.exceptions.HTTPError as e:
+                    return {
+                               "status": "Error",
+                               "message": str(e)
+                           }, 500
+                except requests.exceptions.ConnectionError as e:
+                    return {
+                               "status": "Error",
+                               "message": str(e)
+                           }, 500
+                except requests.exceptions.Timeout as e:
+                    return {
+                               "status": "Error",
+                               "message": str(e)
+                           }, 500
+                except requests.exceptions.RequestException as e:
+                    return {
+                        "status": "Error",
+                        "message": str(e)
+                    }, 500
+                except:
+                    print("Unexpected error:")
+                    print("Title: " + sys.exc_info()[0].__name__)
+                    print("Description: " + traceback.format_exc())
+                    return {
+                        "status": "Error",
+                        "message": traceback.format_exc()
+                    }, 500
             else:
                 return {'errMsg': 'Error payload'}, 500
         else:
