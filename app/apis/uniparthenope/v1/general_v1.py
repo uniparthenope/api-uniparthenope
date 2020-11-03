@@ -82,11 +82,13 @@ class Anagrafica(Resource):
                 res = requests.request("GET", url + "anagrafica-service-v2/docenti/" + Id, headers=headers, timeout=5)
                 _response = res.json()
 
+                print(_response)
+
                 if res.status_code == 200:
                     return {
-                        'nome': _response['nome'],
-                        'cognome': _response['cognome'],
-                        'codFis': _response['codFis'],
+                        'nome': _response[0]['docenteNome'],
+                        'cognome': _response[0]['docenteCognome'],
+                        'codFis': _response[0]['codFis'],
                         'dataNascita': _response[0]['dataNascita'],
                         'emailAte': _response[0]['eMail'],
                         'sesso': _response[0]['sesso'],

@@ -1,4 +1,5 @@
 import base64
+import io
 import json
 import sys
 import traceback
@@ -358,8 +359,6 @@ class sendInfo(Resource):
                         info_json['matricola'] = g.response['user']['trattiCarriera'][0]['matricola']
                     info_json['username'] = g.response['user']['userId']
                     info_json['ruolo'] = g.response['user']['grpDes']
-
-                    print(info_json)
 
                     headers = {
                         'Content-Type': "application/json",
