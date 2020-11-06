@@ -470,6 +470,10 @@ class getContactInfo(Resource):
                             db.session.commit()
 
                             return result, 200
+                        else:
+                            return {'errMsg': 'Operazione non consentita!'}, 403
+                    else:
+                        return {'errMsg': 'Recordo non trovato!'}, 500
                 except requests.exceptions.HTTPError as e:
                     return {
                                "status": "Error",
