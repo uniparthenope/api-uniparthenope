@@ -25,7 +25,7 @@ class getInfo(Resource):
                 "Authorization": "Basic " + Config.USER_ROOT
             }
 
-            response_prof = requests.request("GET", url + "anagrafica-service-v2/docenti", headers=headers, timeout=5)
+            response_prof = requests.request("GET", url + "anagrafica-service-v2/persone/?cognome=Mellone", headers=headers, timeout=5)
             _response_prof = response_prof.json()
 
             print(_response_prof)
