@@ -19,7 +19,7 @@ class Reservations(db.Model):
     username = db.Column(db.String(64), nullable=False)
     matricola = db.Column(db.String(32), nullable=False)
     time = db.Column(db.DateTime, index=True, default=datetime.utcnow, nullable=False)
-    id_lezione =  db.Column(db.Integer, nullable=False)
+    id_lezione = db.Column(db.Integer, nullable=False)
     reserved_by = db.Column(db.String(64), nullable=False)
 
     def __repr__(self):

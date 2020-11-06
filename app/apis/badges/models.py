@@ -51,7 +51,18 @@ class UserScan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_A = db.Column(db.String(64), nullable=False)
     user_B = db.Column(db.String(64), nullable=False)
+    result = db.Column(db.String(64), nullable=True, default="Refused")
     time_stamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
 
     def __repr__(self):
         return '<{}>'.format(self.user_A) + " ha scansionato " + '<{}>'.format(self.user_B)
+
+
+class TempScanNotification(db.Model):
+    __bind_key__ = 'badges'
+    __tablename__ = 'tempScanNotification'
+
+    id = db.Column(db.Integer, primary_key=True)
+    response = db.Column(db.Text, nullable=False)
+    username = db.Column(db.String(64), nullable=False)
+    time_stamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)

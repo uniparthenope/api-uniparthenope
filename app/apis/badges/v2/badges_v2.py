@@ -18,7 +18,7 @@ from app.apis.uniparthenope.v1.general_v1 import Anagrafica
 from app.config import Config
 from app import api, db
 from app.apis.uniparthenope.v1.login_v1 import token_required_general
-from app.apis.badges.models import Badges, Scan, UserScan
+from app.apis.badges.models import Badges, Scan, UserScan, TempScanNotification
 from app.apis.access.models import UserAccess
 from app.apis.ga_uniparthenope.models import Reservations
 from app.log.log import time_log
@@ -260,44 +260,45 @@ class sendRequestInfo(Resource):
                     else:
                         receivedToken = token_string.split(';')[3]
 
-                    headers = {
-                        'Content-Type': "application/json",
-                        "Authorization": "key=" + Config.API_KEY_FIREBASE
-                    }
+                    try:
+                        x = UserScan(user_A=g.response['user']['userId'], user_B=token_string.split(';')[0])
+                        db.session.add(x)
+                        db.session.commit()
 
-                    # TODO dare titolo a notifica
-                    body = {
-                        "notification": {
-                            "title": 'Richiesta informazioni',
-                            "body": g.response['user']['userId'] + " vorrebbe ottenere le tue informazioni.",
-                            "badge": "1",
-                            "sound": "default",
-                            "showWhenInForeground": "true",
-                        },
-                        "data": {
-                            "receivedToken": content['myToken'],
-                            "page": "info"
-                        },
-                        "content_avaible": True,
-                        "priority": "High",
-                        "to": receivedToken
-                    }
+                        headers = {
+                            'Content-Type': "application/json",
+                            "Authorization": "key=" + Config.API_KEY_FIREBASE
+                        }
 
-                    firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
-                                                         headers=headers, timeout=5)
+                        # TODO dare titolo a notifica
+                        body = {
+                            "notification": {
+                                "title": 'Richiesta informazioni',
+                                "body": g.response['user']['userId'] + " vorrebbe ottenere le tue informazioni.",
+                                "badge": "1",
+                                "sound": "default",
+                                "showWhenInForeground": "true",
+                            },
+                            "data": {
+                                "receivedToken": content['myToken'],
+                                "page": "info",
+                                "id": x.id
+                            },
+                            "content_avaible": True,
+                            "priority": "High",
+                            "to": receivedToken
+                        }
 
-                    if firebase_response.status_code == 200:
-                        try:
-                            x = UserScan(user_A=g.response['user']['userId'], user_B=token_string.split(';')[0])
-                            db.session.add(x)
-                            db.session.commit()
-                        except:
-                            db.session.rollback()
+                        firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
+                                                             headers=headers, timeout=5)
 
-                        return {
-                                   "status": "success",
-                                   "message": "Notifica inviata con successo!"
-                               }, 200
+                        if firebase_response.status_code == 200:
+                            return {
+                                       "status": "success",
+                                       "message": "Notifica inviata con successo!"
+                                   }, 200
+                    except:
+                        db.session.rollback()
 
                 except requests.exceptions.HTTPError as e:
                     return {
@@ -337,7 +338,8 @@ class sendRequestInfo(Resource):
 
 
 insert_token_notification_info = ns.model("TokenNotificationInfo", {
-    "receivedToken": fields.String(description="token", required=True)
+    "receivedToken": fields.String(description="token", required=True),
+    "id": fields.String(description="id_transaction", required=True)
 })
 
 
@@ -350,7 +352,7 @@ class sendInfo(Resource):
         content = request.json
 
         if g.status == 200:
-            if 'receivedToken' in content:
+            if 'receivedToken' in content and 'id' in content:
                 # TODO inserire esito in una tabella
                 try:
                     if g.response['user']['grpId'] == 6:
@@ -366,40 +368,46 @@ class sendInfo(Resource):
                     info_json['username'] = g.response['user']['userId']
                     info_json['ruolo'] = g.response['user']['grpDes']
 
-                    headers = {
-                        'Content-Type': "application/json",
-                        "Authorization": "key=" + Config.API_KEY_FIREBASE
-                    }
+                    try:
+                        record = UserScan.query.filter_by(id=content['id']).first()
+                        record.result = "Accepted"
 
-                    # TODO dare titolo a notifica
-                    body = {
-                        "notification": {
-                            "title": 'Informazioni ottenute',
-                            "body": g.response['user']['userId'] + " ha condiviso le sue informazioni.",
-                            "badge": "1",
-                            "sound": "default",
-                            "showWhenInForeground": "true",
-                        },
-                        "data": {
-                            "page": "info_received",
-                            "info": info_json
-                        },
-                        "content_avaible": True,
-                        "priority": "High",
-                        "to": content['receivedToken']
-                    }
+                        x = TempScanNotification(response=info_json, username=record.user_A)
+                        db.session.add(x)
+                        db.session.commit()
 
-                    firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
-                                                         headers=headers, timeout=5)
+                        headers = {
+                            'Content-Type': "application/json",
+                            "Authorization": "key=" + Config.API_KEY_FIREBASE
+                        }
 
-                    print(firebase_response.content)
+                        body = {
+                            "notification": {
+                                "title": 'Informazioni ottenute',
+                                "body": g.response['user']['userId'] + " ha condiviso le sue informazioni.",
+                                "badge": "1",
+                                "sound": "default",
+                                "showWhenInForeground": "true",
+                            },
+                            "data": {
+                                "page": "info_received",
+                                "id_info": x.id
+                            },
+                            "content_avaible": True,
+                            "priority": "High",
+                            "to": content['receivedToken']
+                        }
 
-                    if firebase_response.status_code == 200:
-                        return {
-                                   "status": "success",
-                                   "message": "Notifica inviata con successo!"
-                               }, 200
+                        firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
+                                                             headers=headers, timeout=5)
 
+                        if firebase_response.status_code == 200:
+                            return {
+                                       "status": "success",
+                                       "message": "Notifica inviata con successo!"
+                                   }, 200
+                    except:
+                        db.session.rollback()
                 except requests.exceptions.HTTPError as e:
                     return {
                                "status": "Error",
