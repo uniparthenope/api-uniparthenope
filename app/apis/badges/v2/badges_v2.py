@@ -368,46 +368,47 @@ class sendInfo(Resource):
                     info_json['username'] = g.response['user']['userId']
                     info_json['ruolo'] = g.response['user']['grpDes']
 
-                    try:
-                        record = UserScan.query.filter_by(id=content['id']).first()
-                        record.result = "Accepted"
+                    #try:
+                    record = UserScan.query.filter_by(id=content['id']).first()
+                    record.result = "Accepted"
 
-                        x = TempScanNotification(response=info_json, username=record.user_A)
-                        db.session.add(x)
-                        db.session.commit()
+                    x = TempScanNotification(response=info_json, username=record.user_A)
+                    db.session.add(x)
+                    db.session.commit()
 
-                        headers = {
-                            'Content-Type': "application/json",
-                            "Authorization": "key=" + Config.API_KEY_FIREBASE
-                        }
+                    headers = {
+                        'Content-Type': "application/json",
+                        "Authorization": "key=" + Config.API_KEY_FIREBASE
+                    }
 
-                        body = {
-                            "notification": {
-                                "title": 'Informazioni ottenute',
-                                "body": g.response['user']['userId'] + " ha condiviso le sue informazioni.",
-                                "badge": "1",
-                                "sound": "default",
-                                "showWhenInForeground": "true",
-                            },
-                            "data": {
-                                "page": "info_received",
-                                "id_info": x.id
-                            },
-                            "content_avaible": True,
-                            "priority": "High",
-                            "to": content['receivedToken']
-                        }
+                    body = {
+                        "notification": {
+                            "title": 'Informazioni ottenute',
+                            "body": g.response['user']['userId'] + " ha condiviso le sue informazioni.",
+                            "badge": "1",
+                            "sound": "default",
+                            "showWhenInForeground": "true",
+                        },
+                        "data": {
+                            "page": "info_received",
+                            "id_info": x.id
+                        },
+                        "content_avaible": True,
+                        "priority": "High",
+                        "to": content['receivedToken']
+                    }
 
-                        firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
-                                                             headers=headers, timeout=5)
+                    firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
+                                                         headers=headers, timeout=5)
 
-                        if firebase_response.status_code == 200:
-                            return {
-                                       "status": "success",
-                                       "message": "Notifica inviata con successo!"
-                                   }, 200
-                    except:
-                        db.session.rollback()
+                    if firebase_response.status_code == 200:
+                        return {
+                                   "status": "success",
+                                   "message": "Notifica inviata con successo!"
+
+                               }, 200
+                    #except:
+                    #    db.session.rollback()
                 except requests.exceptions.HTTPError as e:
                     return {
                                "status": "Error",
