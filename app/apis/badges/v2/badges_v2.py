@@ -440,3 +440,65 @@ class sendInfo(Resource):
                 return {'errMsg': 'Error payload'}, 500
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
+
+
+# ------------- GET CONTACT INFO -------------
+
+
+insert_id_info = ns.model("IdInfo", {
+    "id": fields.String(description="id_transaction", required=True)
+})
+
+
+class getContactInfo(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    @ns.expect(insert_id_info)
+    def post(self):
+        """Send Info"""
+        content = request.json
+
+        if g.status == 200:
+            if 'id' in content:
+                try:
+                    record = TempScanNotification.query.filter_by(id=content['id']).first()
+                    if record is not None:
+                        if record.username == g.response['user']['userId']:
+                            result = eval(record.response)
+
+                            db.session.delete(record)
+                            db.session.commit()
+
+                            return result, 200
+                except requests.exceptions.HTTPError as e:
+                    return {
+                               "status": "Error",
+                               "message": str(e)
+                           }, 500
+                except requests.exceptions.ConnectionError as e:
+                    return {
+                               "status": "Error",
+                               "message": str(e)
+                           }, 500
+                except requests.exceptions.Timeout as e:
+                    return {
+                               "status": "Error",
+                               "message": str(e)
+                           }, 500
+                except requests.exceptions.RequestException as e:
+                    return {
+                               "status": "Error",
+                               "message": str(e)
+                           }, 500
+                except:
+                    print("Unexpected error:")
+                    print("Title: " + sys.exc_info()[0].__name__)
+                    print("Description: " + traceback.format_exc())
+                    return {
+                               "status": "Error",
+                               "message": traceback.format_exc()
+                           }, 500
+            else:
+                return {'errMsg': 'Error payload'}, 500
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
