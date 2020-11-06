@@ -288,7 +288,7 @@ class sendRequestInfo(Resource):
 
                     if firebase_response.status_code == 200:
                         try:
-                            x = UserScan(user_A=g.response['user']['userId'], user_B=token_string.split(';')[2])
+                            x = UserScan(user_A=g.response['user']['userId'], user_B=token_string.split(';')[0])
                             db.session.add(x)
                             db.session.commit()
                         except:
