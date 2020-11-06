@@ -370,8 +370,8 @@ class sendInfo(Resource):
                     try:
                         record = UserScan.query.filter_by(id=content['id']).first()
                         record.result = "Accepted"
-
-                        x = TempScanNotification(response=info_json, username=record.user_A)
+                        
+                        x = TempScanNotification(response=str(info_json), username=record.user_A)
                         db.session.add(x)
                         db.session.commit()
 
