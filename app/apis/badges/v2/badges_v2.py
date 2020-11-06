@@ -353,63 +353,61 @@ class sendInfo(Resource):
 
         if g.status == 200:
             if 'receivedToken' in content and 'id' in content:
-                # TODO inserire esito in una tabella
-                #try:
-                if g.response['user']['grpId'] == 6:
-                    id = str(g.response['user']['persId'])
-                elif g.response['user']['grpId'] == 7:
-                    id = str(g.response['user']['docenteId'])
+                try:
+                    if g.response['user']['grpId'] == 6:
+                        id = str(g.response['user']['persId'])
+                    elif g.response['user']['grpId'] == 7:
+                        id = str(g.response['user']['docenteId'])
 
-                info = Anagrafica(Resource).get(id)
-                info_json = json.loads(json.dumps(info))[0]
+                    info = Anagrafica(Resource).get(id)
+                    info_json = json.loads(json.dumps(info))[0]
 
-                if g.response['user']['grpId'] == 6:
-                    info_json['matricola'] = g.response['user']['trattiCarriera'][0]['matricola']
-                info_json['username'] = g.response['user']['userId']
-                info_json['ruolo'] = g.response['user']['grpDes']
+                    if g.response['user']['grpId'] == 6:
+                        info_json['matricola'] = g.response['user']['trattiCarriera'][0]['matricola']
+                    info_json['username'] = g.response['user']['userId']
+                    info_json['ruolo'] = g.response['user']['grpDes']
 
-                #try:
-                record = UserScan.query.filter_by(id=content['id']).first()
-                record.result = "Accepted"
+                    try:
+                        record = UserScan.query.filter_by(id=content['id']).first()
+                        record.result = "Accepted"
 
-                x = TempScanNotification(response=info_json, username=record.user_A)
-                db.session.add(x)
-                #db.session.commit()
+                        x = TempScanNotification(response=info_json, username=record.user_A)
+                        db.session.add(x)
+                        db.session.commit()
 
-                headers = {
-                    'Content-Type': "application/json",
-                    "Authorization": "key=" + Config.API_KEY_FIREBASE
-                }
+                        headers = {
+                            'Content-Type': "application/json",
+                            "Authorization": "key=" + Config.API_KEY_FIREBASE
+                        }
 
-                body = {
-                    "notification": {
-                        "title": 'Informazioni ottenute',
-                        "body": g.response['user']['userId'] + " ha condiviso le sue informazioni.",
-                        "badge": "1",
-                        "sound": "default",
-                        "showWhenInForeground": "true",
-                    },
-                    "data": {
-                        "page": "info_received",
-                        "id_info": x.id
-                    },
-                    "content_avaible": True,
-                    "priority": "High",
-                    "to": content['receivedToken']
-                }
+                        body = {
+                            "notification": {
+                                "title": 'Informazioni ottenute',
+                                "body": g.response['user']['userId'] + " ha condiviso le sue informazioni.",
+                                "badge": "1",
+                                "sound": "default",
+                                "showWhenInForeground": "true",
+                            },
+                            "data": {
+                                "page": "info_received",
+                                "id_info": x.id
+                            },
+                            "content_avaible": True,
+                            "priority": "High",
+                            "to": content['receivedToken']
+                        }
 
-                firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
-                                                     headers=headers, timeout=5)
+                        firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
+                                                             headers=headers, timeout=5)
 
-                if firebase_response.status_code == 200:
-                    return {
-                               "status": "success",
-                               "message": "Notifica inviata con successo!"
+                        if firebase_response.status_code == 200:
+                            return {
+                                       "status": "success",
+                                       "message": "Notifica inviata con successo!"
 
-                           }, 200
-                    #except:
-                    #    db.session.rollback()
-                '''
+                                   }, 200
+                    except:
+                        db.session.rollback()
                 except requests.exceptions.HTTPError as e:
                     return {
                                "status": "Error",
@@ -438,8 +436,6 @@ class sendInfo(Resource):
                                "status": "Error",
                                "message": traceback.format_exc()
                            }, 500
-                           
-                '''
             else:
                 return {'errMsg': 'Error payload'}, 500
         else:
