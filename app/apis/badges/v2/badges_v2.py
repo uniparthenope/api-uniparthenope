@@ -374,7 +374,7 @@ class sendInfo(Resource):
 
                     x = TempScanNotification(response=info_json, username=record.user_A)
                     db.session.add(x)
-                    db.session.commit()
+                    #db.session.commit()
 
                     headers = {
                         'Content-Type': "application/json",
