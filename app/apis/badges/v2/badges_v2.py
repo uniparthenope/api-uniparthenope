@@ -18,13 +18,14 @@ from app.apis.uniparthenope.v1.general_v1 import Anagrafica
 from app.config import Config
 from app import api, db
 from app.apis.uniparthenope.v1.login_v1 import token_required_general
-from app.apis.badges.models import Badges, Scan
+from app.apis.badges.models import Badges, Scan, UserScan
 from app.apis.access.models import UserAccess
 from app.apis.ga_uniparthenope.models import Reservations
 from app.log.log import time_log
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
+
 
 # ------------- QR-CODE -------------
 
@@ -54,7 +55,8 @@ class QrCode_v2(Resource):
                     token_qr_notification = token_qr + ";" + request.headers['Token-notification']
 
                     token_qr_final = (base64.b64encode(bytes(str(token_qr).encode("utf-8")))).decode('utf-8')
-                    token_qr_final_notification = (base64.b64encode(bytes(str(token_qr_notification).encode("utf-8")))).decode('utf-8')
+                    token_qr_final_notification = (
+                        base64.b64encode(bytes(str(token_qr_notification).encode("utf-8")))).decode('utf-8')
 
                     expire_data = datetime.now() + timedelta(minutes=10)
 
@@ -246,7 +248,6 @@ class sendRequestInfo(Resource):
 
         if g.status == 200:
             if 'myToken' in content and 'receivedToken' in content:
-                #TODO inserire esito in una tabella
                 try:
                     base64_bytes = content['receivedToken'].encode('utf-8')
                     message_bytes = base64.b64decode(base64_bytes)
@@ -264,7 +265,7 @@ class sendRequestInfo(Resource):
                         "Authorization": "key=" + Config.API_KEY_FIREBASE
                     }
 
-                    #TODO dare titolo a notifica
+                    # TODO dare titolo a notifica
                     body = {
                         "notification": {
                             "title": 'Richiesta informazioni',
@@ -285,13 +286,18 @@ class sendRequestInfo(Resource):
                     firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
                                                          headers=headers, timeout=5)
 
-                    print(firebase_response.content)
-
                     if firebase_response.status_code == 200:
+                        try:
+                            x = UserScan(user_A=g.response['user']['userId'], user_B=token_string.split(';')[2])
+                            db.session.add(x)
+                            db.session.commit()
+                        except:
+                            db.session.rollback()
+
                         return {
-                            "status": "success",
-                            "message": "Notifica inviata con successo!"
-                        }, 200
+                                   "status": "success",
+                                   "message": "Notifica inviata con successo!"
+                               }, 200
 
                 except requests.exceptions.HTTPError as e:
                     return {
@@ -310,17 +316,17 @@ class sendRequestInfo(Resource):
                            }, 500
                 except requests.exceptions.RequestException as e:
                     return {
-                        "status": "Error",
-                        "message": str(e)
-                    }, 500
+                               "status": "Error",
+                               "message": str(e)
+                           }, 500
                 except:
                     print("Unexpected error:")
                     print("Title: " + sys.exc_info()[0].__name__)
                     print("Description: " + traceback.format_exc())
                     return {
-                        "status": "Error",
-                        "message": traceback.format_exc()
-                    }, 500
+                               "status": "Error",
+                               "message": traceback.format_exc()
+                           }, 500
             else:
                 return {'errMsg': 'Error payload'}, 500
         else:
@@ -345,7 +351,7 @@ class sendInfo(Resource):
 
         if g.status == 200:
             if 'receivedToken' in content:
-                #TODO inserire esito in una tabella
+                # TODO inserire esito in una tabella
                 try:
                     if g.response['user']['grpId'] == 6:
                         id = str(g.response['user']['persId'])
@@ -365,7 +371,7 @@ class sendInfo(Resource):
                         "Authorization": "key=" + Config.API_KEY_FIREBASE
                     }
 
-                    #TODO dare titolo a notifica
+                    # TODO dare titolo a notifica
                     body = {
                         "notification": {
                             "title": 'Informazioni ottenute',
@@ -390,9 +396,9 @@ class sendInfo(Resource):
 
                     if firebase_response.status_code == 200:
                         return {
-                            "status": "success",
-                            "message": "Notifica inviata con successo!"
-                        }, 200
+                                   "status": "success",
+                                   "message": "Notifica inviata con successo!"
+                               }, 200
 
                 except requests.exceptions.HTTPError as e:
                     return {
@@ -411,17 +417,17 @@ class sendInfo(Resource):
                            }, 500
                 except requests.exceptions.RequestException as e:
                     return {
-                        "status": "Error",
-                        "message": str(e)
-                    }, 500
+                               "status": "Error",
+                               "message": str(e)
+                           }, 500
                 except:
                     print("Unexpected error:")
                     print("Title: " + sys.exc_info()[0].__name__)
                     print("Description: " + traceback.format_exc())
                     return {
-                        "status": "Error",
-                        "message": traceback.format_exc()
-                    }, 500
+                               "status": "Error",
+                               "message": traceback.format_exc()
+                           }, 500
             else:
                 return {'errMsg': 'Error payload'}, 500
         else:

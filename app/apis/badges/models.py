@@ -42,3 +42,16 @@ class Tablets(db.Model):
 
     def __repr__(self):
         return '<Tablet {}>'.format(self.default_name) + ", " + '<current_name {}>'.format(self.current_name)
+
+
+class UserScan(db.Model):
+    __bind_key__ = 'badges'
+    __tablename__ = 'userScan'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_A = db.Column(db.String(64), nullable=False)
+    user_B = db.Column(db.String(64), nullable=False)
+    time_stamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+
+    def __repr__(self):
+        return '<{}>'.format(self.user_A) + " ha scansionato " + '<{}>'.format(self.user_B)
