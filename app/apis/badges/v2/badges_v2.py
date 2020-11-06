@@ -351,13 +351,23 @@ class sendInfo(Resource):
         """Send Info"""
         content = request.json
 
+        headers = {
+            'Content-Type': "application/json",
+            "Authorization": "Basic " + g.token
+        }
+
         if g.status == 200:
             if 'receivedToken' in content and 'id' in content:
                 try:
                     if g.response['user']['grpId'] == 6:
                         id = str(g.response['user']['persId'])
+                        res = requests.get(url + "anagrafica-service-v2/persone/" + str(id) + "/foto", headers=headers, timeout=5, stream=True)
+                        image = base64.b64encode(res.content)
                     elif g.response['user']['grpId'] == 7:
                         id = str(g.response['user']['docenteId'])
+                        img_url = "https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + str(id) + ".jpg"
+                        res = requests.request("GET", img_url, verify=False, timeout=5)
+                        image = base64.b64encode(res.content)
 
                     info = Anagrafica(Resource).get(id)
                     info_json = json.loads(json.dumps(info))[0]
@@ -366,6 +376,8 @@ class sendInfo(Resource):
                         info_json['matricola'] = g.response['user']['trattiCarriera'][0]['matricola']
                     info_json['username'] = g.response['user']['userId']
                     info_json['ruolo'] = g.response['user']['grpDes']
+                    if image is not None:
+                        info_json['image'] = image
 
                     try:
                         record = UserScan.query.filter_by(id=content['id']).first()
