@@ -2,6 +2,7 @@ from app import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
+
 class Ristorante(db.Model):
     __bind_key__ = 'eating'
     __tablename__ = 'ristoranteFood'
@@ -13,6 +14,7 @@ class Ristorante(db.Model):
     email = db.Column(db.String(64))
     image = db.Column(db.BLOB)
     users = db.relationship('UserFood', backref='ristoranteFood')
+
 
 class UserFood(db.Model):
     __bind_key__ = 'eating'
