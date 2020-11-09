@@ -346,7 +346,7 @@ insert_token_notification_info = ns.model("TokenNotificationInfo", {
 class sendInfo(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
-    @ns.expect(insert_token_notification)
+    @ns.expect(insert_token_notification_info)
     def post(self):
         """Send Info"""
         content = request.json
