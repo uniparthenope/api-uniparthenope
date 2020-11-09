@@ -40,4 +40,7 @@ from app.apis.bus import routes
 from app.apis.badges import routes
 from app.apis.eating import routes
 from app.apis.notifications import routes
+
+#from app.apis.technology_advising import routes
+
 ### </ROUTES> ###

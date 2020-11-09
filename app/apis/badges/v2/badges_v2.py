@@ -377,7 +377,7 @@ class sendInfo(Resource):
                     info_json['username'] = g.response['user']['userId']
                     info_json['ruolo'] = g.response['user']['grpDes']
                     if image is not None:
-                        info_json['image'] = image
+                        info_json['image'] = image.decode('utf-8')
 
                     try:
                         record = UserScan.query.filter_by(id=content['id']).first()
@@ -411,6 +411,8 @@ class sendInfo(Resource):
 
                         firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
                                                              headers=headers, timeout=5)
+
+                        #print(firebase_response)
 
                         if firebase_response.status_code == 200:
                             return {
@@ -477,7 +479,6 @@ class getContactInfo(Resource):
                     if record is not None:
                         if record.username == g.response['user']['userId']:
                             result = eval(record.response)
-
                             db.session.delete(record)
                             db.session.commit()
 
