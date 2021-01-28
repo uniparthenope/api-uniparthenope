@@ -61,6 +61,7 @@ class Room(db.Model):
     capacity = db.Column(db.Integer, nullable=False)
     room_id = db.relationship('Entry', backref='room')
     area_id = db.Column(db.Integer, db.ForeignKey('area.id'))
+    user_access = db.Column(db.String(32), nullable=True)
 
 
 class Area(db.Model):
