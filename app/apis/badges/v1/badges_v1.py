@@ -330,7 +330,7 @@ class GetScanHistory(Resource):
         userId = token_string.split(':')[0]
 
         if g.status == 200:
-            scans = Scan.query.filter_by(username=userId).all()
+            scans = Scan.query.filter_by(username=userId).order_by('time_stamp').all()
 
             if len(scans) > 0:
                 history = []
