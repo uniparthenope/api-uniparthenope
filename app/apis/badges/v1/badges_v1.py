@@ -340,8 +340,8 @@ class GetScanHistory(Resource):
                         'tablet': scan.id_tablet,
                         'result': scan.result
                     })
-                if count > 0:
-                    return history[count:]
+                if int(count) > 0:
+                    return history[int(count):]
                 else:
                     return history
             else:
