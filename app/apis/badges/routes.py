@@ -12,8 +12,7 @@ ns.add_resource(QrCode, '/v1/generateQrCode', methods=['GET'])
 ns.add_resource(QrCodeCheck, '/v1/checkQrCode', methods=['POST'])
 ns.add_resource(QrCodeStatus, '/v1/QrCodeStatus/<int:interval>/<tabletId>', methods=['GET'])
 ns.add_resource(SyncMachine, '/v1/SyncMachine', methods=['POST'])
-ns.add_resource(GetScanHistory, '/v1/getScanHistory/', methods=['GET'])
-ns.add_resource(GetScanHistory, '/v1/getScanHistory/<count>', methods=['GET'])
+ns.add_resource(GetScanHistory, '/v1/getScanHistory', methods=['GET'])
 
 
 ns.add_resource(QrCode_v2, '/v2/generateQrCode', methods=['GET'])

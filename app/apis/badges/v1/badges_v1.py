@@ -322,7 +322,7 @@ class GetScanHistory(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
 
-    def get(self, count=0):
+    def get(self):
         """Get university access history"""
 
         base64_bytes = g.token.encode('utf-8')
@@ -341,10 +341,8 @@ class GetScanHistory(Resource):
                         'tablet': scan.id_tablet,
                         'result': scan.result
                     })
-                if int(count) > 0:
-                    return history[:int(count)]
-                else:
-                    return history
+                return history
+
             else:
                 return {'errMsg': 'Nessuno scan disponibile'}, 500
 
