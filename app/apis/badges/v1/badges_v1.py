@@ -336,7 +336,7 @@ class GetScanHistory(Resource):
                 history = []
                 for scan in scans:
                     history.append({
-                        'timestamp': scan.time_stamp,
+                        'timestamp': str(scan.time_stamp),
                         'tablet': scan.id_tablet,
                         'result': scan.result
                     })
