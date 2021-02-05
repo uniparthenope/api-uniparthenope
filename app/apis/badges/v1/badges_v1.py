@@ -316,3 +316,36 @@ class SyncMachine(Resource):
                 return {'errMsg': 'Error payload'}, 500
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
+
+class GetScanHistory(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+
+    def get(self, count=0):
+        """Get university access history"""
+
+        base64_bytes = g.token.encode('utf-8')
+        message_bytes = base64.b64decode(base64_bytes)
+        token_string = message_bytes.decode('utf-8')
+        userId = token_string.split(':')[0]
+
+        if g.status == 200:
+            scans = Scan.query.filter_by(username=userId).all()
+
+            if len(scans) > 0:
+                history = []
+                for scan in scans:
+                    history.append({
+                        'timestamp': scan.time_stamp,
+                        'tablet': scan.id_tablet,
+                        'result': scan.result
+                    })
+                if count > 0:
+                    return history[count:]
+                else:
+                    return history
+            else:
+                return {'errMsg': 'Nessuno scan disponibile'}, 500
+
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
