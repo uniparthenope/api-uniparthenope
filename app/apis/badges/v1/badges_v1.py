@@ -341,7 +341,7 @@ class GetScanHistory(Resource):
                         'result': scan.result
                     })
                 if int(count) > 0:
-                    return history[int(count):]
+                    return history[:int(count)]
                 else:
                     return history
             else:
