@@ -597,7 +597,7 @@ class RSSAvvisi(Resource):
 class Privacy(Resource):
     def get(self):
         """Get privacy policy"""
-        page = requests.get('https://www.uniparthenope.it/ateneo/privacy')
+        page = requests.get('https://www.uniparthenope.it/ateneo/privacy', verify=False)
 
         parsed_html = BeautifulSoup(page.content, 'html.parser')
         mydivs = parsed_html.find('div',{"class": "field-item even"})
