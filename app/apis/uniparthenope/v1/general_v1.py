@@ -601,8 +601,10 @@ class Privacy(Resource):
 
         parsed_html = BeautifulSoup(page.content, 'html.parser')
         mydivs = parsed_html.find('div',{"class": "field-item even"})
+        mydivs_text = mydivs.getText()
+        mydivs_text = mydivs_text.replace('\n', '<br>')
 
-        return {'privacy': str(mydivs.getText())}, 200
+        return {'privacy': '<p>' + mydivs_text + '</p>'}, 200
 
 
 # ------------- PLACES -------------
