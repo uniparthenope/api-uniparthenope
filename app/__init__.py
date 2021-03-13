@@ -3,8 +3,7 @@ from flask_restplus import Api
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS, cross_origin
-import sqlalchemy
-import os
+from apscheduler.schedulers.background import BackgroundScheduler
 from app.config import Config
 
 app = Flask(__name__, static_url_path='/')
@@ -31,6 +30,12 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 ### </DATABASE> ###
 
+from app.utils import Utils
+
+sched = BackgroundScheduler(daemon=True)
+sched.add_job(Utils.obscure_data, 'interval', seconds=10)
+sched.start()
+
 ### <ROUTES> ###
 from app.apis.auth import routes
 from app.apis.access import routes
@@ -40,7 +45,4 @@ from app.apis.bus import routes
 from app.apis.badges import routes
 from app.apis.eating import routes
 from app.apis.notifications import routes
-
-#from app.apis.technology_advising import routes
-
 ### </ROUTES> ###

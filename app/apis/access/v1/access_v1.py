@@ -15,9 +15,7 @@ from werkzeug import Response
 from app.models import User, Role
 from app.apis.access.models import UserAccess
 from app.log.log import time_log
-from app.utils import Utils
 
-util = Utils()
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
@@ -42,8 +40,7 @@ class Access(Resource):
         if g.status == 200:
             try:
                 r = g.response
-                userId = util.encrypt_user(username=r['user']['userId'])
-                print(util.decrypt_user(userId))
+                userId = ['user']['userId']
 
                 if r['user']['grpId'] == 7 or r['user']['grpId'] == 99 or r['user']['grpId'] == 97 or r['user']['grpId'] == 98:
                     return {'errMsg': 'Operazione non consentita!'}, 403
