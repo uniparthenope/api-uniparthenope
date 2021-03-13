@@ -427,7 +427,7 @@ class CheckAppello(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "calesa-service-v1/appelli/" + cdsId + "/" + adId, headers=headers, timeout=5)
+            response = requests.request("GET", url + "calesa-service-v1/appelli/" + cdsId + "/" + adId, headers=headers, timeout=10)
             _response = response.json()
 
             if response.status_code == 200:
@@ -549,9 +549,8 @@ def fetch_appelli(token, appelli):
         "Authorization": "Basic " + token
     }
 
-    response2 = requests.request("GET", url + "calesa-service-v1/appelli/" + str(
-        appelli['cdsId']) + "/" + str(appelli['adId']) + "/" + str(appelli['appId']),
-                                 headers=headers, timeout=5)
+    response2 = requests.request("GET", url + "calesa-service-v1/appelli/" + str(appelli['cdsId']) + "/" + str(appelli['adId']) + "/" + str(appelli['appId']),
+                                 headers=headers, timeout=10)
     _response2 = response2.json()
 
     adId = appelli['adId']
@@ -603,7 +602,7 @@ class getReservations(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "calesa-service-v1/prenotazioni/" + matId, headers=headers, timeout=5)
+            response = requests.request("GET", url + "calesa-service-v1/prenotazioni/" + matId, headers=headers, timeout=10)
             _response = response.json()
 
             if response.status_code == 200:

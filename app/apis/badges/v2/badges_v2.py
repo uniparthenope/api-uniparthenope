@@ -7,7 +7,8 @@ from io import BytesIO
 import qrcode
 from datetime import datetime, timedelta
 import random, string
-
+from bs4 import BeautifulSoup
+import urllib
 import requests
 import sqlalchemy
 
@@ -18,6 +19,7 @@ from app.apis.uniparthenope.v1.general_v1 import Anagrafica
 from app.config import Config
 from app import api, db
 from app.apis.uniparthenope.v1.login_v1 import token_required_general
+from app.models import UserNotifications, Devices
 from app.apis.badges.models import Badges, Scan, UserScan, TempScanNotification
 from app.apis.access.models import UserAccess
 from app.apis.ga_uniparthenope.models import Reservations
@@ -27,12 +29,26 @@ url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
 
 
-# ------------- QR-CODE -------------
+# ------------- GLOBAL FUNCRION -------------
 
 
 def randomword(length):
     letters = string.ascii_lowercase + string.digits
     return ''.join(random.choice(letters) for i in range(length))
+
+
+def removeToken(result, tokens):
+    try:
+        for i, err in enumerate(result['results']):
+            if 'error' in err:
+                Devices.query.filter_by(token=tokens[i]).delete()
+        db.session.commit()
+    except:
+        db.session.rollback()
+
+
+
+# ------------- QR-CODE -------------
 
 
 class QrCode_v2(Resource):
@@ -44,33 +60,27 @@ class QrCode_v2(Resource):
 
         if g.status == 200:
             try:
-                if 'Token-notification' in request.headers:
-                    if g.response['user']['grpId'] == 6:
-                        token_qr = g.response['user']['userId'] + ";" + randomword(30) + ";" + str(
-                            g.response['user']['grpId']) + ";" + g.response['user']['trattiCarriera'][0]['matricola']
-                    else:
-                        token_qr = g.response['user']['userId'] + ";" + randomword(30) + ";" + str(
+                if g.response['user']['grpId'] == 6:
+                    token_qr = g.response['user']['userId'] + ":" + randomword(30) + ":" + str(
+                            g.response['user']['grpId']) + ":" + g.response['user']['trattiCarriera'][0]['matricola']
+                else:
+                    token_qr = g.response['user']['userId'] + ":" + randomword(30) + ":" + str(
                             g.response['user']['grpId'])
 
-                    token_qr_notification = token_qr + ";" + request.headers['Token-notification']
 
-                    token_qr_final = (base64.b64encode(bytes(str(token_qr).encode("utf-8")))).decode('utf-8')
-                    token_qr_final_notification = (
-                        base64.b64encode(bytes(str(token_qr_notification).encode("utf-8")))).decode('utf-8')
+                token_qr_final = (base64.b64encode(bytes(str(token_qr).encode("utf-8")))).decode('utf-8')
 
-                    expire_data = datetime.now() + timedelta(minutes=10)
+                expire_data = datetime.now() + timedelta(minutes=10)
 
-                    badge = Badges(token=token_qr_final, expire_time=expire_data)
-                    db.session.add(badge)
-                    db.session.commit()
+                badge = Badges(token=token_qr_final, expire_time=expire_data)
+                db.session.add(badge)
+                db.session.commit()
 
-                    pil_img = qrcode.make(token_qr_final_notification)
-                    img_io = BytesIO()
-                    pil_img.save(img_io, 'PNG')
-                    img_io.seek(0)
-                    return send_file(img_io, mimetype='image/png', cache_timeout=-1)
-                else:
-                    return {'errMsg': 'Payload error!'}, 500
+                pil_img = qrcode.make(token_qr_final)
+                img_io = BytesIO()
+                pil_img.save(img_io, 'PNG')
+                img_io.seek(0)
+                return send_file(img_io, mimetype='image/png', cache_timeout=-1)
             except:
                 print("Unexpected error:")
                 print("Title: " + sys.exc_info()[0].__name__)
@@ -114,8 +124,8 @@ class QrCodeCheck_v2(Resource):
                     base64_bytes = content['token'].encode('utf-8')
                     message_bytes = base64.b64decode(base64_bytes)
                     token_string = message_bytes.decode('utf-8')
-                    username = token_string.split(';')[0]
-                    grpId = token_string.split(';')[2]
+                    username = token_string.split(':')[0]
+                    grpId = token_string.split(':')[2]
 
                     badge = Badges.query.filter_by(token=content['token']).first()
                     if badge is not None:
@@ -124,7 +134,7 @@ class QrCodeCheck_v2(Resource):
                             if user is not None:
                                 if user.autocertification:
                                     if grpId == '6':
-                                        matricola = token_string.split(';')[3]
+                                        matricola = token_string.split(':')[3]
                                         if user.classroom == "presence":
                                             start = datetime(datetime.now().year, datetime.now().month,
                                                              datetime.now().day, 0, 0).timestamp()
@@ -252,54 +262,61 @@ class sendRequestInfo(Resource):
                     base64_bytes = content['receivedToken'].encode('utf-8')
                     message_bytes = base64.b64decode(base64_bytes)
                     token_string = message_bytes.decode('utf-8')
+                    userId = token_string.split(':')[0]
+                    grpId = token_string.split(':')[2]
 
-                    grpId = token_string.split(';')[2]
+                    badge = Badges.query.filter_by(token=content['receivedToken']).first()
+                    if badge is not None:
+                        if datetime.now() < badge.expire_time - timedelta(minutes=9):
+                            try:
+                                x = UserScan(user_A=g.response['user']['userId'], user_B=userId)
+                                db.session.add(x)
+                                db.session.commit()
 
-                    if grpId == '6':
-                        receivedToken = token_string.split(';')[4]
-                    else:
-                        receivedToken = token_string.split(';')[3]
+                                user = UserNotifications.query.filter_by(username=userId).first()
+                                if user is not None:
+                                    devices = []
+                                    for device in user.devices:
+                                        devices.append(device.token)
 
-                    try:
-                        x = UserScan(user_A=g.response['user']['userId'], user_B=token_string.split(';')[0])
-                        db.session.add(x)
-                        db.session.commit()
+                                    headers = {
+                                            'Content-Type': "application/json",
+                                            "Authorization": "key=" + Config.API_KEY_FIREBASE
+                                    }
 
-                        headers = {
-                            'Content-Type': "application/json",
-                            "Authorization": "key=" + Config.API_KEY_FIREBASE
-                        }
+                                    body = {
+                                        "registration_ids": devices,
+                                        "notification": {
+                                        "title": 'Richiesta informazioni',
+                                        "body": g.response['user']['userId'] + " vorrebbe ottenere le tue informazioni.",
+                                        "badge": "1",
+                                        "sound": "default",
+                                        "showWhenInForeground": "true",
+                                        },
+                                        "data": {
+                                            "receivedToken": content['myToken'],
+                                            "page": "info",
+                                            "id": x.id
+                                        },
+                                        "content_avaible": True,
+                                        "priority": "High"
+                                    }
 
-                        # TODO dare titolo a notifica
-                        body = {
-                            "notification": {
-                                "title": 'Richiesta informazioni',
-                                "body": g.response['user']['userId'] + " vorrebbe ottenere le tue informazioni.",
-                                "badge": "1",
-                                "sound": "default",
-                                "showWhenInForeground": "true",
-                            },
-                            "data": {
-                                "receivedToken": content['myToken'],
-                                "page": "info",
-                                "id": x.id
-                            },
-                            "content_avaible": True,
-                            "priority": "High",
-                            "to": receivedToken
-                        }
-
-                        firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
+                                    firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
                                                              headers=headers, timeout=5)
 
-                        if firebase_response.status_code == 200:
-                            return {
-                                       "status": "success",
-                                       "message": "Notifica inviata con successo!"
-                                   }, 200
-                    except:
-                        db.session.rollback()
+                                    removeToken(firebase_response.json(), devices)
 
+                                    return {
+                                            "status": "success",
+                                            "message": "Notifica inviata con successo!"
+                                    }, 200
+                            except:
+                                db.session.rollback()
+                        else:
+                            return {"errMsg": "Token scaduto!"}, 403
+                    else:
+                        return {"errMsg": "Token non valido!"}, 403
                 except requests.exceptions.HTTPError as e:
                     return {
                                "status": "Error",
@@ -359,69 +376,80 @@ class sendInfo(Resource):
         if g.status == 200:
             if 'receivedToken' in content and 'id' in content:
                 try:
-                    if g.response['user']['grpId'] == 6:
-                        id = str(g.response['user']['persId'])
-                        res = requests.get(url + "anagrafica-service-v2/persone/" + str(id) + "/foto", headers=headers, timeout=5, stream=True)
-                        image = base64.b64encode(res.content)
-                    elif g.response['user']['grpId'] == 7:
-                        id = str(g.response['user']['docenteId'])
-                        img_url = "https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/ugov_wsfiles/foto/ugov_fotopersona_0000000000" + str(id) + ".jpg"
-                        res = requests.request("GET", img_url, verify=False, timeout=5)
-                        image = base64.b64encode(res.content)
+                    record = UserScan.query.filter_by(id=content['id']).first()
+                    if record.result != "Accepted":
+                        image = None
+                        info_json = {}
+                        if g.response['user']['grpId'] == 6:
+                            id = str(g.response['user']['persId'])
+                            res = requests.get(url + "anagrafica-service-v2/persone/" + str(id) + "/foto", headers=headers, timeout=5, stream=True)
+                            image = base64.b64encode(res.content).decode('utf-8')
+                        elif g.response['user']['grpId'] == 7:
+                            id = str(g.response['user']['docenteId'])
+                            try:
+                                image = (BeautifulSoup(urllib.request.urlopen('https://www.uniparthenope.it/ugov/person/' + str(g.response['user']['idAb'])).read(), features="html.parser")).find('div', attrs={'class': 'views-field-field-ugov-foto'}).find('img').attrs['src']
+                            except urllib.error.HTTPError:
+                                image = 'https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/default_images/ugov_fotopersona.jpg'
 
-                    info = Anagrafica(Resource).get(id)
-                    info_json = json.loads(json.dumps(info))[0]
+                        if g.response['user']['grpId'] == 6 or g.response['user']['grpId'] == 7:
+                            info = Anagrafica(Resource).get(id)
+                            info_json = json.loads(json.dumps(info))[0]
 
-                    if g.response['user']['grpId'] == 6:
-                        info_json['matricola'] = g.response['user']['trattiCarriera'][0]['matricola']
-                    info_json['username'] = g.response['user']['userId']
-                    info_json['ruolo'] = g.response['user']['grpDes']
-                    if image is not None:
-                        info_json['image'] = image.decode('utf-8')
-
-                    try:
-                        record = UserScan.query.filter_by(id=content['id']).first()
-                        record.result = "Accepted"
+                            if g.response['user']['grpId'] == 6:
+                                info_json['matricola'] = g.response['user']['trattiCarriera'][0]['matricola']
+                                info_json['image'] = image
                         
-                        x = TempScanNotification(response=str(info_json), username=record.user_A)
-                        db.session.add(x)
-                        db.session.commit()
+                        info_json['username'] = g.response['user']['userId']
+                        info_json['ruolo'] = g.response['user']['grpDes']
 
-                        headers = {
-                            'Content-Type': "application/json",
-                            "Authorization": "key=" + Config.API_KEY_FIREBASE
-                        }
 
-                        body = {
-                            "notification": {
-                                "title": 'Informazioni ottenute',
-                                "body": g.response['user']['userId'] + " ha condiviso le sue informazioni.",
-                                "badge": "1",
-                                "sound": "default",
-                                "showWhenInForeground": "true",
-                            },
-                            "data": {
-                                "page": "info_received",
-                                "id_info": x.id
-                            },
-                            "content_avaible": True,
-                            "priority": "High",
-                            "to": content['receivedToken']
-                        }
+                        try:
+                            record.result = "Accepted"
+                        
+                            x = TempScanNotification(response=str(info_json), username=record.user_A)
+                            db.session.add(x)
+                            db.session.commit()
 
-                        firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
+                            headers = {
+                                'Content-Type': "application/json",
+                                "Authorization": "key=" + Config.API_KEY_FIREBASE
+                            }
+
+                            body = {
+                                "notification": {
+                                    "title": 'Informazioni ottenute',
+                                    "body": g.response['user']['userId'] + " ha condiviso le sue informazioni.",
+                                    "badge": "1",
+                                    "sound": "default",
+                                    "showWhenInForeground": "true",
+                                },
+                                "data": {
+                                    "page": "info_received",
+                                    "id_info": x.id
+                                },
+                                "content_avaible": True,
+                                "priority": "High",
+                                "to": content['receivedToken']
+                            }
+
+                            firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
                                                              headers=headers, timeout=5)
 
-                        #print(firebase_response)
-
-                        if firebase_response.status_code == 200:
-                            return {
-                                       "status": "success",
-                                       "message": "Notifica inviata con successo!"
-
-                                   }, 200
-                    except:
-                        db.session.rollback()
+                            if firebase_response.status_code == 200:
+                                return {
+                                    "status": "success",
+                                    "message": "Notifica inviata con successo!"
+                                }, 200
+                        except:
+                            print("Unexpected error:")
+                            print("Title: " + sys.exc_info()[0].__name__)
+                            print("Description: " + traceback.format_exc())
+                            db.session.rollback()
+                    else:
+                        return {
+                            "errMsg": "Error",
+                            "message": "Scmabio informazioni già avvenuto"
+                        }, 500
                 except requests.exceptions.HTTPError as e:
                     return {
                                "status": "Error",

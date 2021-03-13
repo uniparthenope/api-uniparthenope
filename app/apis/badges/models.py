@@ -65,4 +65,5 @@ class TempScanNotification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     response = db.Column(db.Text, nullable=False)
     username = db.Column(db.String(64), nullable=False)
+    image = db.Column(db.BLOB, nullable=True)
     time_stamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)

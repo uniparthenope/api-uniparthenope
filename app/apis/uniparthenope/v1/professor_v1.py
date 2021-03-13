@@ -83,14 +83,15 @@ class getCourses(Resource):
                         "Authorization": "Basic " + Config.USER_ROOT
                     }
 
-                    response = requests.request("GET", url + "logistica-service-v1/logisticaPerDocente?docenteId=" + str(g.response['user']['docenteId']) + "&" + "aaOffId=" + str(aaId), headers=headers, timeout=5)
+                    response = requests.request("GET", url + "logistica-service-v1/logisticaPerDocente?docenteId=" + str(g.response['user']['docenteId']) + "&" + "aaOffId=" + str(aaId), headers=headers, timeout=10)
                     _response = response.json()
+                    #print(_response)
 
                     if response.status_code == 200:
                         for i in range(len(_response)):
                             if _response[i]['adId'] not in array_adId:
                                 array_adId.append(_response[i]['adId'])
-                                response2 = requests.request("GET", url + "logistica-service-v1/logistica?aaOffId=" + aaId + "&adId=" + str(_response[i]['adId']), headers=headers, timeout=5)
+                                response2 = requests.request("GET", url + "logistica-service-v1/logistica?aaOffId=" + aaId + "&adId=" + str(_response[i]['adId']), headers=headers, timeout=10)
                                 if response2.status_code == 200:
                                     _response2 = response2.json()
                                     if len(_response2) != 0:

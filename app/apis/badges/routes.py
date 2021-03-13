@@ -5,14 +5,14 @@ ver = "v1"
 
 ns = api.namespace('Badges', description='UniParthenope App operations')
 
-from app.apis.badges.v1.badges_v1 import QrCode, QrCodeCheck, QrCodeStatus, SyncMachine, GetScanHistory
+from app.apis.badges.v1.badges_v1 import QrCode, QrCodeCheck, QrCodeStatus, SyncMachine, ScanHistory
 from app.apis.badges.v2.badges_v2 import QrCode_v2, QrCodeCheck_v2, sendRequestInfo, sendInfo, getContactInfo
 
 ns.add_resource(QrCode, '/v1/generateQrCode', methods=['GET'])
 ns.add_resource(QrCodeCheck, '/v1/checkQrCode', methods=['POST'])
 ns.add_resource(QrCodeStatus, '/v1/QrCodeStatus/<int:interval>/<tabletId>', methods=['GET'])
 ns.add_resource(SyncMachine, '/v1/SyncMachine', methods=['POST'])
-ns.add_resource(GetScanHistory, '/v1/getScanHistory', methods=['GET'])
+ns.add_resource(ScanHistory, '/v1/ScanHistory', methods=['GET'])
 
 
 ns.add_resource(QrCode_v2, '/v2/generateQrCode', methods=['GET'])

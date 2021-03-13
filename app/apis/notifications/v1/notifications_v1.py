@@ -54,8 +54,8 @@ class RegisterDevice(Resource):
                         db.session.commit()
 
                     return {
-                               "status": "OK"
-                           }, 200
+                        "status": "OK"
+                    }, 200
 
                 except exc.IntegrityError:
                     db.session.rollback()
@@ -78,6 +78,42 @@ class RegisterDevice(Resource):
                 return {'errMsg': 'Wrong body!'}, 500
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
+
+
+# ------------- UNREGISTER USER'S DEVICE -------------
+
+
+remove_info = ns.model("remove_devices_info", {
+    "token": fields.String(description="Token devices", required=True)
+})
+
+
+class UnregisterDevice(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    @ns.expect(remove_info)
+    def post(self):
+        """Unregister device"""
+
+        content = request.json
+
+        if g.status == 200:
+            user = Devices.query.filter_by(token=content['token']).join(UserNotifications).filter_by(username=g.response['user']['userId']).first()
+
+            if user is not None:
+                try:
+                    db.session.delete(user)
+                    db.session.commit()
+                    return {"status": "Ok"}, 200
+                except:
+                    db.session.rollback()
+                    print("Unexpected error:")
+                    print("Title: " + sys.exc_info()[0].__name__)
+                    print("Description: " + traceback.format_exc())
+                    return {
+                        'errMsgTitle': sys.exc_info()[0].__name__,
+                        'errMsg': traceback.format_exc()
+                    }, 500
 
 
 # ------------- GET ALL CDSID -------------
@@ -160,6 +196,11 @@ class NotificationByCdsId(Resource):
                                     "sound": "default",
                                     "showWhenInForeground": "true",
                                 },
+                                "data": {
+                                    "page": "news",
+                                    "title": content['title'],
+                                    "body": content['body']
+                                },
                                 "content_avaible": True,
                                 "priority": "High",
                                 "to": "/topics/CDS_" + content['cdsId']
@@ -200,6 +241,16 @@ class NotificationByCdsId(Resource):
 # ------------- SEND NOTIFICATION BY USERNAME -------------
 
 
+def removeToken(result, tokens):
+    try:
+        for i, err in enumerate(result['results']):
+            if 'error' in err:
+                Devices.query.filter_by(token=tokens[i]).delete()
+        db.session.commit()
+    except:
+        db.session.rollback()
+
+
 notification_username = ns.model("notification_username", {
     "username": fields.List(fields.String(example="user1")),
     "title": fields.String(description="titolo della notifica", required=True, example="title"),
@@ -230,59 +281,66 @@ class NotificationByUsername(Resource):
                         user = UserNotifications.query.filter_by(username=username).first()
 
                         if user is not None:
+                            devices = []
                             for device in user.devices:
-                                try:
-                                    headers = {
-                                        'Content-Type': "application/json",
-                                        "Authorization": "key=" + Config.API_KEY_FIREBASE
-                                    }
+                                devices.append(device.token)
 
-                                    body = {
-                                        "notification": {
-                                            "title": content['title'],
-                                            "body": content['body'],
-                                            "badge": "1",
-                                            "sound": "default",
-                                            "showWhenInForeground": "true",
-                                        },
-                                        "content_avaible": True,
-                                        "priority": "High",
-                                        "to": device.token
-                                    }
+                            try:
+                                headers = {
+                                    'Content-Type': "application/json",
+                                    "Authorization": "key=" + Config.API_KEY_FIREBASE
+                                }
 
-                                    firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body, headers=headers, timeout=5)
-                                    if firebase_response.status_code == 200:
-                                        status_array.append({
-                                            "status": "OK",
-                                            "message": "Success!"
-                                        })
-                                    else:
-                                        status_array.append({
-                                            "status": "Error",
-                                            "message": firebase_response.content
-                                        })
+                                body = {
+                                    "registration_ids": devices,
+                                    "notification": {
+                                        "title": content['title'],
+                                        "body": content['body'],
+                                        "badge": "1",
+                                        "sound": "default",
+                                        "showWhenInForeground": "true",
+                                    },
+                                    "data": {
+                                        "page": "news",
+                                        "title": content['title'],
+                                        "body": content['body']
+                                    },
+                                    "content_avaible": True,
+                                    "priority": "High"
+                                }
 
-                                except requests.exceptions.HTTPError as e:
+                                firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body, headers=headers, timeout=5)
+
+                                removeToken(firebase_response.json(), devices)
+
+                                if firebase_response.status_code == 200:
+                                    result = firebase_response.json()
+                                    status_array.append({
+                                        "status": "OK",
+                                        "message": result['results']
+                                    })
+
+                            except requests.exceptions.HTTPError as e:
                                     status_array.append({
                                         "status": "Error",
                                         "message": str(e)
                                     })
-                                except requests.exceptions.ConnectionError as e:
+                            except requests.exceptions.ConnectionError as e:
                                     status_array.append({
                                         "status": "Error",
                                         "message": str(e)
                                     })
-                                except requests.exceptions.Timeout as e:
+                            except requests.exceptions.Timeout as e:
                                     status_array.append({
                                         "status": "Error",
                                         "message": str(e)
                                     })
-                                except requests.exceptions.RequestException as e:
+                            except requests.exceptions.RequestException as e:
                                     status_array.append({
                                         "status": "Error",
                                         "message": str(e)
                                     })
-                                except:
+                            except:
                                     print("Unexpected error:")
                                     print("Title: " + sys.exc_info()[0].__name__)
                                     print("Description: " + traceback.format_exc())

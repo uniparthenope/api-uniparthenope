@@ -32,8 +32,7 @@ class MyExams(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "libretto-service-v2/libretti/" + matId + "/righe",
-                                            headers=headers, timeout=5)
+            response = requests.request("GET", url + "libretto-service-v2/libretti/" + matId + "/righe", headers=headers, timeout=10)
             _response = response.json()
 
             if response.status_code == 200:

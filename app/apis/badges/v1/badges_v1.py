@@ -318,7 +318,7 @@ class SyncMachine(Resource):
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
 
-class GetScanHistory(Resource):
+class ScanHistory(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
 

@@ -65,12 +65,12 @@ class getTodayServices(Resource):
 
             try:
                 start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0)
-                end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59)
+                end = datetime(datetime.now().year, datetime.now().month, datetime.now().day + 1, 23, 59)
 
                 # start = datetime(2020, 9, 30, 0, 0)
                 # end = datetime(2020, 9, 30, 23, 59)
                 grpid = "," + str(g.response['user']['grpId']) + ","
-                print(grpid)
+                #print(grpid)
 
                 aree = Area.query.all()
                 for area in aree:
@@ -167,10 +167,6 @@ class getTodayLecture(Resource):
             codici = []
             codici_res = []
 
-            res_room = ReservableRoom.query.all()
-            for rr in res_room:
-                codici_res.append(rr.id_corso)
-
             for i in range(len(_result)):
                 if _result[i]['status']['esito'] == 'P' or _result[i]['status']['esito'] == 'F':
                     codici.append(_result[i]['codice'])
@@ -182,74 +178,28 @@ class getTodayLecture(Resource):
 
             array = []
             start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
-            end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59).timestamp()
+            end = datetime(datetime.now().year, datetime.now().month, datetime.now().day + 1, 23, 59).timestamp()
 
             # start = datetime(2020, 10, 9, 0, 0).timestamp()
             # end = datetime(2020, 10, 9, 23, 59).timestamp()
 
-            user_info = UserTemp.query.filter_by(username=username).first()
-            if len(_result) == 0 and user_info is not None:
-                for cod in codici_res:
-                    rs = con.execute(
-                        "SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND `id_corso` LIKE '%%" + str(
-                            cod) + "%%' AND start_time >= '" + str(start) + "' AND end_time <= '" + str(end) + "'")
-
-                    for row in rs:
-                        reserved = False
-                        resered_id = None
-                        reserved_by = None
-                        reservation = Reservations.query.filter_by(id_lezione=row[0]).filter_by(
-                            username=username)
-
-                        if reservation.first() is not None:
-                            reserved = True
-                            resered_id = reservation.first().id
-                            reserved_by = reservation.first().reserved_by
-
-                        array.append({
-                            'id': row[0],
-                            'id_corso': cod,
-                            'start': str(datetime.fromtimestamp(row[1])),
-                            'end': str(datetime.fromtimestamp(row[2])),
-                            'room': {
-                                'name': row[38],
-                                'capacity': math.floor(row[41] / 2),
-                                'description': row[40],
-                                'availability': math.floor(
-                                    int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(
-                                    id_lezione=row[0]).count()
-                            },
-                            'course_name': row[9],
-                            'prof': row[11],
-                            'reservation': {
-                                'reserved_id': resered_id,
-                                'reserved': reserved,
-                                'reserved_by': reserved_by
-                            }
-                        })
-                return array, 200
-
-
             for i in range(len(codici)):
                 codice = codici[i]
-                if codice in codici_res:
-                    rs = con.execute(
-                        "SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND `id_corso` LIKE '%%" + str(
-                            codice) + "%%' AND start_time >= '" + str(start) + "' AND end_time <= '" + str(end) + "'")
+                rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND `id_corso` LIKE '%%" + str(codice) + "%%' AND start_time >= '" + str(start) + "' AND end_time <= '" + str(end) + "'")
 
-                    for row in rs:
-                        reserved = False
-                        resered_id = None
-                        reserved_by = None
-                        reservation = Reservations.query.filter_by(id_lezione=row[0]).filter_by(
+                for row in rs:
+                    reserved = False
+                    resered_id = None
+                    reserved_by = None
+                    reservation = Reservations.query.filter_by(id_lezione=row[0]).filter_by(
                             username=username)
 
-                        if reservation.first() is not None:
-                            reserved = True
-                            resered_id = reservation.first().id
-                            reserved_by = reservation.first().reserved_by
+                    if reservation.first() is not None:
+                        reserved = True
+                        resered_id = reservation.first().id
+                        reserved_by = reservation.first().reserved_by
 
-                        array.append({
+                    array.append({
                             'id': row[0],
                             'id_corso': codice,
                             'start': str(datetime.fromtimestamp(row[1])),
@@ -269,39 +219,7 @@ class getTodayLecture(Resource):
                                 'reserved': reserved,
                                 'reserved_by': reserved_by
                             }
-                        })
-                else:
-                    res = Reservations.query.filter_by(id_corso=codice).filter_by(username=username).filter(
-                        Reservations.start_time >= datetime.fromtimestamp(start)).filter(
-                        Reservations.end_time <= datetime.fromtimestamp(end)).first()
-                    if res is not None:
-                        rs = con.execute(
-                            "SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND E.id LIKE '%%" + str(
-                                res.id_lezione) + "%%' AND start_time >= '" + str(start) + "' AND end_time <= '" + str(
-                                end) + "'")
-
-                        for row in rs:
-                            array.append({
-                                'id': row[0],
-                                'id_corso': codice,
-                                'start': str(datetime.fromtimestamp(row[1])),
-                                'end': str(datetime.fromtimestamp(row[2])),
-                                'room': {
-                                    'name': row[38],
-                                    'capacity': math.floor(row[41] / 2),
-                                    'description': row[40],
-                                    'availability': math.floor(
-                                        int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(
-                                        id_lezione=row[0]).count()
-                                },
-                                'course_name': row[9],
-                                'prof': row[11],
-                                'reservation': {
-                                    'reserved_id': res.id,
-                                    'reserved': True,
-                                    'reserved_by': res.reserved_by
-                                }
-                            })
+                    })
 
             return array, 200
 
@@ -344,8 +262,7 @@ class getLectures(Resource):
                 if _result[i]['status']['esito'] == 'P' or _result[i]['status']['esito'] == 'F':
                     codice = _result[i]['codice']
 
-                    rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso LIKE '%%" + str(
-                        codice) + "%%' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
+                    rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso LIKE '%%" + str(codice) + "%%' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
 
                     for row in rs:
                         reserved = False
@@ -383,7 +300,6 @@ class getLectures(Resource):
 
             res = Reservations.query.filter_by(username=username).filter(
                 Reservations.start_time >= datetime.fromtimestamp(start)).all()
-            print(res)
 
             if len(array) == 0:
                 for r in res:
@@ -483,9 +399,9 @@ class getProfLectures(Resource):
 
                 start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
 
-                rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso LIKE '%%" + str(
-                    codice) + "%%' AND E.start_time >= '" + str(
-                    start) + "' AND R.id = E.room_id AND E.description LIKE '%%" + username.split(".")[1] + "%%'")
+                rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso LIKE '%%" + str(codice) + "%%' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id") 
+                #COGNOMI CON SPAZI E ACCENTI
+                #AND E.description LIKE '%%" + username.split(".")[1] + "%%'")
 
                 courses = []
                 for row in rs:
@@ -508,6 +424,8 @@ class getProfLectures(Resource):
                     'nome': _result[i]['adDes'],
                     'courses': courses
                 })
+
+            #print(array)
             return array, 200
         else:
             return {'errMsg': _result['errMsg']}, status
@@ -545,7 +463,7 @@ class ServicesReservation(Resource):
                         if user.autocertification and user.classroom == "presence":
                             capacity = math.floor(rs.Room.capacity / 2)
 
-                            now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59)
+                            now = datetime(datetime.now().year, datetime.now().month, datetime.now().day+1, 23, 59)
                             # now = datetime(2020, 9, 28, 23, 59)
 
                             if rs.Entry.start_time > now or rs.Entry.end_time > now or rs.Entry.end_time < datetime.now():
@@ -554,18 +472,16 @@ class ServicesReservation(Resource):
                                            'errMsg': 'Prenotazione non consentita.'
                                 }, 500
 
-                            start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0,
-                                             0)
-                            end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23,
-                                           59)
+                            start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0)
+                            end = datetime(datetime.now().year, datetime.now().month, datetime.now().day+1, 23, 59)
 
                             today_reservations = Reservations.query.filter_by(username=username).filter(
                                 Reservations.start_time >= start).filter(
                                 Reservations.end_time <= end).all()
 
                             for res in today_reservations:
-                                print(res.start_time, rs.Entry.start_time, res.end_time)
-                                print(res.start_time, rs.Entry.end_time, res.end_time)
+                                #print(res.start_time, rs.Entry.start_time, res.end_time)
+                                #print(res.start_time, rs.Entry.end_time, res.end_time)
                                 if res.start_time <= rs.Entry.start_time < res.end_time or res.start_time < rs.Entry.end_time <= res.end_time:
                                     return {
                                                'errMsgTitle': 'Attenzione',
@@ -621,7 +537,7 @@ class ServicesReservation(Resource):
 
                             capacity = math.floor(rs.Room.capacity / 2)
 
-                            now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59)
+                            now = datetime(datetime.now().year, datetime.now().month, datetime.now().day+1, 23, 59)
                             # now = datetime(2020, 9, 28, 23, 59)
 
                             if rs.Entry.start_time > now or rs.Entry.end_time > now or rs.Entry.end_time < datetime.now():
@@ -630,10 +546,8 @@ class ServicesReservation(Resource):
                                            'errMsg': 'Prenotazione non consentita.'
                                        }, 500
 
-                            start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0,
-                                             0)
-                            end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23,
-                                           59)
+                            start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0)
+                            end = datetime(datetime.now().year, datetime.now().month, datetime.now().day+1, 23, 59)
 
                             today_reservations = Reservations.query.filter_by(username=username).filter(
                                 Reservations.start_time >= start).filter(
@@ -749,25 +663,21 @@ class Reservation(Resource):
                         if user is not None:
                             if user.autocertification and user.classroom == "presence":
                                 con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
-                                rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id = '" + content[
-                                    'id_lezione'] + "' AND E.room_id = R.id")
+                                rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id = '" + content['id_lezione'] + "' AND E.room_id = R.id")
                                 result = rs.fetchall()
                                 capacity = int(result[0][41]) / 2
     
-                                now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59)
+                                now = datetime(datetime.now().year, datetime.now().month, datetime.now().day+1, 23, 59)
                                 # now = datetime(2020, 9, 28, 23, 59)
-                                print(datetime.fromtimestamp(result[0][1]), now)
+                                #print(datetime.fromtimestamp(result[0][1]), now)
 
-                                if datetime.fromtimestamp(result[0][1]) > now or content[
-                                    'id_corso'] not in codici_res or datetime.fromtimestamp(result[0][2]) > now or datetime.fromtimestamp(result[0][2]) < datetime.now():
+                                if datetime.fromtimestamp(result[0][1]) > now or datetime.fromtimestamp(result[0][2]) > now or datetime.fromtimestamp(result[0][2]) < datetime.now():
                                     return {
                                                'errMsgTitle': 'Attenzione',
                                                'errMsg': 'Prenotazione non consentita.'
                                            }, 500
-                                start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0,
-                                         0)
-                                end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23,
-                                       59)
+                                start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0)
+                                end = datetime(datetime.now().year, datetime.now().month, datetime.now().day+1, 23, 59)
 
                                 today_reservations = Reservations.query.filter_by(username=username).filter(
                                     Reservations.start_time >= start).filter(
@@ -849,7 +759,7 @@ class Reservation(Resource):
             if g.response['user']['grpId'] == 6:
                 try:
                     start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
-                    end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59).timestamp()
+                    end = datetime(datetime.now().year, datetime.now().month, datetime.now().day+1, 23, 59).timestamp()
 
                     # start = datetime(2020, 9, 21, 0, 0)
                     # end = datetime(2020, 9, 21, 23, 59)
@@ -906,8 +816,6 @@ class Reservation(Resource):
 
                     status = json.loads(json.dumps(result))[1]
                     _result = json.loads(json.dumps(result))[0]
-
-                    print(_result)
 
                     if status == 200:
                         codici = []

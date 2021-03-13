@@ -268,18 +268,29 @@ class CurrentAA(Resource):
                             _response_aa = response_aa.json()
 
                             if response_aa.status_code == 200:
-
+                                
+                                lang = ''
+                                try:
+                                    lang = requests.headers['Accept-Language']
+                                except:
+                                    lang = ''
                                 if curr_sem == "Sessione Estiva" or curr_sem == "Sessione Anticipata" or curr_sem == "Sessione Straordinaria":
+                                    sem = 'Secondo Semestre'
+                                    if 'en' in lang:
+                                        sem = 'Second Semester' 
 
                                     return {
                                                'curr_sem': _response[i]['des'],
-                                               'semestre': "Secondo Semestre",
+                                               'semestre': sem,
                                                'aa_accad': str(_response_aa['aaId'])
                                            }, 200
                                 else:
+                                    sem = 'Primo Semestre'
+                                    if 'en' in lang:
+                                        sem = 'First Semester'
                                     return {
                                                'curr_sem': _response[i]['des'],
-                                               'semestre': "Primo Semestre",
+                                               'semestre': sem,
                                                'aa_accad': str(_response_aa['aaId'])
                                            }, 200
                             else:
