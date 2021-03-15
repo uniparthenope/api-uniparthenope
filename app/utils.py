@@ -1,6 +1,7 @@
 from app import Config
 from cryptography.fernet import Fernet
 from app.apis.badges.models import Scan
+import datetime 
 
 
 class Utils(object):
@@ -20,6 +21,13 @@ class Utils(object):
 
     @staticmethod
     def obscure_data():
-        print("Begin")
         scan = Scan.query.all()
-        print(scan)
+
+        tod = datetime.datetime.now()
+        d = datetime.timedelta(days = 28)
+        a = tod - d
+        count = 0
+
+        for s in scan:
+            if s.time_stamp < a and s.username is not None:
+                count += 1
