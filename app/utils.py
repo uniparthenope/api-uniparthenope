@@ -1,6 +1,7 @@
 from app import Config
 from cryptography.fernet import Fernet
 from app.apis.badges.models import Scan
+from app import db
 import datetime 
 
 
@@ -21,13 +22,17 @@ class Utils(object):
 
     @staticmethod
     def obscure_data():
+        print("Inizio cancellazione dati")
         scan = Scan.query.all()
 
-        tod = datetime.datetime.now()
-        d = datetime.timedelta(days = 28)
-        a = tod - d
-        count = 0
+        today = datetime.datetime.now()
+        delta = datetime.timedelta(days=28)
+        new_data = today - delta
 
         for s in scan:
-            if s.time_stamp < a and s.username is not None:
-                count += 1
+            if s.time_stamp < new_data and s.username is not None and s.username != '_USERNAME_':
+                s.username = '_USERNAME_'
+                s.matricola = '_ID_'
+
+        db.session.commit()
+        print("Fine cancellazione dati")

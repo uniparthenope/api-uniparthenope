@@ -33,7 +33,7 @@ migrate = Migrate(app, db)
 from app.utils import Utils
 
 sched = BackgroundScheduler()
-sched.add_job(Utils.obscure_data, 'interval', seconds=10)
+sched.add_job(Utils.obscure_data, 'cron', minute='0', hour='23')
 sched.start()
 
 ### <ROUTES> ###
