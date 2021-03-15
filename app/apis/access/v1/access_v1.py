@@ -137,7 +137,6 @@ class Access(Resource):
                 userId = r['user']['userId']
 
                 user = UserAccess.query.filter_by(username=userId).first()
-                user.encrypt_user(userId)
                 if r['user']['grpId'] == 6:
                     if r['user']['userId'] != userId:
                         user = UserAccess.query.filter_by(username=r['user']['userId']).first()
