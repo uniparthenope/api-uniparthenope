@@ -40,7 +40,7 @@ class Access(Resource):
         if g.status == 200:
             try:
                 r = g.response
-                userId = ['user']['userId']
+                userId = r['user']['userId']
 
                 if r['user']['grpId'] == 7 or r['user']['grpId'] == 99 or r['user']['grpId'] == 97 or r['user']['grpId'] == 98:
                     return {'errMsg': 'Operazione non consentita!'}, 403
