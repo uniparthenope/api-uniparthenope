@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 import urllib
 import requests
 import sqlalchemy
+import asyncio
 
 from flask import g, send_file, Response, request
 from flask_restplus import Resource, fields
@@ -46,6 +47,13 @@ def removeToken(result, tokens):
     except:
         db.session.rollback()
 
+
+async def deleteTempRow(id):
+    await asyncio.sleep(10)
+    record = TempScanNotification.query.filter_by(id=id).first()
+    if record is not None:
+        db.session.delete(record)
+        db.session.commit()
 
 
 # ------------- QR-CODE -------------
@@ -434,6 +442,8 @@ class sendInfo(Resource):
 
                             firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
                                                              headers=headers, timeout=5)
+
+                            asyncio.run(deleteTempRow(x.id))
 
                             if firebase_response.status_code == 200:
                                 return {
