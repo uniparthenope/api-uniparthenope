@@ -49,11 +49,16 @@ def removeToken(result, tokens):
 
 
 async def deleteTempRow(id):
+    #print("Prima async")
     await asyncio.sleep(10)
-    record = TempScanNotification.query.filter_by(id=id).first()
-    if record is not None:
-        db.session.delete(record)
-        db.session.commit()
+    #print("Dopo async")
+    try:
+        record = TempScanNotification.query.filter_by(id=id).first()
+        if record is not None:
+            db.session.delete(record)
+            db.session.commit()
+    except:
+        pass
 
 
 # ------------- QR-CODE -------------
@@ -443,7 +448,8 @@ class sendInfo(Resource):
                             firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
                                                              headers=headers, timeout=5)
 
-                            asyncio.run(deleteTempRow(x.id))
+                            loop = asyncio.get_event_loop()
+                            loop.run_until_complete(deleteTempRow(x.id))
 
                             if firebase_response.status_code == 200:
                                 return {
