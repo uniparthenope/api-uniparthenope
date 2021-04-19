@@ -177,7 +177,7 @@ class getSession(Resource):
 
 
                         response_aa = requests.request("GET",
-                                                       url + "servizi-service-v1/annoRif/DR_SUA", headers=headers)
+                                                       url + "servizi-service-v1/annoRif/DR_OFF", headers=headers)
                         _response_aa = response_aa.json()
                         aa = str(_response_aa['aaId'])
 
