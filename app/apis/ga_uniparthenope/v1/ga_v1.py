@@ -1,9 +1,6 @@
-import csv
 import json
 import sys
 import traceback
-import urllib.request
-import io
 import base64
 import math
 
