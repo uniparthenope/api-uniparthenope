@@ -50,7 +50,7 @@ def removeToken(result, tokens):
 
 async def deleteTempRow(id):
     #print("Prima async")
-    await asyncio.sleep(10)
+    await asyncio.sleep(300)
     #print("Dopo async")
     try:
         record = TempScanNotification.query.filter_by(id=id).first()
