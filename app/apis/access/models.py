@@ -14,6 +14,7 @@ class UserAccess(db.Model):
     matId = db.Column(db.Integer)
     matricola = db.Column(db.String(16))
     cdsId = db.Column(db.Integer)
+    GP_expire = db.Column(db.DateTime)
 
     def __repr__(self):
         return '<User {}>'.format(self.username) + '<classroom {}>'.format(self.classroom) + '<flag {}>'.format(self.autocertification)

@@ -25,3 +25,7 @@ pillow==8.1.2
 pymysql==0.10.1
 cryptography==3.4.6
 apscheduler==3.7.0
+python-codicefiscale
+base45
+cbor2
+cose==0.9.dev7
