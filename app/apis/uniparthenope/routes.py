@@ -11,9 +11,12 @@ from app.apis.uniparthenope.v1.students_v1 import DepInfo, GetPianoId, GetAverag
 from app.apis.uniparthenope.v1.professor_v1 import getCourses, getSession, DetInfo, getStudentList
 from app.apis.uniparthenope.v1.general_v1 import Sedi, CurrentAA, RecentAD, InfoCourse, InfoPersone, PersonalImage, ProfImage, RSSNews, RSSAvvisi, Privacy, Anagrafica
 from app.apis.uniparthenope.v2.students_v2 import MyExams
+from app.apis.uniparthenope.v2.login_v2 import Login_v2
 
 ns.add_resource(Login, '/v1/login', methods=['GET'])
 ns.add_resource(Logout, '/v1/logout', methods=['GET'])
+
+ns.add_resource(Login_v2, '/v2/login', methods=['GET'])
 
 
 ns.add_resource(DepInfo, '/v1/students/departmentInfo/<stuId>', methods=['GET'])
