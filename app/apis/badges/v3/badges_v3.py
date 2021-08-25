@@ -2,13 +2,8 @@ import base64
 import sys
 import traceback
 from datetime import datetime, timedelta
-import sqlalchemy
 import requests
 from codicefiscale import codicefiscale
-import zlib
-import base45
-import cbor2
-import json
 from app.libs import greenpass
 
 from flask import g, request
@@ -19,14 +14,13 @@ from app import api, db
 from app.apis.uniparthenope.v1.login_v1 import token_required_general
 from app.apis.badges.models import Badges, Scan
 from app.apis.access.models import UserAccess
-from app.apis.ga_uniparthenope.models import Reservations
 from app.log.log import time_log
 
 url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
 
 
-def returnMessage(message, duration, color, position, data='', id = None):
+def returnMessage(message, duration, color, position, data='', id=None):
     return {
         'message': message,
         'data': data,
@@ -35,6 +29,52 @@ def returnMessage(message, duration, color, position, data='', id = None):
         'color': color,
         'position': int(position)
     }
+
+
+def check(username, content, msg):
+    try:
+        headers = {
+            'Content-Type': "application/json",
+            "Authorization": "Basic " + Config.USER_ROOT
+        }
+
+        info_request = requests.request("GET",
+                                        url + "anagrafica-service-v2/utenti/" + username,
+                                        headers=headers, timeout=5)
+        _info = info_request.json()
+        _info = _info[0]
+
+        if info_request.status_code == 200:
+            x = codicefiscale.decode(_info['codFis'])
+            date = x['birthdate']
+            info = username + ":" + _info['nome'] + ":" + _info[
+                'cognome'] + ":" + date.strftime("%Y-%m-%d")
+            message_bytes = info.encode('ascii')
+            base64_bytes = base64.b64encode(message_bytes)
+            base64_message = base64_bytes.decode('ascii')
+
+            u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
+                     username=username,
+                     result=msg,
+                     scan_by=g.response['user']['userId'])
+            db.session.add(u)
+            db.session.commit()
+            return returnMessage("\n\nNON AUTORIZZATO !\n\n" + msg, 1,
+                                 "#0703FC", 3, base64_message, u.id), 501
+    except:
+        message_bytes = username.encode('ascii')
+        base64_bytes = base64.b64encode(message_bytes)
+        base64_message = base64_bytes.decode('ascii')
+
+        u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
+                 username=username,
+                 result=msg,
+                 scan_by=g.response['user']['userId'])
+        db.session.add(u)
+        db.session.commit()
+        print("Description: " + traceback.format_exc())
+        return returnMessage("\n\nNON AUTORIZZATO !\n\n" + msg, 1,
+                             "#0703FC", 3, base64_message, u.id), 502
 
 
 # ------------- QR-CODE CHECK -------------
@@ -61,7 +101,6 @@ class QrCodeCheck_v3(Resource):
                     message_bytes = base64.b64decode(base64_bytes)
                     token_string = message_bytes.decode('utf-8')
                     username = token_string.split(':')[0]
-                    grpId = token_string.split(':')[2]
 
                     badge = Badges.query.filter_by(token=content['token']).first()
                     if badge is not None:
@@ -69,96 +108,35 @@ class QrCodeCheck_v3(Resource):
                             user = UserAccess.query.filter_by(username=username).first()
                             if user is not None:
                                 if user.autocertification and user.GP_expire > datetime.now():
-                                    if grpId == 6:
-                                        matricola = token_string.split(':')[3]
-                                        if user.classroom == "presence":
-                                            u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
-                                                         username=username, grpId=grpId, matricola=matricola,
-                                                         result="OK", scan_by=g.response['user']['userId'])
-                                            db.session.add(u)
-                                            db.session.commit()
-                                            return returnMessage("\n\nAUTORIZZATO !\n\n" + string, 1, "#00AA00",
-                                                                     3), 200
-                                        else:
-                                            u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
-                                                     username=username, grpId=grpId, matricola=matricola,
-                                                     result="Tipo di accesso non in presenza!",
-                                                     scan_by=g.response['user']['userId'])
-                                            db.session.add(u)
-                                            db.session.commit()
-                                            return returnMessage(
-                                                "\n\nNON AUTORIZZATO !\n\nTipo di accesso non in presenza!", 1,
-                                                "#AA0000", 3), 500
-                                    else:
-                                        u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
-                                                 username=username, grpId=grpId,
-                                                 result="OK", scan_by=g.response['user']['userId'])
-                                        db.session.add(u)
-                                        db.session.commit()
-                                        return returnMessage("\n\nAUTORIZZATO !\n\n", 1, "#00AA00", 3), 200
+                                    u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
+                                             username=username, result="OK",
+                                             scan_by=g.response['user']['userId'])
+                                    db.session.add(u)
+                                    db.session.commit()
+                                    return returnMessage("\n\nAUTORIZZATO !\n\n", 1, "#00AA00",
+                                                         3), 200
                                 else:
                                     if datetime.now() < user.GP_expire:
                                         msg = "GreenPass Scaduto!"
                                         user = UserAccess.query.filter_by(username=username).first()
                                         user.autocertification = False
-                                        #user.GP_expire = None
+                                        # user.GP_expire = None
                                         db.session.commit()
                                     else:
                                         msg = "GreenPass Mancante!"
 
-                                    try:
-                                        headers = {
-                                            'Content-Type': "application/json",
-                                            "Authorization": "Basic " + Config.USER_ROOT
-                                        }
-
-                                        info_request = requests.request("GET", url + "anagrafica-service-v2/utenti/" + username, headers=headers, timeout=5)
-                                        _info = info_request.json()
-                                        #print(_info)
-                                        _info = _info[0]
-
-                                        if info_request.status_code == 200:
-                                            x = codicefiscale.decode(_info['codFis'])
-                                            date = x['birthdate']
-                                            info = username + ":" + _info['nome'] + ":" + _info['cognome'] + ":" + date.strftime("%Y-%m-%d")
-                                            message_bytes = info.encode('ascii')
-                                            base64_bytes = base64.b64encode(message_bytes)
-                                            base64_message = base64_bytes.decode('ascii')
-                                        
-                                            u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
-                                                username=username, grpId=grpId,
-                                                result=msg,
-                                                scan_by=g.response['user']['userId'])
-                                            db.session.add(u)
-                                            db.session.commit()
-                                            return returnMessage("\n\nNON AUTORIZZATO !\n\n" + msg, 1,
-                                                         "#0703FC", 3, base64_message, u.id), 501
-                                    except:
-                                        message_bytes = username.encode('ascii')
-                                        base64_bytes = base64.b64encode(message_bytes)
-                                        base64_message = base64_bytes.decode('ascii')
-
-                                        u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
-                                             username=username, grpId=grpId,
-                                             result=msg,
-                                             scan_by=g.response['user']['userId'])
-                                        db.session.add(u)
-                                        db.session.commit()
-                                        print("Description: " + traceback.format_exc())
-                                        return returnMessage("\n\nNON AUTORIZZATO !\n\n" + msg, 1,
-                                                         "#0703FC", 3, base64_message, u.id), 502
+                                    return check(username, content, msg)
                             else:
-                                u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
-                                         username=username, grpId=grpId,
-                                         result="Utente non presente nel db.", scan_by=g.response['user']['userId'])
+                                u = UserAccess(username=username, persId=None,
+                                               stuId=None, matId=None, matricola=None, cdsId=None,
+                                               GP_expire="2001-01-01 00:00:00")
                                 db.session.add(u)
                                 db.session.commit()
-                                return returnMessage(
-                                    "\n\nNON AUTORIZZATO !\n\nUtente non presente nel db. Provare con il proprio username al posto del CF!",
-                                    1, "#AA0000", 3), 500
+
+                                return check(username, content, "GreenPass Mancante!")
                         else:
                             u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
-                                     username=username, grpId=grpId,
+                                     username=username,
                                      result="Token scaduto", scan_by=g.response['user']['userId'])
                             db.session.add(u)
                             db.session.commit()
@@ -186,7 +164,6 @@ class QrCodeCheck_v3(Resource):
             return {'errMsg': 'Wrong username/pass'}, g.status
 
 
-
 # ------------- GREENPASS CHECK -------------
 
 insert_token = ns.model("Token_GP", {
@@ -199,14 +176,10 @@ insert_token = ns.model("Token_GP", {
 def checkGP(name, surname, birthdate, greenpassToken):
     certificate, is_valid = greenpass.certinfo(greenpassToken.encode('UTF-8'))
     expiry = datetime.strptime(certificate['certificate']['v'][0]['dt'], "%Y-%m-%d") + timedelta(days=270)
-    #print(certificate['certificate'])
     if is_valid and datetime.now() < expiry:
         nameData = certificate['certificate']['nam']['gn']
         surnameData = certificate['certificate']['nam']['fn']
         birthdateData = certificate['certificate']['dob']
-        #print(nameData, name)
-        #print(surnameData, surname)
-        #print(birthdateData, birthdate)
 
         if nameData == name and surnameData == surname and birthdate == birthdateData:
             return True, expiry, "GreenPass valido!"
@@ -214,6 +187,7 @@ def checkGP(name, surname, birthdate, greenpassToken):
             return False, expiry, "ATTENZIONE! \nL'utente non corrisponde!"
     else:
         return False, expiry, "GreenPass non valido!"
+
 
 class GreenPassCheck(Resource):
     @time_log(title="BADGES_V3", filename="badges_v3.log", funcName="GreenPassCheck")
@@ -223,6 +197,7 @@ class GreenPassCheck(Resource):
     def post(self):
         """ GreenPass QrCode """
         content = request.json
+        print(content)
 
         if g.status == 200:
             if 'token_GP' in content and 'data' in content and 'id' in content:
@@ -260,6 +235,7 @@ class GreenPassCheck(Resource):
 
                     return returnMessage("\n\nNON AUTORIZZATO !\n\nToken non valido!", 1, "#AA0000", 3), 500
             else:
+                print("QUI")
                 return {'errMsg': 'Error payload'}, 500
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
