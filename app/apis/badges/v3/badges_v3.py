@@ -101,6 +101,25 @@ class QrCodeCheck_v3(Resource):
                     message_bytes = base64.b64decode(base64_bytes)
                     token_string = message_bytes.decode('utf-8')
                     username = token_string.split(':')[0]
+                    grpId = token_string.split(':')[-1]
+
+                    if grpId == '90':
+                        try:
+                            headers = {
+                                'Content-Type': "application/json",
+                                "Authorization": "Basic " + Config.USER_ROOT
+                            }
+
+                            info_request = requests.request("GET",
+                                                            url + "anagrafica-service-v2/utenti?codFis=" + username,
+                                                            headers=headers, timeout=5)
+                            _info = info_request.json()
+                            _info = _info[0]
+
+                            username = _info["userId"]
+                            print(username)
+                        except:
+                            print("Description: " + traceback.format_exc())
 
                     badge = Badges.query.filter_by(token=content['token']).first()
                     if badge is not None:

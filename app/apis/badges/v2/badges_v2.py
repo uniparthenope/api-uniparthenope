@@ -49,9 +49,9 @@ def removeToken(result, tokens):
 
 
 async def deleteTempRow(id):
-    #print("Prima async")
+    # print("Prima async")
     await asyncio.sleep(300)
-    #print("Dopo async")
+    # print("Dopo async")
     try:
         record = TempScanNotification.query.filter_by(id=id).first()
         if record is not None:
@@ -71,15 +71,14 @@ class QrCode_v2(Resource):
     def get(self):
         """Get qr-code image"""
 
-        if g.status == 200:
+        if g.status == 200 or g.status == 202:
             try:
                 if g.response['user']['grpId'] == 6:
                     token_qr = g.response['user']['userId'] + ":" + randomword(30) + ":" + str(
-                            g.response['user']['grpId']) + ":" + g.response['user']['trattiCarriera'][0]['matricola']
+                        g.response['user']['grpId']) + ":" + g.response['user']['trattiCarriera'][0]['matricola']
                 else:
                     token_qr = g.response['user']['userId'] + ":" + randomword(30) + ":" + str(
-                            g.response['user']['grpId'])
-
+                        g.response['user']['grpId'])
 
                 token_qr_final = (base64.b64encode(bytes(str(token_qr).encode("utf-8")))).decode('utf-8')
 
@@ -101,7 +100,39 @@ class QrCode_v2(Resource):
                 return {'errMsg': 'Image creation error'}, 500
 
         else:
-            return {'errMsg': 'Wrong username/pass'}, g.status
+            return {'errMsg': 'Wrong username/pass'}, g.statu
+
+
+class QrCode_v2_SPID(Resource):
+    @ns.produces(['image/png'])
+    def post(self):
+        """Get qr-code image"""
+        content = request.json
+
+        print(content)
+
+        try:
+            grpId = '90'
+            token_qr = content['CF'] + ":" + randomword(30) + ":" + grpId
+
+            token_qr_final = (base64.b64encode(bytes(str(token_qr).encode("utf-8")))).decode('utf-8')
+
+            expire_data = datetime.now() + timedelta(minutes=10)
+
+            badge = Badges(token=token_qr_final, expire_time=expire_data)
+            db.session.add(badge)
+            db.session.commit()
+
+            pil_img = qrcode.make(token_qr_final)
+            img_io = BytesIO()
+            pil_img.save(img_io, 'PNG')
+            img_io.seek(0)
+            return send_file(img_io, mimetype='image/png', cache_timeout=-1)
+        except:
+            print("Unexpected error:")
+            print("Title: " + sys.exc_info()[0].__name__)
+            print("Description: " + traceback.format_exc())
+            return {'errMsg': 'Image creation error'}, 500
 
 
 # ------------- QR-CODE CHECK -------------
@@ -293,18 +324,19 @@ class sendRequestInfo(Resource):
                                         devices.append(device.token)
 
                                     headers = {
-                                            'Content-Type': "application/json",
-                                            "Authorization": "key=" + Config.API_KEY_FIREBASE
+                                        'Content-Type': "application/json",
+                                        "Authorization": "key=" + Config.API_KEY_FIREBASE
                                     }
 
                                     body = {
                                         "registration_ids": devices,
                                         "notification": {
-                                        "title": 'Richiesta informazioni',
-                                        "body": g.response['user']['userId'] + " vorrebbe ottenere le tue informazioni.",
-                                        "badge": "1",
-                                        "sound": "default",
-                                        "showWhenInForeground": "true",
+                                            "title": 'Richiesta informazioni',
+                                            "body": g.response['user'][
+                                                        'userId'] + " vorrebbe ottenere le tue informazioni.",
+                                            "badge": "1",
+                                            "sound": "default",
+                                            "showWhenInForeground": "true",
                                         },
                                         "data": {
                                             "receivedToken": content['myToken'],
@@ -315,15 +347,16 @@ class sendRequestInfo(Resource):
                                         "priority": "High"
                                     }
 
-                                    firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
-                                                             headers=headers, timeout=5)
+                                    firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send",
+                                                                         json=body,
+                                                                         headers=headers, timeout=5)
 
                                     removeToken(firebase_response.json(), devices)
 
                                     return {
-                                            "status": "success",
-                                            "message": "Notifica inviata con successo!"
-                                    }, 200
+                                               "status": "success",
+                                               "message": "Notifica inviata con successo!"
+                                           }, 200
                             except:
                                 db.session.rollback()
                         else:
@@ -395,12 +428,18 @@ class sendInfo(Resource):
                         info_json = {}
                         if g.response['user']['grpId'] == 6:
                             id = str(g.response['user']['persId'])
-                            res = requests.get(url + "anagrafica-service-v2/persone/" + str(id) + "/foto", headers=headers, timeout=5, stream=True)
+                            res = requests.get(url + "anagrafica-service-v2/persone/" + str(id) + "/foto",
+                                               headers=headers, timeout=5, stream=True)
                             image = base64.b64encode(res.content).decode('utf-8')
                         elif g.response['user']['grpId'] == 7:
                             id = str(g.response['user']['docenteId'])
                             try:
-                                image = (BeautifulSoup(urllib.request.urlopen('https://www.uniparthenope.it/ugov/person/' + str(g.response['user']['idAb'])).read(), features="html.parser")).find('div', attrs={'class': 'views-field-field-ugov-foto'}).find('img').attrs['src']
+                                image = (BeautifulSoup(urllib.request.urlopen(
+                                    'https://www.uniparthenope.it/ugov/person/' + str(
+                                        g.response['user']['idAb'])).read(), features="html.parser")).find('div',
+                                                                                                           attrs={
+                                                                                                               'class': 'views-field-field-ugov-foto'}).find(
+                                    'img').attrs['src']
                             except urllib.error.HTTPError:
                                 image = 'https://www.uniparthenope.it/sites/default/files/styles/fototessera__175x200_/public/default_images/ugov_fotopersona.jpg'
 
@@ -411,14 +450,13 @@ class sendInfo(Resource):
                             if g.response['user']['grpId'] == 6:
                                 info_json['matricola'] = g.response['user']['trattiCarriera'][0]['matricola']
                                 info_json['image'] = image
-                        
+
                         info_json['username'] = g.response['user']['userId']
                         info_json['ruolo'] = g.response['user']['grpDes']
 
-
                         try:
                             record.result = "Accepted"
-                        
+
                             x = TempScanNotification(response=str(info_json), username=record.user_A)
                             db.session.add(x)
                             db.session.commit()
@@ -445,17 +483,18 @@ class sendInfo(Resource):
                                 "to": content['receivedToken']
                             }
 
-                            firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send", json=body,
-                                                             headers=headers, timeout=5)
+                            firebase_response = requests.request("POST", "https://fcm.googleapis.com/fcm/send",
+                                                                 json=body,
+                                                                 headers=headers, timeout=5)
 
                             loop = asyncio.get_event_loop()
                             loop.run_until_complete(deleteTempRow(x.id))
 
                             if firebase_response.status_code == 200:
                                 return {
-                                    "status": "success",
-                                    "message": "Notifica inviata con successo!"
-                                }, 200
+                                           "status": "success",
+                                           "message": "Notifica inviata con successo!"
+                                       }, 200
                         except:
                             print("Unexpected error:")
                             print("Title: " + sys.exc_info()[0].__name__)
@@ -463,9 +502,9 @@ class sendInfo(Resource):
                             db.session.rollback()
                     else:
                         return {
-                            "errMsg": "Error",
-                            "message": "Scmabio informazioni già avvenuto"
-                        }, 500
+                                   "errMsg": "Error",
+                                   "message": "Scmabio informazioni già avvenuto"
+                               }, 500
                 except requests.exceptions.HTTPError as e:
                     return {
                                "status": "Error",
