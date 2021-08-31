@@ -2,7 +2,7 @@ import sys
 import traceback
 
 import sqlalchemy
-from datetime import datetime
+from datetime import datetime, timedelta
 import math
 
 from sqlalchemy import exc
@@ -36,8 +36,8 @@ class getAllTodayRooms(Resource):
             for area in all_areas:
                 areas.append({'area': area.area_name, 'services': []})
 
-            start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
-            end = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59).timestamp()
+            start = datetime.now().date()
+            end = start + timedelta(days=1)
 
             con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
 
@@ -119,8 +119,8 @@ class RoomsReservation(Resource):
                                    'errMsgTitle': 'Attenzione',
                                    'errMsg': 'Prenotazione non consentita.'
                                }, 500
-                    start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0)
-                    end = datetime(datetime.now().year, datetime.now().month, datetime.now().day + 1, 23, 59)
+                    start = datetime.now().date()
+                    end = start + timedelta(days=1)
 
                     today_reservations = Reservations.query.filter_by(username=username).filter(
                         Reservations.start_time >= start).filter(

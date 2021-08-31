@@ -171,11 +171,8 @@ class getTodayLecture(Resource):
                     codici.append(r.id_corso)
 
             array = []
-            start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
-            end = datetime(datetime.now().year, datetime.now().month, datetime.now().day + 1, 23, 59).timestamp()
-
-            # start = datetime(2020, 10, 9, 0, 0).timestamp()
-            # end = datetime(2020, 10, 9, 23, 59).timestamp()
+            start = datetime.now().date()
+            end = start + timedelta(days=1)
 
             for i in range(len(codici)):
                 codice = codici[i]
@@ -247,7 +244,7 @@ class getLectures(Resource):
 
         con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
 
-        start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
+        start = datetime.now().date()
 
         if status == 200:
             array = []
@@ -391,7 +388,7 @@ class getProfLectures(Resource):
             for i in range(len(_result)):
                 codice = _result[i]['adDefAppCod']
 
-                start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
+                start = datetime.now().date()
 
                 rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso LIKE '%%" + str(codice) + "%%' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id") 
                 #COGNOMI CON SPAZI E ACCENTI
@@ -466,8 +463,8 @@ class ServicesReservation(Resource):
                                            'errMsg': 'Prenotazione non consentita.'
                                 }, 500
 
-                            start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0)
-                            end = datetime(datetime.now().year, datetime.now().month, datetime.now().day+1, 23, 59)
+                            start = datetime.now().date()
+                            end = start + timedelta(days=1)
 
                             today_reservations = Reservations.query.filter_by(username=username).filter(
                                 Reservations.start_time >= start).filter(
@@ -540,8 +537,8 @@ class ServicesReservation(Resource):
                                            'errMsg': 'Prenotazione non consentita.'
                                        }, 500
 
-                            start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0)
-                            end = datetime(datetime.now().year, datetime.now().month, datetime.now().day+1, 23, 59)
+                            start = datetime.now().date()
+                            end = start + timedelta(days=1)
 
                             today_reservations = Reservations.query.filter_by(username=username).filter(
                                 Reservations.start_time >= start).filter(
@@ -670,8 +667,8 @@ class Reservation(Resource):
                                                'errMsgTitle': 'Attenzione',
                                                'errMsg': 'Prenotazione non consentita.'
                                            }, 500
-                                start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0)
-                                end = datetime(datetime.now().year, datetime.now().month, datetime.now().day+1, 23, 59)
+                                start = datetime.now().date()
+                                end = start + timedelta(days=1)
 
                                 today_reservations = Reservations.query.filter_by(username=username).filter(
                                     Reservations.start_time >= start).filter(
@@ -752,11 +749,8 @@ class Reservation(Resource):
         if g.status == 200:
             if g.response['user']['grpId'] == 6:
                 try:
-                    start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
-                    end = datetime(datetime.now().year, datetime.now().month, datetime.now().day+1, 23, 59).timestamp()
-
-                    # start = datetime(2020, 9, 21, 0, 0)
-                    # end = datetime(2020, 9, 21, 23, 59)
+                    start = datetime.now().date()
+                    end = start + timedelta(days=1)
 
                     reservations = Reservations.query.filter_by(username=username).filter(
                         Reservations.start_time >= datetime.fromtimestamp(start)).all()
@@ -1063,7 +1057,7 @@ class getEvents(Resource):
     def get(self):
         """Get Events"""
         try:
-            start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
+            start = datetime.now().date()
             con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
             rs = con.execute(
                 "SELECT *  FROM `mrbs_entry` E JOIN mrbs_room R WHERE (E.type = 't' COLLATE utf8mb4_bin OR E.type = 's' COLLATE utf8mb4_bin OR E.type = 'b' COLLATE utf8mb4_bin OR E.type = 'a' COLLATE utf8mb4_bin OR E.type = 'z' COLLATE utf8mb4_bin OR E.type = 'Y' COLLATE utf8mb4_bin OR E.type = 'O' COLLATE utf8mb4_bin) AND start_time >= '" + str(
