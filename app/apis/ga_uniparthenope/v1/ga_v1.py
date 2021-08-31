@@ -61,13 +61,10 @@ class getTodayServices(Resource):
             array = []
 
             try:
-                start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0)
-                end = datetime(datetime.now().year, datetime.now().month, datetime.now().day + 1, 23, 59)
+                start = datetime.now().date()
+                end = start + timedelta(days=1)
 
-                # start = datetime(2020, 9, 30, 0, 0)
-                # end = datetime(2020, 9, 30, 23, 59)
                 grpid = "," + str(g.response['user']['grpId']) + ","
-                #print(grpid)
 
                 aree = Area.query.all()
                 for area in aree:
