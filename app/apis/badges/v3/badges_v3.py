@@ -308,3 +308,23 @@ class GreenPassCheck(Resource):
                 return returnMessage("\n\nNON AUTORIZZATO !\n\n" + msg, 1, "#AA0000", 3), 500
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
+
+
+
+class GreenPassStatus(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    def get(self):
+        """ GreenPass Status """
+        if g.status == 200:
+            r = g.response
+            userId = r['user']['userId']
+
+            user = UserAccess.query.filter_by(username=userId).first()
+
+            if user is not None:
+                return {'autocertification': user.autocertification, 'expiry': str(user.GP_expire.strftime('%d-%b-%Y'))}, 200
+            else:
+                return {'autocertification': '0', 'expiry': '2001-01-01 00:00:00'}, 200
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status

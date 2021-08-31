@@ -111,7 +111,7 @@ class RoomsReservation(Resource):
                     result = rs.fetchall()
                     capacity = int(result[0][41]) / 2
 
-                    now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 23, 59)
+                    now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
                     if datetime.fromtimestamp(result[0][1]) > now or datetime.fromtimestamp(
                             result[0][2]) > now or datetime.fromtimestamp(result[0][2]) < datetime.now():

@@ -90,6 +90,15 @@ class getTodayServices(Resource):
                             resered_id = reservation.first().id
                             reserved_by = reservation.first().reserved_by
 
+                        if s.Room.piano is None or s.Room.piano == '999':
+                            piano = " "
+                        else:
+                            piano = s.Room.piano
+                        if s.Room.lato is None:
+                            lato = " "
+                        else:
+                            lato = s.Room.lato
+
                         service.append({
                             'id': s.Entry.id,
                             'start': str(s.Entry.start_time),
@@ -97,7 +106,7 @@ class getTodayServices(Resource):
                             'room': {
                                 'name': s.Room.room_name,
                                 'capacity': math.floor(s.Room.capacity / 2),
-                                'description': "Piano " + s.Room.piano + " Lato " + s.Room.lato,
+                                'description': "Piano " + piano + " Lato " + lato,
                                 'availability': math.floor(
                                     s.Room.capacity / 2) - Reservations.query.with_for_update().filter_by(
                                     id_lezione=s.Entry.id).count()
@@ -244,7 +253,7 @@ class getLectures(Resource):
 
         con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
 
-        start = datetime.now().date()
+        start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
 
         if status == 200:
             array = []
@@ -388,7 +397,7 @@ class getProfLectures(Resource):
             for i in range(len(_result)):
                 codice = _result[i]['adDefAppCod']
 
-                start = datetime.now().date()
+                start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
 
                 rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso LIKE '%%" + str(codice) + "%%' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id") 
                 #COGNOMI CON SPAZI E ACCENTI
@@ -454,8 +463,7 @@ class ServicesReservation(Resource):
                         if user.autocertification and user.classroom == "presence":
                             capacity = math.floor(rs.Room.capacity / 2)
 
-                            now = datetime(datetime.now().year, datetime.now().month, datetime.now().day+1, 23, 59)
-                            # now = datetime(2020, 9, 28, 23, 59)
+                            now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
 
                             if rs.Entry.start_time > now or rs.Entry.end_time > now or rs.Entry.end_time < datetime.now():
                                 return {
@@ -528,8 +536,7 @@ class ServicesReservation(Resource):
 
                             capacity = math.floor(rs.Room.capacity / 2)
 
-                            now = datetime(datetime.now().year, datetime.now().month, datetime.now().day+1, 23, 59)
-                            # now = datetime(2020, 9, 28, 23, 59)
+                            now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
 
                             if rs.Entry.start_time > now or rs.Entry.end_time > now or rs.Entry.end_time < datetime.now():
                                 return {
@@ -658,9 +665,7 @@ class Reservation(Resource):
                                 result = rs.fetchall()
                                 capacity = int(result[0][41]) / 2
     
-                                now = datetime(datetime.now().year, datetime.now().month, datetime.now().day+1, 23, 59)
-                                # now = datetime(2020, 9, 28, 23, 59)
-                                #print(datetime.fromtimestamp(result[0][1]), now)
+                                now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
 
                                 if datetime.fromtimestamp(result[0][1]) > now or datetime.fromtimestamp(result[0][2]) > now or datetime.fromtimestamp(result[0][2]) < datetime.now():
                                     return {
@@ -1057,7 +1062,7 @@ class getEvents(Resource):
     def get(self):
         """Get Events"""
         try:
-            start = datetime.now().date()
+            start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
             con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
             rs = con.execute(
                 "SELECT *  FROM `mrbs_entry` E JOIN mrbs_room R WHERE (E.type = 't' COLLATE utf8mb4_bin OR E.type = 's' COLLATE utf8mb4_bin OR E.type = 'b' COLLATE utf8mb4_bin OR E.type = 'a' COLLATE utf8mb4_bin OR E.type = 'z' COLLATE utf8mb4_bin OR E.type = 'Y' COLLATE utf8mb4_bin OR E.type = 'O' COLLATE utf8mb4_bin) AND start_time >= '" + str(
