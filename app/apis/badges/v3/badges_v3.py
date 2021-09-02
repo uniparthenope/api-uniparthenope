@@ -134,7 +134,7 @@ class QrCodeCheck_v3(Resource):
                                     return returnMessage("\n\nAUTORIZZATO !\n\n", 1, "#00AA00",
                                                          3), 200
                                 else:
-                                    if datetime.now() < user.GP_expire:
+                                    if user.GP_expire < datetime.now():
                                         msg = "GreenPass Scaduto!"
                                         user = UserAccess.query.filter_by(username=username).first()
                                         user.autocertification = False
@@ -328,3 +328,84 @@ class GreenPassStatus(Resource):
                 return {'autocertification': '0', 'expiry': '2001-01-01 00:00:00'}, 200
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
+
+token_gp = ns.model("Token_GP_Mobile", {
+    "token_GP": fields.String(description="token greenpass", required=True)
+})
+
+class GreenPassCheckMobile(Resource):
+    @time_log(title="BADGES_V3", filename="badges_v3.log", funcName="GreenPassCheckMobile")
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    @ns.expect(token_gp)
+    def post(self):
+        """ GreenPass Mobile QrCode """
+        content = request.json
+
+        if g.status == 200:
+            if 'token_GP' in content:
+                try:
+
+                    username = g.response['user']['userId']
+                    name_data = g.response['user']['firstName']
+                    surname_data = g.response['user']['lastName']
+                    cf = codicefiscale.decode(g.response['user']['codFis'])
+                    birthdate_data = cf['birthdate']
+                    _result, expiry, msg = checkGP(name_data, surname_data, birthdate_data.strftime("%Y-%m-%d"), content['token_GP'])
+
+                    if _result:
+                        user = UserAccess.query.filter_by(username=username).first()
+                        user.autocertification = True
+                        user.GP_expire = expiry
+                        db.session.commit()
+
+                        return returnMessage("\n\nSUCCESSO !\n\n" + msg, 1, "#00AA00", 3), 200
+                    else:
+                        return returnMessage("\n\nFALLITO !\n\n" + msg, 1, "#AA0000", 3), 500
+                except:
+                    print("Unexpected error:")
+                    print("Title: " + sys.exc_info()[0].__name__)
+                    print("Description: " + traceback.format_exc())
+
+                    return returnMessage("\n\nFALLITO ! !\n\nToken non valido!", 1, "#AA0000", 3), 500
+            else:
+                msg = 'Error payload'
+                return returnMessage("\n\nFALLITO ! !\n\n" + msg, 1, "#AA0000", 3), 500
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
+
+
+token_operator = ns.model("Token_operator", {
+    "operator_id": fields.String(description="Operator Token", required=True)
+})
+
+class CheckOperator(Resource):
+    @time_log(title="BADGES_V3", filename="badges_v3.log", funcName="CheckOperator")
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    @ns.expect(token_operator)
+    def post(self):
+        """ Check Operator QrCode """
+        content = request.json
+
+        if g.status == 200:
+            if 'operator_id' in content:
+                try:
+                    base64_bytes = content['operator_id'].encode('utf-8')
+                    message_bytes = base64.b64decode(base64_bytes)
+                    token_string = message_bytes.decode('utf-8')
+                    st = troken_string.split(":")
+                    print(token_string)
+
+                except:
+                    print("Unexpected error:")
+                    print("Title: " + sys.exc_info()[0].__name__)
+                    print("Description: " + traceback.format_exc())
+
+                    return returnMessage("\n\nFALLITO ! !\n\nToken non valido!", 1, "#AA0000", 3), 500
+            else:
+                msg = 'Error payload'
+                return returnMessage("\n\nFALLITO ! !\n\n" + msg, 1, "#AA0000", 3), 500
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
+
