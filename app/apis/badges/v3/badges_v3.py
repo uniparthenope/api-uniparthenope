@@ -93,6 +93,8 @@ class QrCodeCheck_v3(Resource):
     def post(self):
         """ Check QrCode """
         content = request.json
+        
+        BYPASS_USR = ["7","99"]
 
         if g.status == 200:
             if 'token' in content and 'id_tablet' in content:
@@ -123,35 +125,52 @@ class QrCodeCheck_v3(Resource):
                     badge = Badges.query.filter_by(token=content['token']).first()
                     if badge is not None:
                         if datetime.now() < badge.expire_time:
-                            user = UserAccess.query.filter_by(username=username).first()
-                            if user is not None:
-                                if user.autocertification and user.GP_expire > datetime.now():
-                                    u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
+                            if grpId in BYPASS_USR:
+                                user = UserAccess.query.filter_by(username=username).first()
+                                if user is not None and user.autocertification:
+                                    msg = " "
+                                    color = "#00AA00"
+                                else:
+                                    msg = "Ricorda di mostrare il GreenPass!"
+                                    color = "#34EBAE"
+
+                                u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
                                              username=username, result="OK",
                                              scan_by=g.response['user']['userId'])
-                                    db.session.add(u)
-                                    db.session.commit()
-                                    return returnMessage("\n\nAUTORIZZATO !\n\n", 1, "#00AA00",
-                                                         3), 200
-                                else:
-                                    if user.GP_expire < datetime.now():
-                                        msg = "GreenPass Scaduto!"
-                                        user = UserAccess.query.filter_by(username=username).first()
-                                        user.autocertification = False
-                                        # user.GP_expire = None
-                                        db.session.commit()
-                                    else:
-                                        msg = "GreenPass Mancante!"
-
-                                    return check(username, content, msg)
-                            else:
-                                u = UserAccess(username=username, persId=None,
-                                               stuId=None, matId=None, matricola=None, cdsId=None,
-                                               GP_expire="2001-01-01 00:00:00")
                                 db.session.add(u)
                                 db.session.commit()
+                                return returnMessage("\n\nAUTORIZZATO !\n\n" + msg, 1, color,
+                                                         3), 200
+                            else:
+                                user = UserAccess.query.filter_by(username=username).first()
+                                if user is not None:
+                                    if user.autocertification and user.GP_expire > datetime.now():
+                                        u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
+                                                 username=username, result="OK",
+                                                 scan_by=g.response['user']['userId'])
+                                        db.session.add(u)
+                                        db.session.commit()
+                                        return returnMessage("\n\nAUTORIZZATO !\n\n", 1, "#00AA00",
+                                                         3), 200
+                                    else:
+                                        if user.GP_expire < datetime.now():
+                                            msg = "GreenPass Scaduto!"
+                                            user = UserAccess.query.filter_by(username=username).first()
+                                            user.autocertification = False
+                                            # user.GP_expire = None
+                                            db.session.commit()
+                                        else:
+                                            msg = "GreenPass Mancante!"
 
-                                return check(username, content, "GreenPass Mancante!")
+                                        return check(username, content, msg)
+                                else:
+                                    u = UserAccess(username=username, persId=None,
+                                                   stuId=None, matId=None, matricola=None, cdsId=None,
+                                                   GP_expire="2001-01-01 00:00:00")
+                                    db.session.add(u)
+                                    db.session.commit()
+
+                                    return check(username, content, "GreenPass Mancante!")
                         else:
                             u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
                                      username=username,
@@ -189,8 +208,12 @@ class ListGreenPass(Resource):
         """ List Validity GreenPass """
         validity = [24, 48]
 
-        return {"validity": validity}, 200
-
+        #return {"validity": validity}, 200
+        return[{"desc":"Certificato 24 ore", "expire":1},
+                {"desc":"Certificato 48 ore", "expire":2},
+                {"desc":"Certificato 9 mesi", "expire":270},
+                {"desc":"Altro tipo", "expire":1}
+                ],200
 
 # ------------- GREENPASS CHECK -------------
 
@@ -216,7 +239,7 @@ class GreenPassCheckNoScan(Resource):
                     username = record.username
                     user = UserAccess.query.filter_by(username=username).first()
                     user.autocertification = True
-                    user.GP_expire = datetime.now().date() + timedelta(hours=content['expiry'])
+                    user.GP_expire = datetime.now().date() + timedelta(days=content['expiry'])
                     db.session.commit()
 
                     msg = "Green Pass aggiunto!"
@@ -394,9 +417,10 @@ class CheckOperator(Resource):
                     base64_bytes = content['operator_id'].encode('utf-8')
                     message_bytes = base64.b64decode(base64_bytes)
                     token_string = message_bytes.decode('utf-8')
-                    st = troken_string.split(":")
-                    print(token_string)
-
+                    st = token_string.split(":")
+                    if st[2] == "99" or st[2] == "7":
+                        msg = "Operatore Autenticato!"
+                        return returnMessage("\n\nSUCESSO!\n\n" + msg, 1, "#00AA00", 3), 200
                 except:
                     print("Unexpected error:")
                     print("Title: " + sys.exc_info()[0].__name__)

@@ -427,7 +427,7 @@ class CheckAppello(Resource):
         }
 
         try:
-            response = requests.request("GET", url + "calesa-service-v1/appelli/" + cdsId + "/" + adId, headers=headers, timeout=10)
+            response = requests.request("GET", url + "calesa-service-v1/appelli/" + cdsId + "/" + adId, headers=headers, timeout=20)
             _response = response.json()
 
             if response.status_code == 200:
@@ -561,6 +561,7 @@ def fetch_appelli(token, appelli):
     for x in range(0, len(_response2['turni'])):
         if _response2['turni'][x]['appLogId'] == appelli['appLogId']:
             if _response2['stato'] != "C":
+                dataEsa = datetime.strptime(_response2['turni'][x]['dataOraEsa'], "%d/%m/%Y %H:%M:%S").strftime("%Y/%m/%d %H:%M")
                 item.append({
                     'adId': adId,
                     'appId': appId,
@@ -579,7 +580,7 @@ def fetch_appelli(token, appelli):
                     'edificioDes': _response2['turni'][x]['edificioDes'],
                     'aulaDes': _response2['turni'][x]['aulaDes'],
                     'desApp': _response2['turni'][x]['des'],
-                    'dataEsa': _response2['turni'][x]['dataOraEsa']
+                    'dataEsa': dataEsa
                 })
 
     return item

@@ -574,7 +574,8 @@ class RSSAvvisi(Resource):
             for i in range(0, size):
                 avviso = {}
                 html = ""
-                abstract = ""
+                #TODO sistemare abstract
+                abstract = " "
 
                 parsed_html = BeautifulSoup(feed['entries'][i]['summary'], features="html.parser")
                 for p in parsed_html.find('div', attrs={'class': 'field-name-field-descrizione'}).find_all('p'):
