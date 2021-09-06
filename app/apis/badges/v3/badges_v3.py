@@ -450,7 +450,7 @@ class GreenPassRemove(Resource):
 
                 db.session.commit()
 
-                return 200
+                return {'message': 'Correctly removed!'}, 200
             else:
                 return {'errMsg': 'User not found'}, 500
         else:
