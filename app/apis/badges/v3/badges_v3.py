@@ -244,7 +244,7 @@ class GreenPassCheckNoScan(Resource):
                     db.session.commit()
 
                     msg = "Green Pass aggiunto!"
-                    return returnMessage("\n\nAUTORIZZATO !\n\n" + msg, 1, "#00AA00", 3), 200
+                    return returnMessage("\n\n\u2705\u2705 AUTORIZZATO \u2705\u2705\n\n" + msg, 1, "#00AA00", 3), 200
             else:
                 msg = 'Error payload'
                 return returnMessage("\n\nNON AUTORIZZATO !\n\n" + msg, 1, "#AA0000", 3), 500
@@ -320,16 +320,16 @@ class GreenPassCheck(Resource):
 
                             return returnMessage("\n\n\u2705\u2705 AUTORIZZATO \u2705\u2705\n\n" + msg, 1, "#00AA00", 3), 200
                         else:
-                            return returnMessage("\n\nNON AUTORIZZATO !\n\n" + msg, 1, "#AA0000", 3), 500
+                            return returnMessage("\n\n\u274C\u274C NON AUTORIZZATO \u274C\u274C\n\n" + msg, 1, "#AA0000", 3), 500
                 except:
                     print("Unexpected error:")
                     print("Title: " + sys.exc_info()[0].__name__)
                     print("Description: " + traceback.format_exc())
 
-                    return returnMessage("\n\nNON AUTORIZZATO !\n\nGreenPass non riconosciuto!", 1, "#AA0000", 3), 500
+                    return returnMessage("\n\n\u274C\u274C NON AUTORIZZATO \u274C\u274C\n\nGreenPass non riconosciuto!", 1, "#AA0000", 3), 500
             else:
                 msg = 'Error payload'
-                return returnMessage("\n\nNON AUTORIZZATO !\n\n" + msg, 1, "#AA0000", 3), 500
+                return returnMessage("\n\n\u274C\u274C NON AUTORIZZATO \u274C\u274C\n\n" + msg, 1, "#AA0000", 3), 500
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
 
@@ -385,16 +385,16 @@ class GreenPassCheckMobile(Resource):
 
                         return returnMessage("\n\n\u2705\u2705 SUCCESSO \u2705\u2705\n\n" + msg, 1, "#00AA00", 3), 200
                     else:
-                        return returnMessage("\n\nFALLITO !\n\n" + msg, 1, "#AA0000", 3), 500
+                        return returnMessage("\n\n\u274C\u274C FALLITO \u274C\u274C\n\n" + msg, 1, "#AA0000", 3), 500
                 except:
                     print("Unexpected error:")
                     print("Title: " + sys.exc_info()[0].__name__)
                     print("Description: " + traceback.format_exc())
 
-                    return returnMessage("\n\nFALLITO ! !\n\nToken non valido!", 1, "#AA0000", 3), 500
+                    return returnMessage("\n\n\u274C\u274C FALLITO \u274C\u274C\n\nToken non valido!", 1, "#AA0000", 3), 500
             else:
                 msg = 'Error payload'
-                return returnMessage("\n\nFALLITO ! !\n\n" + msg, 1, "#AA0000", 3), 500
+                return returnMessage("\n\n\u274C\u274C FALLITO \u274C\u274C\n\n" + msg, 1, "#AA0000", 3), 500
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
 
@@ -421,16 +421,16 @@ class CheckOperator(Resource):
                     st = token_string.split(":")
                     if st[2] == "99" or st[2] == "7":
                         msg = "Operatore Autenticato!"
-                        return returnMessage("\n\nSUCESSO!\n\n" + msg, 1, "#00AA00", 3), 200
+                        return returnMessage("\n\n\u2705\u2705 SUCESSO \u2705\u2705\n\n" + msg, 1, "#00AA00", 3), 200
                 except:
                     print("Unexpected error:")
                     print("Title: " + sys.exc_info()[0].__name__)
                     print("Description: " + traceback.format_exc())
 
-                    return returnMessage("\n\nFALLITO ! !\n\nToken non valido!", 1, "#AA0000", 3), 500
+                    return returnMessage("\n\n\u274C\u274C FALLITO \u274C\u274C\n\nToken non valido!", 1, "#AA0000", 3), 500
             else:
                 msg = 'Error payload'
-                return returnMessage("\n\nFALLITO ! !\n\n" + msg, 1, "#AA0000", 3), 500
+                return returnMessage("\n\n\u274C\u274C FALLITO \u274C\u274C\n\n" + msg, 1, "#AA0000", 3), 500
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
 
