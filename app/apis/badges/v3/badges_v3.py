@@ -132,7 +132,7 @@ class QrCodeCheck_v3(Resource):
                                     msg = " "
                                     color = "#00AA00"
                                 else:
-                                    msg = "Ricorda di mostrare il GreenPass!"
+                                    msg = "\u2139 Ricorda di mostrare il GreenPass!"
                                     color = "#34EBAE"
 
                                 u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
@@ -273,7 +273,7 @@ def checkGP(name, surname, birthdate, greenpassToken):
             if nameData == name and surnameData == surname and birthdate == birthdateData:
                 return True, expiry, "\u2705\u2705 GreenPass valido \u2705\u2705"
             else:
-                return False, expiry, "\u274C\u274C ATTENZIONE \u274C\u274C\nL'utente non corrisponde!"
+                return False, expiry, "\u274C\u274C L'utente non corrisponde \u274C\u274C\n"
     else:
         return False, expiry, "\u274C\u274C GreenPass non valido! \u274C\u274C"
 
@@ -383,18 +383,18 @@ class GreenPassCheckMobile(Resource):
                         user.GP_expire = expiry
                         db.session.commit()
 
-                        return returnMessage("\n\n\u2705\u2705 SUCCESSO \u2705\u2705\n\n" + msg, 1, "#00AA00", 3), 200
+                        return returnMessage( msg, 1, "#00AA00", 3), 200
                     else:
-                        return returnMessage("\n\n\u274C\u274C FALLITO \u274C\u274C\n\n" + msg, 1, "#AA0000", 3), 500
+                        return returnMessage( msg, 1, "#AA0000", 3), 500
                 except:
                     print("Unexpected error:")
                     print("Title: " + sys.exc_info()[0].__name__)
                     print("Description: " + traceback.format_exc())
 
-                    return returnMessage("\n\n\u274C\u274C FALLITO \u274C\u274C\n\nToken non valido!", 1, "#AA0000", 3), 500
+                    return returnMessage("\n\n\u274C\u274C Token non valido \u274C\u274C", 1, "#AA0000", 3), 500
             else:
                 msg = 'Error payload'
-                return returnMessage("\n\n\u274C\u274C FALLITO \u274C\u274C\n\n" + msg, 1, "#AA0000", 3), 500
+                return returnMessage( msg, 1, "#AA0000", 3), 500
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
 
