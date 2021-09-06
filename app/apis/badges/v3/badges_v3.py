@@ -59,7 +59,7 @@ def check(username, content, msg):
                      scan_by=g.response['user']['userId'])
             db.session.add(u)
             db.session.commit()
-            return returnMessage("\n\nNON AUTORIZZATO !\n\n" + msg, 1,
+            return returnMessage("\n\n\u2734\u2734 NON AUTORIZZATO \u2734\u2734\n\n" + msg, 1,
                                  "#0703FC", 3, base64_message, u.id), 501
     except:
         message_bytes = username.encode('ascii')
@@ -73,7 +73,7 @@ def check(username, content, msg):
         db.session.add(u)
         db.session.commit()
         print("Description: " + traceback.format_exc())
-        return returnMessage("\n\nNON AUTORIZZATO !\n\n" + msg, 1,
+        return returnMessage("\n\n\u2734\u2734 NON AUTORIZZATO \u2734\u2734\n\n" + msg, 1,
                              "#0703FC", 3, base64_message, u.id), 502
 
 
@@ -125,6 +125,7 @@ class QrCodeCheck_v3(Resource):
                     badge = Badges.query.filter_by(token=content['token']).first()
                     if badge is not None:
                         if datetime.now() < badge.expire_time:
+                            badge.expire_time = datetime.now() # EXPIRE TOKEN!
                             if grpId in BYPASS_USR:
                                 user = UserAccess.query.filter_by(username=username).first()
                                 if user is not None and user.autocertification:
@@ -139,7 +140,7 @@ class QrCodeCheck_v3(Resource):
                                              scan_by=g.response['user']['userId'])
                                 db.session.add(u)
                                 db.session.commit()
-                                return returnMessage("\n\nAUTORIZZATO !\n\n" + msg, 1, color,
+                                return returnMessage("\n\n\u2705\u2705 AUTORIZZATO \u2705\u2705\n\n" + msg, 1, color,
                                                          3), 200
                             else:
                                 user = UserAccess.query.filter_by(username=username).first()
@@ -150,7 +151,7 @@ class QrCodeCheck_v3(Resource):
                                                  scan_by=g.response['user']['userId'])
                                         db.session.add(u)
                                         db.session.commit()
-                                        return returnMessage("\n\nAUTORIZZATO !\n\n", 1, "#00AA00",
+                                        return returnMessage("\n\n\u2705\u2705 AUTORIZZATO \u2705\u2705\n\n", 1, "#00AA00",
                                                          3), 200
                                     else:
                                         if user.GP_expire < datetime.now():
@@ -177,13 +178,13 @@ class QrCodeCheck_v3(Resource):
                                      result="Token scaduto", scan_by=g.response['user']['userId'])
                             db.session.add(u)
                             db.session.commit()
-                            return returnMessage("\n\nNON AUTORIZZATO !\n\nToken scaduto!", 1, "#AA0000", 3), 500
+                            return returnMessage("\n\n\u274C\u274C NON AUTORIZZATO \u274C\u274C\n\nToken scaduto!", 1, "#AA0000", 3), 500
                     else:
                         u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(), result="Token non valido!",
                                  scan_by=g.response['user']['userId'])
                         db.session.add(u)
                         db.session.commit()
-                        return returnMessage("\n\nNON AUTORIZZATO !\n\nToken non valido!", 1, "#AA0000", 3), 500
+                        return returnMessage("\n\n\u274C\u274C NON AUTORIZZATO \u274C\u274C\n\nToken non valido!", 1, "#AA0000", 3), 500
                 except:
                     print("Unexpected error:")
                     print("Title: " + sys.exc_info()[0].__name__)
@@ -194,7 +195,7 @@ class QrCodeCheck_v3(Resource):
                     db.session.add(u)
                     db.session.commit()
 
-                    return returnMessage("\n\nNON AUTORIZZATO !\n\nQr-code non valido!", 1, "#AA0000", 3), 500
+                    return returnMessage("\n\n\u274C\u274C NON AUTORIZZATO \u274C\u274C\n\nQr-code non valido!", 1, "#AA0000", 3), 500
             else:
                 return {'errMsg': 'Error payload'}, 500
         else:
@@ -270,11 +271,11 @@ def checkGP(name, surname, birthdate, greenpassToken):
             birthdateData = certificate['certificate']['dob']
 
             if nameData == name and surnameData == surname and birthdate == birthdateData:
-                return True, expiry, "GreenPass valido!"
+                return True, expiry, "\u2705\u2705 GreenPass valido \u2705\u2705"
             else:
-                return False, expiry, "ATTENZIONE! \nL'utente non corrisponde!"
+                return False, expiry, "\u274C\u274C ATTENZIONE \u274C\u274C\nL'utente non corrisponde!"
     else:
-        return False, expiry, "GreenPass non valido!"
+        return False, expiry, "\u274C\u274C GreenPass non valido! \u274C\u274C"
 
 
 class GreenPassCheck(Resource):
