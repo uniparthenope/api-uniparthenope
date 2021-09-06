@@ -434,3 +434,24 @@ class CheckOperator(Resource):
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
 
+
+class GreenPassRemove(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    def delete(self):
+        """ Remove GreenPass  """
+        if g.status == 200:
+            r = g.response
+            userId = r['user']['userId']
+            user = UserAccess.query.filter_by(username=userId).first()
+            if user is not None:
+                user.greenpass = False
+                user.expiry = '2001-01-01 00:00:00'
+
+                db.session.commit()
+
+                return 200
+            else:
+                return {'errMsg': 'User not found'}, 500
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
