@@ -318,7 +318,7 @@ class GreenPassCheck(Resource):
                             user.GP_expire = expiry
                             db.session.commit()
 
-                            return returnMessage("\n\nAUTORIZZATO !\n\n" + msg, 1, "#00AA00", 3), 200
+                            return returnMessage("\n\n\u2705\u2705 AUTORIZZATO \u2705\u2705\n\n" + msg, 1, "#00AA00", 3), 200
                         else:
                             return returnMessage("\n\nNON AUTORIZZATO !\n\n" + msg, 1, "#AA0000", 3), 500
                 except:
@@ -326,7 +326,7 @@ class GreenPassCheck(Resource):
                     print("Title: " + sys.exc_info()[0].__name__)
                     print("Description: " + traceback.format_exc())
 
-                    return returnMessage("\n\nNON AUTORIZZATO !\n\nToken non valido!", 1, "#AA0000", 3), 500
+                    return returnMessage("\n\nNON AUTORIZZATO !\n\nGreenPass non riconosciuto!", 1, "#AA0000", 3), 500
             else:
                 msg = 'Error payload'
                 return returnMessage("\n\nNON AUTORIZZATO !\n\n" + msg, 1, "#AA0000", 3), 500
@@ -383,7 +383,7 @@ class GreenPassCheckMobile(Resource):
                         user.GP_expire = expiry
                         db.session.commit()
 
-                        return returnMessage("\n\nSUCCESSO !\n\n" + msg, 1, "#00AA00", 3), 200
+                        return returnMessage("\n\n\u2705\u2705 SUCCESSO \u2705\u2705\n\n" + msg, 1, "#00AA00", 3), 200
                     else:
                         return returnMessage("\n\nFALLITO !\n\n" + msg, 1, "#AA0000", 3), 500
                 except:
