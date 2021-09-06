@@ -128,7 +128,7 @@ class QrCodeCheck_v3(Resource):
                             badge.expire_time = datetime.now() # EXPIRE TOKEN!
                             if grpId in BYPASS_USR:
                                 user = UserAccess.query.filter_by(username=username).first()
-                                if user is not None and user.autocertification:
+                                if user is not None and user.greenpass:
                                     msg = " "
                                     color = "#00AA00"
                                 else:
@@ -145,7 +145,7 @@ class QrCodeCheck_v3(Resource):
                             else:
                                 user = UserAccess.query.filter_by(username=username).first()
                                 if user is not None:
-                                    if user.autocertification and user.GP_expire > datetime.now():
+                                    if user.greenpass and user.GP_expire > datetime.now():
                                         u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
                                                  username=username, result="OK",
                                                  scan_by=g.response['user']['userId'])
@@ -157,7 +157,7 @@ class QrCodeCheck_v3(Resource):
                                         if user.GP_expire < datetime.now():
                                             msg = "GreenPass Scaduto!"
                                             user = UserAccess.query.filter_by(username=username).first()
-                                            user.autocertification = False
+                                            user.greenpass = False
                                             # user.GP_expire = None
                                             db.session.commit()
                                         else:
@@ -239,7 +239,7 @@ class GreenPassCheckNoScan(Resource):
                 if record is not None:
                     username = record.username
                     user = UserAccess.query.filter_by(username=username).first()
-                    user.autocertification = True
+                    user.greenpass = True
                     user.GP_expire = datetime.now().date() + timedelta(days=content['expiry'])
                     db.session.commit()
 
@@ -314,7 +314,7 @@ class GreenPassCheck(Resource):
 
                         if result:
                             user = UserAccess.query.filter_by(username=username).first()
-                            user.autocertification = True
+                            user.greenpass = True
                             user.GP_expire = expiry
                             db.session.commit()
 
@@ -347,7 +347,7 @@ class GreenPassStatus(Resource):
             user = UserAccess.query.filter_by(username=userId).first()
 
             if user is not None:
-                return {'autocertification': user.autocertification, 'expiry': str(user.GP_expire.strftime('%d-%b-%Y'))}, 200
+                return {'autocertification': user.greenpass, 'expiry': str(user.GP_expire.strftime('%d-%b-%Y'))}, 200
             else:
                 return {'autocertification': '0', 'expiry': '2001-01-01 00:00:00'}, 200
         else:
@@ -379,7 +379,7 @@ class GreenPassCheckMobile(Resource):
 
                     if _result:
                         user = UserAccess.query.filter_by(username=username).first()
-                        user.autocertification = True
+                        user.greenpass = True
                         user.GP_expire = expiry
                         db.session.commit()
 
