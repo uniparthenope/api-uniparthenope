@@ -71,11 +71,11 @@ class getTodayServices(Resource):
                     array_area = []
                     service = []
 
-                    services = db.session.query(Entry, Room).filter(Room.id == Entry.room_id)\
-                        .filter(Entry.start_time >= start)\
-                        .filter(Entry.end_time <= end)\
-                        .filter(Entry.end_time > datetime.now())\
-                        .filter(Room.area_id == area.id)\
+                    services = db.session.query(Entry, Room).filter(Room.id == Entry.room_id) \
+                        .filter(Entry.start_time >= start) \
+                        .filter(Entry.end_time <= end) \
+                        .filter(Entry.end_time > datetime.now()) \
+                        .filter(Room.area_id == area.id) \
                         .filter(Room.user_access.contains(grpid))
 
                     for s in services:
@@ -185,14 +185,16 @@ class getTodayLecture(Resource):
 
             for i in range(len(codici)):
                 codice = codici[i]
-                rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND `id_corso` LIKE '%%" + str(codice) + "%%' AND start_time >= '" + str(start) + "' AND end_time <= '" + str(end) + "'")
+                rs = con.execute(
+                    "SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND `id_corso` LIKE '%%" + str(
+                        codice) + "%%' AND start_time >= '" + str(start) + "' AND end_time <= '" + str(end) + "'")
 
                 for row in rs:
                     reserved = False
                     resered_id = None
                     reserved_by = None
                     reservation = Reservations.query.filter_by(id_lezione=row[0]).filter_by(
-                            username=username)
+                        username=username)
 
                     if reservation.first() is not None:
                         reserved = True
@@ -200,25 +202,25 @@ class getTodayLecture(Resource):
                         reserved_by = reservation.first().reserved_by
 
                     array.append({
-                            'id': row[0],
-                            'id_corso': codice,
-                            'start': str(datetime.fromtimestamp(row[1])),
-                            'end': str(datetime.fromtimestamp(row[2])),
-                            'room': {
-                                'name': row[38],
-                                'capacity': math.floor(row[41] / 2),
-                                'description': row[40],
-                                'availability': math.floor(
-                                    int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(
-                                    id_lezione=row[0]).count()
-                            },
-                            'course_name': row[9],
-                            'prof': row[11],
-                            'reservation': {
-                                'reserved_id': resered_id,
-                                'reserved': reserved,
-                                'reserved_by': reserved_by
-                            }
+                        'id': row[0],
+                        'id_corso': codice,
+                        'start': str(datetime.fromtimestamp(row[1])),
+                        'end': str(datetime.fromtimestamp(row[2])),
+                        'room': {
+                            'name': row[38],
+                            'capacity': math.floor(row[41] / 2),
+                            'description': row[40],
+                            'availability': math.floor(
+                                int(row[41]) / 2) - Reservations.query.with_for_update().filter_by(
+                                id_lezione=row[0]).count()
+                        },
+                        'course_name': row[9],
+                        'prof': row[11],
+                        'reservation': {
+                            'reserved_id': resered_id,
+                            'reserved': reserved,
+                            'reserved_by': reserved_by
+                        }
                     })
 
             return array, 200
@@ -262,7 +264,8 @@ class getLectures(Resource):
                 if _result[i]['status']['esito'] == 'P' or _result[i]['status']['esito'] == 'F':
                     codice = _result[i]['codice']
 
-                    rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso LIKE '%%" + str(codice) + "%%' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
+                    rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso LIKE '%%" + str(
+                        codice) + "%%' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
 
                     for row in rs:
                         reserved = False
@@ -399,9 +402,10 @@ class getProfLectures(Resource):
 
                 start = datetime(datetime.now().year, datetime.now().month, datetime.now().day, 0, 0).timestamp()
 
-                rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso LIKE '%%" + str(codice) + "%%' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id") 
-                #COGNOMI CON SPAZI E ACCENTI
-                #AND E.description LIKE '%%" + username.split(".")[1] + "%%'")
+                rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id_corso LIKE '%%" + str(
+                    codice) + "%%' AND E.start_time >= '" + str(start) + "' AND R.id = E.room_id")
+                # COGNOMI CON SPAZI E ACCENTI
+                # AND E.description LIKE '%%" + username.split(".")[1] + "%%'")
 
                 courses = []
                 for row in rs:
@@ -425,7 +429,7 @@ class getProfLectures(Resource):
                     'courses': courses
                 })
 
-            #print(array)
+            # print(array)
             return array, 200
         else:
             return {'errMsg': _result['errMsg']}, status
@@ -436,6 +440,72 @@ prenotazione_servizi = ns.model("services_reservation", {
     "id_entry": fields.String(description="", required=True),
     "matricola": fields.String(description="", required=True)
 })
+
+
+def reserve(username, content, rs):
+    try:
+        capacity = math.floor(rs.Room.capacity / 2)
+
+        now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+
+        if rs.Entry.start_time > now or rs.Entry.end_time > now or rs.Entry.end_time < datetime.now():
+            return {
+                       'errMsgTitle': 'Attenzione',
+                       'errMsg': 'Prenotazione non consentita.'
+                   }, 500
+
+        start = datetime.now().date()
+        end = start + timedelta(days=1)
+
+        today_reservations = Reservations.query.filter_by(username=username).filter(
+            Reservations.start_time >= start).filter(
+            Reservations.end_time <= end).all()
+
+        for res in today_reservations:
+            if res.start_time <= rs.Entry.start_time < res.end_time or res.start_time < rs.Entry.end_time <= res.end_time:
+                return {
+                           'errMsgTitle': 'Attenzione',
+                           'errMsg': 'Già presente una prenotazione in questo lasso di tempo.'
+                       }, 500
+
+        r = Reservations(id_corso="SERVICE", course_name=rs.Entry.name,
+                         start_time=rs.Entry.start_time,
+                         end_time=rs.Entry.end_time,
+                         username=username, matricola=content['matricola'],
+                         time=datetime.now(), id_lezione=content['id_entry'],
+                         reserved_by=username)
+        db.session.add(r)
+
+        count = Reservations.query.with_for_update().filter_by(
+            id_lezione=content['id_entry']).count()
+        if count > capacity:
+            db.session.rollback()
+            return {
+                       'errMsgTitle': 'Attenzione',
+                       'errMsg': 'Raggiunta la capacità massima consentita.'
+                   }, 500
+
+        db.session.commit()
+
+        return {
+                   "status": "Prenotazione effettuata con successo."
+               }, 200
+
+    except exc.IntegrityError:
+        db.session.rollback()
+        return {
+                   'errMsgTitle': 'Attenzione',
+                   'errMsg': 'Prenotazione già effettuata per questo servizio.'
+               }, 500
+    except:
+        db.session.rollback()
+        print("Unexpected error:")
+        print("Title: " + sys.exc_info()[0].__name__)
+        print("Description: " + traceback.format_exc())
+        return {
+                   'errMsgTitle': sys.exc_info()[0].__name__,
+                   'errMsg': traceback.format_exc()
+               }, 500
 
 
 class ServicesReservation(Resource):
@@ -457,151 +527,16 @@ class ServicesReservation(Resource):
             grpid = "," + str(g.response['user']['grpId']) + ","
 
             if grpid in rs.Room.user_access:
-                if g.response['user']['grpId'] == 6:
-                    try:
-                        user = UserAccess.query.filter_by(username=username).first()
-                        if user.autocertification and user.classroom == "presence":
-                            capacity = math.floor(rs.Room.capacity / 2)
+                if g.response['user']['grpId'] != 7 and g.response['user']['grpId'] != 99:
+                    user = UserAccess.query.filter_by(username=username).first()
+                    if user is not None and user.greenpass:
+                        reserve(username, content, rs)
+                    else:
+                        return {'status': 'error',
+                                'errMsg': 'Impossibile prenotarsi in mancanza di Green Pass.'}, 500
 
-                            now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
-
-                            if rs.Entry.start_time > now or rs.Entry.end_time > now or rs.Entry.end_time < datetime.now():
-                                return {
-                                           'errMsgTitle': 'Attenzione',
-                                           'errMsg': 'Prenotazione non consentita.'
-                                }, 500
-
-                            start = datetime.now().date()
-                            end = start + timedelta(days=1)
-
-                            today_reservations = Reservations.query.filter_by(username=username).filter(
-                                Reservations.start_time >= start).filter(
-                                Reservations.end_time <= end).all()
-
-                            for res in today_reservations:
-                                #print(res.start_time, rs.Entry.start_time, res.end_time)
-                                #print(res.start_time, rs.Entry.end_time, res.end_time)
-                                if res.start_time <= rs.Entry.start_time < res.end_time or res.start_time < rs.Entry.end_time <= res.end_time:
-                                    return {
-                                               'errMsgTitle': 'Attenzione',
-                                               'errMsg': 'Già presente una prenotazione in questo lasso di tempo.'
-                                    }, 500
-
-                            r = Reservations(id_corso="SERVICE", course_name=rs.Entry.name,
-                                             start_time=rs.Entry.start_time,
-                                             end_time=rs.Entry.end_time,
-                                             username=username, matricola=content['matricola'],
-                                             time=datetime.now(), id_lezione=content['id_entry'],
-                                             reserved_by=username)
-                            db.session.add(r)
-
-                            count = Reservations.query.with_for_update().filter_by(
-                                id_lezione=content['id_entry']).count()
-                            if count > capacity:
-                                db.session.rollback()
-                                return {
-                                           'errMsgTitle': 'Attenzione',
-                                           'errMsg': 'Raggiunta la capacità massima consentita.'
-                                       }, 500
-
-                            db.session.commit()
-
-                            return {
-                                       "status": "Prenotazione effettuata con successo."
-                                   }, 200
-
-                        else:
-                            return {'status': 'error',
-                                    'errMsg': 'Impossibile prenotarsi in mancanza di autocertificazione/accesso in presenza.'}, 500
-
-                    except exc.IntegrityError:
-                        db.session.rollback()
-                        return {
-                                   'errMsgTitle': 'Attenzione',
-                                   'errMsg': 'Prenotazione già effettuata per questa lezione.'
-                               }, 500
-                    except:
-                        db.session.rollback()
-                        print("Unexpected error:")
-                        print("Title: " + sys.exc_info()[0].__name__)
-                        print("Description: " + traceback.format_exc())
-                        return {
-                                   'errMsgTitle': sys.exc_info()[0].__name__,
-                                   'errMsg': traceback.format_exc()
-                               }, 500
                 else:
-                    try:
-                        user = UserAccess.query.filter_by(username=username).first()
-                        if user.autocertification:
-
-                            capacity = math.floor(rs.Room.capacity / 2)
-
-                            now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
-
-                            if rs.Entry.start_time > now or rs.Entry.end_time > now or rs.Entry.end_time < datetime.now():
-                                return {
-                                           'errMsgTitle': 'Attenzione',
-                                           'errMsg': 'Prenotazione non consentita.'
-                                       }, 500
-
-                            start = datetime.now().date()
-                            end = start + timedelta(days=1)
-
-                            today_reservations = Reservations.query.filter_by(username=username).filter(
-                                Reservations.start_time >= start).filter(
-                                Reservations.end_time <= end).all()
-
-                            for res in today_reservations:
-                                print(res.start_time, rs.Entry.start_time, res.end_time)
-                                print(res.start_time, rs.Entry.end_time, res.end_time)
-                                if res.start_time <= rs.Entry.start_time < res.end_time or res.start_time < rs.Entry.end_time <= res.end_time:
-                                    return {
-                                               'errMsgTitle': 'Attenzione',
-                                               'errMsg': 'Già presente una prenotazione in questo lasso di tempo.'
-                                           }, 500
-
-                            r = Reservations(id_corso="SERVICE", course_name=rs.Entry.name,
-                                             start_time=rs.Entry.start_time,
-                                             end_time=rs.Entry.end_time,
-                                             username=username, matricola=content['matricola'],
-                                             time=datetime.now(), id_lezione=content['id_entry'],
-                                             reserved_by=username)
-                            db.session.add(r)
-
-                            count = Reservations.query.with_for_update().filter_by(
-                                id_lezione=content['id_entry']).count()
-                            if count > capacity:
-                                db.session.rollback()
-                                return {
-                                           'errMsgTitle': 'Attenzione',
-                                           'errMsg': 'Raggiunta la capacità massima consentita.'
-                                       }, 500
-
-                            db.session.commit()
-
-                            return {
-                                       "status": "Prenotazione effettuata con successo."
-                                   }, 200
-
-                        else:
-                            return {'status': 'error',
-                                    'errMsg': 'Impossibile prenotarsi in mancanza di autocertificazione.'}, 500
-
-                    except exc.IntegrityError:
-                        db.session.rollback()
-                        return {
-                                   'errMsgTitle': 'Attenzione',
-                                   'errMsg': 'Prenotazione già effettuata per questo servizio.'
-                               }, 500
-                    except:
-                        db.session.rollback()
-                        print("Unexpected error:")
-                        print("Title: " + sys.exc_info()[0].__name__)
-                        print("Description: " + traceback.format_exc())
-                        return {
-                                   'errMsgTitle': sys.exc_info()[0].__name__,
-                                   'errMsg': traceback.format_exc()
-                               }, 500
+                    reserve(username, content, rs)
 
             else:
                 return {
@@ -610,7 +545,6 @@ class ServicesReservation(Resource):
                        }, 500
         else:
             return {'errMsg': 'Errore username/pass!'}, g.status
-
 
 
 # ------------- RESERVATIONS -------------
@@ -661,13 +595,17 @@ class Reservation(Resource):
                         if user is not None:
                             if user.autocertification and user.classroom == "presence":
                                 con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
-                                rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id = '" + content['id_lezione'] + "' AND E.room_id = R.id")
+                                rs = con.execute(
+                                    "SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id = '" + content[
+                                        'id_lezione'] + "' AND E.room_id = R.id")
                                 result = rs.fetchall()
                                 capacity = int(result[0][41]) / 2
-    
-                                now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
 
-                                if datetime.fromtimestamp(result[0][1]) > now or datetime.fromtimestamp(result[0][2]) > now or datetime.fromtimestamp(result[0][2]) < datetime.now():
+                                now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(
+                                    days=1)
+
+                                if datetime.fromtimestamp(result[0][1]) > now or datetime.fromtimestamp(
+                                        result[0][2]) > now or datetime.fromtimestamp(result[0][2]) < datetime.now():
                                     return {
                                                'errMsgTitle': 'Attenzione',
                                                'errMsg': 'Prenotazione non consentita.'
@@ -680,18 +618,20 @@ class Reservation(Resource):
                                     Reservations.end_time <= end).all()
 
                                 for res in today_reservations:
-                                    if res.start_time <= datetime.fromtimestamp(result[0][1]) < res.end_time or res.start_time < datetime.fromtimestamp(result[0][2]) <= res.end_time:
+                                    if res.start_time <= datetime.fromtimestamp(
+                                            result[0][1]) < res.end_time or res.start_time < datetime.fromtimestamp(
+                                            result[0][2]) <= res.end_time:
                                         return {
-                                           'errMsgTitle': 'Attenzione',
-                                           'errMsg': 'Già presente una prenotazione in questo lasso di tempo.'
-                                        }, 500
+                                                   'errMsgTitle': 'Attenzione',
+                                                   'errMsg': 'Già presente una prenotazione in questo lasso di tempo.'
+                                               }, 500
 
                                 r = Reservations(id_corso=content['id_corso'], course_name=result[0][9],
-                                             start_time=datetime.fromtimestamp(result[0][1]),
-                                             end_time=datetime.fromtimestamp(result[0][2]),
-                                             username=username, matricola=content['matricola'],
-                                             time=datetime.now(), id_lezione=content['id_lezione'],
-                                             reserved_by=username)
+                                                 start_time=datetime.fromtimestamp(result[0][1]),
+                                                 end_time=datetime.fromtimestamp(result[0][2]),
+                                                 username=username, matricola=content['matricola'],
+                                                 time=datetime.now(), id_lezione=content['id_lezione'],
+                                                 reserved_by=username)
                                 db.session.add(r)
 
                                 count = Reservations.query.with_for_update().filter_by(
@@ -699,18 +639,18 @@ class Reservation(Resource):
                                 if count > capacity:
                                     db.session.rollback()
                                     return {
-                                           'errMsgTitle': 'Attenzione',
-                                           'errMsg': 'Raggiunta la capacità massima consentita.'
+                                               'errMsgTitle': 'Attenzione',
+                                               'errMsg': 'Raggiunta la capacità massima consentita.'
                                            }, 500
 
                                 db.session.commit()
 
                                 return {
                                            "status": "Prenotazione effettuata con successo."
-                                    }, 200
+                                       }, 200
                             else:
                                 return {'status': 'error',
-                                    'errMsg': 'Impossibile prenotarsi in mancanza di autocertificazione/accesso in presenza.'}, 500
+                                        'errMsg': 'Impossibile prenotarsi in mancanza di autocertificazione/accesso in presenza.'}, 500
                         else:
                             return {'status': 'error',
                                     'errMsg': 'Impossibile prenotarsi in mancanza di autocertificazione/accesso in presenza.'}, 500
@@ -718,13 +658,13 @@ class Reservation(Resource):
                         return {
                                    'errMsgTitle': 'Attenzione',
                                    'errMsg': 'Non è possibile prenotarsi ad una lezione non presente nel proprio piano di studi/già superata.'
-                            }, 500
+                               }, 500
 
                 except exc.IntegrityError:
                     db.session.rollback()
                     return {
-                           'errMsgTitle': 'Attenzione',
-                           'errMsg': 'Prenotazione già effettuata per questa lezione.'
+                               'errMsgTitle': 'Attenzione',
+                               'errMsg': 'Prenotazione già effettuata per questa lezione.'
                            }, 500
                 except:
                     db.session.rollback()
@@ -732,14 +672,14 @@ class Reservation(Resource):
                     print("Title: " + sys.exc_info()[0].__name__)
                     print("Description: " + traceback.format_exc())
                     return {
-                           'errMsgTitle': sys.exc_info()[0].__name__,
-                           'errMsg': traceback.format_exc()
-                        }, 500
+                               'errMsgTitle': sys.exc_info()[0].__name__,
+                               'errMsg': traceback.format_exc()
+                           }, 500
 
             else:
                 return {'errMsg': _result['errMsg']}, status
         else:
-            return {'errMsg':'Payload error!' }, 500
+            return {'errMsg': 'Payload error!'}, 500
 
     @ns.doc(security='Basic Auth')
     @token_required_general
@@ -801,7 +741,6 @@ class Reservation(Resource):
             token_string = message_bytes.decode('utf-8')
 
             username = token_string.split(':')[0]
-
 
             if g.response['user']['grpId'] == 7:
                 if request.args.get('aaId') != None:
