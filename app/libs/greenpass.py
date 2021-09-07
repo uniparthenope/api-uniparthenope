@@ -1,36 +1,24 @@
 import sys
-import glob
 import json
 import zlib
 import cbor2
-import os
-from PIL import Image
-#from pyzbar import pyzbar
-from datetime import datetime
-from urllib.request import urlopen
-from cose.messages import CoseMessage
-from cose.headers import KID, Algorithm
 from base64 import b64decode, b64encode
 from base45 import b45decode
 
-from cose.algorithms import Es256
 from cose.keys.curves import P256
-from cose.algorithms import Es256, EdDSA, Ps256
-from cose.headers import KID, Algorithm
+from cose.algorithms import Es256, Ps256
+from cose.headers import KID
 from cose.keys import CoseKey
 from cose.keys.keyparam import KpAlg, EC2KpX, EC2KpY, EC2KpCurve, RSAKpE, RSAKpN
 from cose.keys.keyparam import KpKty
 from cose.keys.keytype import KtyEC2, KtyRSA
 from cose.messages import CoseMessage
-from cryptography import x509
 from cryptography.utils import int_to_bytes
-from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import ec
 
-sch = open('/home/montella/api-uniparthenope/app/libs/dataset/schema-combined.json')
+sch = open('/Users/ciro/PycharmProjects/api-uniparthenope/app/libs/dataset/schema-combined.json')
 glb_schema = json.load(sch)
 
 kids = {}
@@ -64,7 +52,7 @@ def add_kid(kid_b64, key_b64):
 
 def load_pub_keys():
     #keys = urlopen('https://verifier-api.coronacheck.nl/v4/verifier/public_keys')
-    keys = open('/home/montella/api-uniparthenope/app/libs/dataset/public_keys.json')
+    keys = open('/Users/ciro/PycharmProjects/api-uniparthenope/app/libs/dataset/public_keys.json')
     pkg = json.load(keys)
     payload = b64decode(pkg['payload'])
     trustlist = json.loads(payload)
@@ -74,7 +62,7 @@ def load_pub_keys():
 
 def load_valuesets():
     for name in ["co", "ma", "mp", "tg", "tr", "tt", "vp"]:
-        filename = "/home/montella/api-uniparthenope/app/libs/dataset/{}.json".format(name)
+        filename = "/Users/ciro/PycharmProjects/api-uniparthenope/app/libs/dataset/{}.json".format(name)
         valuesets[name] = json.load(open(filename))["valueSetValues"]
 
 load_valuesets()
