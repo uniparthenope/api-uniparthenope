@@ -19,7 +19,7 @@ from flask import g, request
 ns = api.namespace('uniparthenope')
 
 
-# ------------- GET ALL TODAY ROOMS -------------
+# ------------- GET ALL TODAY CLASSROOMS -------------
 
 
 class getAllTodayRooms(Resource):
@@ -36,14 +36,16 @@ class getAllTodayRooms(Resource):
             for area in all_areas:
                 areas.append({'area': area.area_name, 'services': []})
 
-            start = datetime.now().date()
-            end = start + timedelta(days=1)
+            start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            end = start + timedelta(days=2)
+            start = start.timestamp()
+            end = end.timestamp()
 
             con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
 
             rs = con.execute(
                 "SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND start_time >= '" +
-                str(start) + "' AND end_time <= '" + str(end) + "'")
+                str(start) + "' AND end_time <= '" + str(end) + "' AND type != 'W' AND type != 'c' AND type != 'b' AND type != 't' AND type != 'O'")
 
             for row in rs:
                 reserved = False
@@ -82,7 +84,7 @@ class getAllTodayRooms(Resource):
             return {'errMsg': 'Wrong username/pass'}, g.status
 
 
-# ------------- SERVICES RESERVATIONS -------------
+# ------------- CLASSROOMS RESERVATIONS -------------
 
 
 prenotazione_aule = ns.model("services_reservation", {
@@ -111,16 +113,17 @@ class RoomsReservation(Resource):
                     result = rs.fetchall()
                     capacity = int(result[0][41]) / 2
 
-                    now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+                    start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+                    end = start + timedelta(days=2)
 
-                    if datetime.fromtimestamp(result[0][1]) > now or datetime.fromtimestamp(
-                            result[0][2]) > now or datetime.fromtimestamp(result[0][2]) < datetime.now():
+                    if datetime.fromtimestamp(result[0][1]) < start or datetime.fromtimestamp(
+                            result[0][2]) > end or datetime.fromtimestamp(result[0][2]) < datetime.now():
                         return {
                                    'errMsgTitle': 'Attenzione',
                                    'errMsg': 'Prenotazione non consentita.'
                                }, 500
                     start = datetime.now().date()
-                    end = start + timedelta(days=1)
+                    end = start + timedelta(days=2)
 
                     today_reservations = Reservations.query.filter_by(username=username).filter(
                         Reservations.start_time >= start).filter(

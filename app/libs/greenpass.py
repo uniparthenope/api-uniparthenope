@@ -18,7 +18,7 @@ from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 from cryptography.hazmat.primitives import serialization
 
-sch = open('/Users/ciro/PycharmProjects/api-uniparthenope/app/libs/dataset/schema-combined.json')
+sch = open('/home/montella/api-uniparthenope/app/libs/dataset/schema-combined.json')
 glb_schema = json.load(sch)
 
 kids = {}
@@ -52,7 +52,7 @@ def add_kid(kid_b64, key_b64):
 
 def load_pub_keys():
     #keys = urlopen('https://verifier-api.coronacheck.nl/v4/verifier/public_keys')
-    keys = open('/Users/ciro/PycharmProjects/api-uniparthenope/app/libs/dataset/public_keys.json')
+    keys = open('/home/montella/api-uniparthenope/app/libs/dataset/public_keys.json')
     pkg = json.load(keys)
     payload = b64decode(pkg['payload'])
     trustlist = json.loads(payload)
@@ -62,7 +62,7 @@ def load_pub_keys():
 
 def load_valuesets():
     for name in ["co", "ma", "mp", "tg", "tr", "tt", "vp"]:
-        filename = "/Users/ciro/PycharmProjects/api-uniparthenope/app/libs/dataset/{}.json".format(name)
+        filename = "/home/montella/api-uniparthenope/app/libs/dataset/{}.json".format(name)
         valuesets[name] = json.load(open(filename))["valueSetValues"]
 
 load_valuesets()

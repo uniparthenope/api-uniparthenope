@@ -62,7 +62,7 @@ class getTodayServices(Resource):
 
             try:
                 start = datetime.now().date()
-                end = start + timedelta(days=1)
+                end = start + timedelta(days=2)
 
                 grpid = "," + str(g.response['user']['grpId']) + ","
 
@@ -446,7 +446,7 @@ def reserve(username, content, rs):
     try:
         capacity = math.floor(rs.Room.capacity / 2)
 
-        now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+        now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=2)
 
         if rs.Entry.start_time > now or rs.Entry.end_time > now or rs.Entry.end_time < datetime.now():
             return {
@@ -455,7 +455,7 @@ def reserve(username, content, rs):
                    }, 500
 
         start = datetime.now().date()
-        end = start + timedelta(days=1)
+        end = start + timedelta(days=2)
 
         today_reservations = Reservations.query.filter_by(username=username).filter(
             Reservations.start_time >= start).filter(
@@ -530,13 +530,13 @@ class ServicesReservation(Resource):
                 if g.response['user']['grpId'] != 7 and g.response['user']['grpId'] != 99:
                     user = UserAccess.query.filter_by(username=username).first()
                     if user is not None and user.greenpass:
-                        reserve(username, content, rs)
+                        return reserve(username, content, rs)
                     else:
                         return {'status': 'error',
                                 'errMsg': 'Impossibile prenotarsi in mancanza di Green Pass.'}, 500
 
                 else:
-                    reserve(username, content, rs)
+                    return reserve(username, content, rs)
 
             else:
                 return {
