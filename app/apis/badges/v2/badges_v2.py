@@ -109,7 +109,7 @@ class QrCode_v2_SPID(Resource):
         """Get qr-code image"""
         content = request.json
 
-        print(content)
+        #print(content)
 
         try:
             grpId = '90'

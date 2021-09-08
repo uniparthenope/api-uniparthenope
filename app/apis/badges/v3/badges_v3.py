@@ -128,11 +128,19 @@ class QrCodeCheck_v3(Resource):
                             badge.expire_time = datetime.now() # EXPIRE TOKEN!
                             if grpId in BYPASS_USR:
                                 user = UserAccess.query.filter_by(username=username).first()
-                                if user is not None and user.greenpass:
-                                    msg = " "
-                                    color = "#00AA00"
+                                if user is not None:
+                                    if user.greenpass:
+                                        msg = " "
+                                        color = "#00AA00"
+                                    else:
+                                        msg = "\u2139 Ricorda di mostrare la Certificazione Verde COVID-19!"
+                                        color = "#34EBAE"
                                 else:
-                                    msg = "\u2139 Ricorda di mostrare il GreenPass!"
+                                    new_user = UserAccess(username=username, persId=None, grpId=grpId,
+                                                    stuId=None, matId=None, matricola=None, cdsId=None,
+                                                    GP_expire='2001-01-01 00:00:00', greenpass=False)
+                                    db.session.add(new_user)
+                                    msg = "\u2139 Ricorda di mostrare la Certificazione Verde COVID-19!"
                                     color = "#34EBAE"
 
                                 u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
@@ -155,23 +163,23 @@ class QrCodeCheck_v3(Resource):
                                                          3), 200
                                     else:
                                         if user.GP_expire < datetime.now():
-                                            msg = "GreenPass Scaduto!"
+                                            msg = "Certificazione Verde COVID-19 Scaduta!"
                                             user = UserAccess.query.filter_by(username=username).first()
                                             user.greenpass = False
                                             # user.GP_expire = None
                                             db.session.commit()
                                         else:
-                                            msg = "GreenPass Mancante!"
+                                            msg = "Certificazione Verde COVID-19 Mancante!"
 
                                         return check(username, content, msg)
                                 else:
-                                    u = UserAccess(username=username, persId=None,
+                                    u = UserAccess(username=username, persId=None, grpId=grpId,
                                                    stuId=None, matId=None, matricola=None, cdsId=None,
                                                    GP_expire="2001-01-01 00:00:00")
                                     db.session.add(u)
                                     db.session.commit()
 
-                                    return check(username, content, "GreenPass Mancante!")
+                                    return check(username, content, "Certificazione Verde COVID-19 Mancante!")
                         else:
                             u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
                                      username=username,
@@ -206,7 +214,7 @@ class QrCodeCheck_v3(Resource):
 
 class ListGreenPass(Resource):
     def get(self):
-        """ List Validity GreenPass """
+        """ List Validity Certificazione Verde COVID-19 """
         validity = [24, 48]
 
         #return {"validity": validity}, 200
@@ -230,7 +238,7 @@ class GreenPassCheckNoScan(Resource):
     @token_required_general
     @ns.expect(id_noScan)
     def post(self):
-        """ GreenPass QrCode """
+        """ EU Digital Covid QrCode """
         content = request.json
 
         if g.status == 200:
@@ -239,11 +247,18 @@ class GreenPassCheckNoScan(Resource):
                 if record is not None:
                     username = record.username
                     user = UserAccess.query.filter_by(username=username).first()
-                    user.greenpass = True
-                    user.GP_expire = datetime.now().date() + timedelta(days=content['expiry'])
-                    db.session.commit()
+                    if user is not None:
+                        user.greenpass = True
+                        user.GP_expire = datetime.now().date() + timedelta(days=content['expiry'])
+                        db.session.commit()
+                    else:
+                        u = UserAccess(username=username, persId=None,
+                                        stuId=None, matId=None, matricola=None, cdsId=None,
+                                        GP_expire=datetime.now().date() + timedelta(days=content['expiry']), greenpass=True)
+                        db.session.add(u)
+                        db.session.commit()
 
-                    msg = "Green Pass aggiunto!"
+                    msg = "Certificazione Verde COVID-19 verificata!"
                     return returnMessage("\n\n\u2705\u2705 AUTORIZZATO \u2705\u2705\n\n" + msg, 1, "#00AA00", 3), 200
             else:
                 msg = 'Error payload'
@@ -264,18 +279,21 @@ def checkGP(name, surname, birthdate, greenpassToken):
     expiry = datetime.strptime(certificate['certificate']['v'][0]['dt'], "%Y-%m-%d") + timedelta(days=270)
     if is_valid and datetime.now() < expiry:
         if name == "" and surname == "" and birthdate == "":
-            return True, expiry, "GreenPass di " + certificate['certificate']['nam']['gn'] + " " + certificate['certificate']['nam']['fn'] + " nato il " + certificate['certificate']['dob']
+            return True, expiry, "Certificazione Verde COVID-19 di " + certificate['certificate']['nam']['gn'] + " " + certificate['certificate']['nam']['fn'] + " nato il " + certificate['certificate']['dob']
         else:
             nameData = certificate['certificate']['nam']['gn']
             surnameData = certificate['certificate']['nam']['fn']
             birthdateData = certificate['certificate']['dob']
 
-            if nameData == name and surnameData == surname and birthdate == birthdateData:
-                return True, expiry, "\u2705\u2705 GreenPass valido \u2705\u2705"
+            completeNameGP = (surnameData + nameData).replace(' ', '')
+            completeNameApp = (surname + name).replace(' ', '')
+
+            if completeNameGP == completeNameApp and birthdate == birthdateData:
+                return True, expiry, "\u2705\u2705 Certificazione Verde COVID-19 verificata \u2705\u2705"
             else:
                 return False, expiry, "\u274C\u274C L'utente non corrisponde \u274C\u274C\n"
     else:
-        return False, expiry, "\u274C\u274C GreenPass non valido! \u274C\u274C"
+        return False, expiry, "\u274C\u274C Certificazione Verde COVID-19 non verificata! \u274C\u274C"
 
 
 class GreenPassCheck(Resource):
@@ -284,7 +302,7 @@ class GreenPassCheck(Resource):
     @token_required_general
     @ns.expect(insert_token)
     def post(self):
-        """ GreenPass QrCode """
+        """ EU digital COVID certificate QrCode """
         content = request.json
 
         if g.status == 200:
@@ -314,9 +332,16 @@ class GreenPassCheck(Resource):
 
                         if result:
                             user = UserAccess.query.filter_by(username=username).first()
-                            user.greenpass = True
-                            user.GP_expire = expiry
-                            db.session.commit()
+                            if user is not None:
+                                user.greenpass = True
+                                user.GP_expire = expiry
+                                db.session.commit()
+                            else:
+                                u = UserAccess(username=username, persId=None,
+                                                   stuId=None, matId=None, matricola=None, cdsId=None,
+                                                   GP_expire=expiry, greenpass=True)
+                                db.session.add(u)
+                                db.session.commit()
 
                             return returnMessage("\n\n\u2705\u2705 AUTORIZZATO \u2705\u2705\n\n" + msg, 1, "#00AA00", 3), 200
                         else:
@@ -326,7 +351,7 @@ class GreenPassCheck(Resource):
                     print("Title: " + sys.exc_info()[0].__name__)
                     print("Description: " + traceback.format_exc())
 
-                    return returnMessage("\n\n\u274C\u274C NON AUTORIZZATO \u274C\u274C\n\nGreenPass non riconosciuto!", 1, "#AA0000", 3), 500
+                    return returnMessage("\n\n\u274C\u274C NON AUTORIZZATO \u274C\u274C\n\nCertificazione Verde COVID-19 non riconosciuta!", 1, "#AA0000", 3), 500
             else:
                 msg = 'Error payload'
                 return returnMessage("\n\n\u274C\u274C NON AUTORIZZATO \u274C\u274C\n\n" + msg, 1, "#AA0000", 3), 500
@@ -345,11 +370,18 @@ class GreenPassStatus(Resource):
             userId = r['user']['userId']
 
             user = UserAccess.query.filter_by(username=userId).first()
+            room_button = True
+            service_button = True
 
             if user is not None:
-                return {'autocertification': user.greenpass, 'expiry': str(user.GP_expire.strftime('%d-%b-%Y'))}, 200
+                try:
+                    return {'autocertification': user.greenpass, 'expiry': str(user.GP_expire.strftime('%d-%b-%Y')), 'service_button': service_button, 'room_button': room_button}, 200
+                except:
+                    user.GP_expire = '2001-01-01 00:00:00'
+                    db.session.commit()
+                    return {'autocertification': user.greenpass, 'expiry': '2001-01-01 00:00:00', 'service_button': service_button, 'room_button': room_button}, 200
             else:
-                return {'autocertification': '0', 'expiry': '2001-01-01 00:00:00'}, 200
+                return {'autocertification': False, 'expiry': '2001-01-01 00:00:00', 'service_button': service_button, 'room_button': room_button}, 200
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
 
@@ -363,7 +395,7 @@ class GreenPassCheckMobile(Resource):
     @token_required_general
     @ns.expect(token_gp)
     def post(self):
-        """ GreenPass Mobile QrCode """
+        """ EU Digital COVID certificate Mobile QrCode """
         content = request.json
 
         if g.status == 200:
@@ -379,9 +411,16 @@ class GreenPassCheckMobile(Resource):
 
                     if _result:
                         user = UserAccess.query.filter_by(username=username).first()
-                        user.greenpass = True
-                        user.GP_expire = expiry
-                        db.session.commit()
+                        if user is not None:
+                            user.greenpass = True
+                            user.GP_expire = expiry
+                            db.session.commit()
+                        else:
+                            u = UserAccess(username=username, persId=None, grpId=g.response['user']['grpId'],
+                                                   stuId=None, matId=None, matricola=None, cdsId=None,
+                                                   GP_expire=expiry, greenpass=True)
+                            db.session.add(u)
+                            db.session.commit()
 
                         return returnMessage( msg, 1, "#00AA00", 3), 200
                     else:
@@ -439,7 +478,7 @@ class GreenPassRemove(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
     def delete(self):
-        """ Remove GreenPass  """
+        """ Remove EU digital COVID certificate  """
         if g.status == 200:
             r = g.response
             userId = r['user']['userId']
@@ -450,7 +489,7 @@ class GreenPassRemove(Resource):
 
                 db.session.commit()
 
-                return {'message': 'Correctly removed!'}, 200
+                return {'message': 'Correctly canceled!'}, 200
             else:
                 return {'errMsg': 'User not found'}, 500
         else:

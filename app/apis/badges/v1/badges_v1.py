@@ -52,12 +52,12 @@ class QrCode(Resource):
                 else:
                     token_qr = userId + ":" + randomword(30) + ":" + str(g.response['user']['grpId'])
 
-                print(token_qr)
+                #print(token_qr)
                 token_qr_final = (base64.b64encode(bytes(str(token_qr).encode("utf-8")))).decode('utf-8')
-                print(token_qr_final)
+                #print(token_qr_final)
 
                 expire_data = datetime.now() + timedelta(minutes=10)
-                print(expire_data)
+                #print(expire_data)
 
                 badge = Badges(token=token_qr_final, expire_time=expire_data)
                 db.session.add(badge)

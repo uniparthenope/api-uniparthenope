@@ -74,7 +74,7 @@ def auth(token):
                         r = ldap_auth(username, password)
                         g.response = r
 
-                        if r['result'] == 0:
+                        if r is not None:
                             x = TokenAuth(token_MD5=token_hash, result=str(r), expire_time = datetime.now() + timedelta(minutes=60))
                             db.session.add(x)
                             db.session.commit()

