@@ -144,7 +144,7 @@ class ANMBus(Resource):
                                 if response["d"][0]["stato"] is None:
                                     pos_bus = []
                                     for x in range(0, len(response["d"])):
-                                        print(response["d"][x]["linea"])
+                                        #print(response["d"][x]["linea"])
                                         item = ({
                                             'lat': response["d"][x]["lat"],
                                             'long': response["d"][x]["lon"]

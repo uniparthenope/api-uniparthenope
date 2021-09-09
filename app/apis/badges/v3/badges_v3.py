@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import requests
 from codicefiscale import codicefiscale
 from app.libs import greenpass
+from unidecode import unidecode
 
 from flask import g, request
 from flask_restplus import Resource, fields
@@ -276,7 +277,14 @@ insert_token = ns.model("Token_GP", {
 
 def checkGP(name, surname, birthdate, greenpassToken):
     certificate, is_valid = greenpass.certinfo(greenpassToken.encode('UTF-8'))
-    expiry = datetime.strptime(certificate['certificate']['v'][0]['dt'], "%Y-%m-%d") + timedelta(days=270)
+    if 'v' in certificate['certificate']:
+        expiry = datetime.strptime(certificate['certificate']['v'][0]['dt'], "%Y-%m-%d") + timedelta(days=270)
+    elif 'r' in certificate['certificate']:
+        expiry = datetime.strptime(certificate['certificate']['r'][0]['du'], "%Y-%m-%d")
+    elif 't' in certificate['certificate']:
+        date = str(certificate['certificate']['t'][0]['sc']).split("+")[0]
+        expiry = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S") + timedelta(days=2)
+
     if is_valid and datetime.now() < expiry:
         if name == "" and surname == "" and birthdate == "":
             return True, expiry, "Certificazione Verde COVID-19 di " + certificate['certificate']['nam']['gn'] + " " + certificate['certificate']['nam']['fn'] + " nato il " + certificate['certificate']['dob']
@@ -285,8 +293,9 @@ def checkGP(name, surname, birthdate, greenpassToken):
             surnameData = certificate['certificate']['nam']['fn']
             birthdateData = certificate['certificate']['dob']
 
-            completeNameGP = (surnameData + nameData).replace(' ', '')
-            completeNameApp = (surname + name).replace(' ', '')
+            completeNameGP = unidecode((surnameData + nameData).replace(' ', '').replace("'", ''))
+            completeNameApp = unidecode((surname + name).replace(' ', '').replace("'", ''))
+            print(completeNameGP, completeNameApp)
 
             if completeNameGP == completeNameApp and birthdate == birthdateData:
                 return True, expiry, "\u2705\u2705 Certificazione Verde COVID-19 verificata \u2705\u2705"
@@ -347,10 +356,7 @@ class GreenPassCheck(Resource):
                         else:
                             return returnMessage("\n\n\u274C\u274C NON AUTORIZZATO \u274C\u274C\n\n" + msg, 1, "#AA0000", 3), 500
                 except:
-                    print("Unexpected error:")
-                    print("Title: " + sys.exc_info()[0].__name__)
-                    print("Description: " + traceback.format_exc())
-
+                    print("GreenPass Token: " + content['token_GP'])
                     return returnMessage("\n\n\u274C\u274C NON AUTORIZZATO \u274C\u274C\n\nCertificazione Verde COVID-19 non riconosciuta!", 1, "#AA0000", 3), 500
             else:
                 msg = 'Error payload'
@@ -426,11 +432,32 @@ class GreenPassCheckMobile(Resource):
                     else:
                         return returnMessage( msg, 1, "#AA0000", 3), 500
                 except:
-                    print("Unexpected error:")
-                    print("Title: " + sys.exc_info()[0].__name__)
-                    print("Description: " + traceback.format_exc())
+                    if (content['token_GP'].isdecimal()):
+                        print("GreenPass Token: GP sgualcito o non riconosciuto")
+                        return returnMessage("\n\n\u274C\u274C Certificazione Verde non leggibile! \u274C\u274C", 1, "#AA0000", 3), 500
+                    else:
+                        try:
+                            base64_bytes = content['token_GP'].encode('utf-8')
+                            message_bytes = base64.b64decode(base64_bytes)
+                            token_string = message_bytes.decode('utf-8')
+                            t = token_string.split(":")
 
-                    return returnMessage("\n\n\u274C\u274C Token non valido \u274C\u274C", 1, "#AA0000", 3), 500
+                            if (3 <= len(t) <= 4):
+
+                                print("GreenPass Token: Scansione QR-Universitario (capra)")
+                                return returnMessage("\n\n\u274C\u274C Non utilizzare il QR-Code universitario! \u274C\u274C", 1, "#AA0000", 3), 500
+                            else:
+                                print("Unexpected error:")
+                                print("Title: " + sys.exc_info()[0].__name__)
+                                print("Description: " + traceback.format_exc())
+                                print("GreenPass Token: " + content['token_GP'])
+                                return returnMessage("\n\n\u274C\u274C Token non valido!! \u274C\u274C", 1, "#AA0000", 3), 500
+                        except:
+                            print("Unexpected error:")
+                            print("Title: " + sys.exc_info()[0].__name__)
+                            print("Description: " + traceback.format_exc())
+                            print("GreenPass Token: " + content['token_GP'])
+                            return returnMessage("\n\n\u274C\u274C Token non valido \u274C\u274C", 1, "#AA0000", 3), 500
             else:
                 msg = 'Error payload'
                 return returnMessage( msg, 1, "#AA0000", 3), 500
@@ -485,7 +512,7 @@ class GreenPassRemove(Resource):
             user = UserAccess.query.filter_by(username=userId).first()
             if user is not None:
                 user.greenpass = False
-                user.expiry = '2001-01-01 00:00:00'
+                user.GP_expire = '2001-01-01 00:00:00'
 
                 db.session.commit()
 

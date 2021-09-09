@@ -29,3 +29,4 @@ python-codicefiscale
 base45
 cbor2
 cose==0.9.dev7
+unidecode
