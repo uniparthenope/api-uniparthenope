@@ -11,7 +11,7 @@ from app.apis.badges.v3.badges_v3 import QrCodeCheck_v3, GreenPassCheck, GreenPa
 
 ns.add_resource(QrCode, '/v1/generateQrCode', methods=['GET'])
 ns.add_resource(QrCodeCheck, '/v1/checkQrCode', methods=['POST'])
-ns.add_resource(QrCodeStatus, '/v1/QrCodeStatus/<int:interval>/<tabletId>', methods=['GET'])
+ns.add_resource(QrCodeStatus, '/v1/QrCodeStatus/<tabletId>', methods=['GET'])
 ns.add_resource(SyncMachine, '/v1/SyncMachine', methods=['POST'])
 ns.add_resource(ScanHistory, '/v1/ScanHistory', methods=['GET'])
 

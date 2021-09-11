@@ -176,7 +176,6 @@ class QrCodeCheck(Resource):
 # ------------- QR-CODE STATUS -------------
 
 parser = api.parser()
-parser.add_argument('interval', type=int, required=True, help='Interval (seconds)')
 parser.add_argument('tabletId', type=str, help='Id tablet')
 
 @ns.doc(parser=parser)
@@ -184,7 +183,7 @@ class QrCodeStatus(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
     
-    def get(self, interval, tabletId):
+    def get(self, tabletId):
         """Get qr-code status by interval"""
         
         if g.status == 200:
@@ -194,34 +193,75 @@ class QrCodeStatus(Resource):
                 message_bytes = base64.b64decode(base64_bytes)
                 token_string = message_bytes.decode('utf-8')
                 userId = token_string.split(':')[0]
+                grpId = g.response['user']['grpId']
+
                 user = User.query.filter_by(username=userId).join(Role).filter_by(role='admin').first() or User.query.filter_by(username=userId).join(Role).filter_by(role='pta').first()
-                if user is not None:
-                    if tabletId is None:
+                if user is not None or grpId == 99:
+                    if tabletId is None or tabletId == "--":
                         tabletId = ""
                     #print(datetime.now()-timedelta(minutes=3600), datetime.now())
-                    time_now = datetime.now()
-                    interval = int(interval)
+
+                    total_gp = UserAccess.query.filter(UserAccess.greenpass == True).count()
                     
-                    ok_count = Scan.query.filter(Scan.time_stamp.between(time_now - timedelta(seconds=interval),time_now)).filter(Scan.result == "OK").filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
-                    bad_token_count = Scan.query.filter(Scan.time_stamp.between(time_now - timedelta(seconds=interval),time_now)).filter(Scan.result.like("%Token%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
-                    bad_aut_count = Scan.query.filter(Scan.time_stamp.between(time_now - timedelta(seconds=interval),time_now)).filter(Scan.result.like("%Autocertificazione%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count() 
-                    bad_presence_count = Scan.query.filter(Scan.time_stamp.between(time_now - timedelta(seconds=interval),time_now)).filter(Scan.result.like("%Tipo di%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
-                    bad_qr_count = Scan.query.filter(Scan.time_stamp.between(time_now - timedelta(seconds=interval),time_now)).filter(Scan.result.like("%Qr-code%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+                    # DAY UPDATES
+                    time_now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+
+                    ok_count = Scan.query.filter(Scan.time_stamp > time_now).filter(Scan.result == "OK").filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+
+                    ok_verified = Scan.query.filter(Scan.time_stamp > time_now).filter(Scan.result.like("%COVID-19 verificata%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+
+
+                    bad_gp_notver = Scan.query.filter(Scan.time_stamp > time_now).filter(Scan.result.like("%non verificata!%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+                    bad_gp_miss = Scan.query.filter(Scan.time_stamp > time_now).filter(Scan.result.like("%Mancante!%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+                    bad_gp_fake = Scan.query.filter(Scan.time_stamp > time_now).filter(Scan.result.like("%non corrisponde%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+                    bad_gp_expired = Scan.query.filter(Scan.time_stamp > time_now).filter(Scan.result.like("%COVID-19 Scaduta%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+
+                    bad_token_count = Scan.query.filter(Scan.time_stamp > time_now).filter(Scan.result.like("%Token%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+                    bad_qr_count = Scan.query.filter(Scan.time_stamp > time_now).filter(Scan.result.like("%Qr-code%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+
+                    # LIVE UPDATES
+                    #time_now = datetime.now()
+                    #interval = int(interval)
+                    #ok_count = Scan.query.filter(Scan.time_stamp.between(time_now - timedelta(seconds=interval),time_now)).filter(Scan.result == "OK").filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+                    
+                    #ok_verified = Scan.query.filter(Scan.time_stamp.between(time_now - timedelta(seconds=interval),time_now)).filter(Scan.result.like("%COVID-19 verificata%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+
+
+                    #bad_gp_notver = Scan.query.filter(Scan.time_stamp.between(time_now - timedelta(seconds=interval),time_now)).filter(Scan.result.like("%non verificata!%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+                    #bad_gp_miss = Scan.query.filter(Scan.time_stamp.between(time_now - timedelta(seconds=interval),time_now)).filter(Scan.result.like("%Mancante!%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+                    #bad_gp_fake = Scan.query.filter(Scan.time_stamp.between(time_now - timedelta(seconds=interval),time_now)).filter(Scan.result.like("%non corrisponde%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+                    #bad_gp_expired = Scan.query.filter(Scan.time_stamp.between(time_now - timedelta(seconds=interval),time_now)).filter(Scan.result.like("%COVID-19 Scaduta%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+                    
+                    #bad_token_count = Scan.query.filter(Scan.time_stamp.between(time_now - timedelta(seconds=interval),time_now)).filter(Scan.result.like("%Token%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
+                    #bad_qr_count = Scan.query.filter(Scan.time_stamp.between(time_now - timedelta(seconds=interval),time_now)).filter(Scan.result.like("%Qr-code%")).filter(Scan.id_tablet.like("%" + tabletId + "%")).count()
             
-                    bad_count = bad_token_count + bad_aut_count + bad_presence_count + bad_qr_count
+                    ok_general = ok_count + ok_verified
+
+                    bad_gp = bad_gp_notver + bad_gp_miss + bad_gp_fake + bad_gp_expired
+                    bad_count = bad_token_count + bad_qr_count + bad_gp
             
-                    total_count = ok_count + bad_count
+                    total_count = ok_general + bad_count
                     fail = {
                         "total": bad_count,
+                        "total_gp": bad_gp,
+                        "gp_notver": bad_gp_notver,
+                        "gp_miss":bad_gp_miss,
+                        "gp_fake":bad_gp_fake,
+                        "gp_expired": bad_gp_expired,
+
                         "expired_token": bad_token_count,
                         "unknown_user": bad_qr_count,
-                        "no_selfcert": bad_aut_count,
-                        "not_in_presence":bad_presence_count
                         }
-                    return [{"timeStamp": str(time_now.strftime("%Y-%m-%dT%H:%M:%S")),
-                        "interval_seconds": interval,
+                    success ={
+                            "total": ok_general,
+                            "ok_count": ok_count,
+                            "ok_gp": ok_verified
+                            }
+                    return [{
+                        "timeStamp": str((datetime.now()).strftime("%Y-%m-%dT%H:%M:%S")),
                         "total": total_count,
-                        "success": ok_count,
+                        "total_gp": total_gp,
+                        "success": success,
                         "fail" : fail
                         }], 200
             
