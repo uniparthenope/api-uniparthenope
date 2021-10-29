@@ -355,76 +355,71 @@ class getAllGACourses(Resource):
 
 # ------------- GET GA LECTURES -------------
 
+
 class getGALectures(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
-    def get(self):
+    def get(self, type):
         """Get GA Lectures"""
+        if g.status == 200:
+            username = g.response['user']['userId']
 
-        content = request.json
+            lectures = []
 
-        if 'type' in content:
-            if g.status == 200:
-                username = g.response['user']['userId']
+            _now = datetime.now() + timedelta(hours=6)
+            start = _now.replace(hour=18, minute=0, second=0, microsecond=0)
+            start = start - timedelta(days=1)
 
-                lectures = []
+            end = _now.replace(hour=18, minute=0, second=0, microsecond=0)
+            end = end + timedelta(days=2)
 
-                _now = datetime.now() + timedelta(hours=6)
-                start = _now.replace(hour=18, minute=0, second=0, microsecond=0)
-                start = start - timedelta(days=1)
+            start = start.timestamp()
+            end = end.timestamp()
 
-                end = _now.replace(hour=18, minute=0, second=0, microsecond=0)
-                end = end + timedelta(days=2)
+            con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
 
-                start = start.timestamp()
-                end = end.timestamp()
+            rs = con.execute(
+                "SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND ((start_time >= '" +
+                str(datetime.now().timestamp()) + "' AND BINARY type = 'J')  OR (start_time >= '" +
+                str(start) + "' AND end_time <= '" + str(end) + "' AND BINARY type == '" + type + "'))"
+            )
 
-                con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
+            for row in rs:
+                reserved = False
+                resered_id = None
+                reserved_by = None
+                _reservation = Reservations.query.filter_by(id_lezione=row[0])
+                reservation = _reservation.filter_by(username=username)
+                res_count = _reservation.count()
 
-                rs = con.execute(
-                    "SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND ((start_time >= '" +
-                    str(datetime.now().timestamp()) + "' AND BINARY type = 'J')  OR (start_time >= '" +
-                    str(start) + "' AND end_time <= '" + str(end) + "' AND BINARY type == '" + type + "'))"
-                )
+                if reservation.first() is not None:
+                    reserved = True
+                    resered_id = reservation.first().id
+                    reserved_by = reservation.first().reserved_by
 
-                for row in rs:
-                    reserved = False
-                    resered_id = None
-                    reserved_by = None
-                    _reservation = Reservations.query.filter_by(id_lezione=row[0])
-                    reservation = _reservation.filter_by(username=username)
-                    res_count = _reservation.count()
+                capacity = math.floor(int(row[41]) / int(Config.CAPACITY_F))
 
-                    if reservation.first() is not None:
-                        reserved = True
-                        resered_id = reservation.first().id
-                        reserved_by = reservation.first().reserved_by
+                lectures.append({
+                    'id': row[0],
+                    'id_corso': row[32],
+                    'start': str(datetime.fromtimestamp(row[1])),
+                    'end': str(datetime.fromtimestamp(row[2])),
+                    'room': {
+                        'name': row[38],
+                        'capacity': capacity,
+                        'description': row[40],
+                        'availability': capacity - res_count
+                    },
+                    'course_name': row[9],
+                    'prof': row[11],
+                    'reservation': {
+                        'reserved_id': resered_id,
+                        'reserved': reserved,
+                        'reserved_by': reserved_by
+                    }
+                })
+            con.dispose()
 
-                    capacity = math.floor(int(row[41]) / int(Config.CAPACITY_F))
-
-                    lectures.append({
-                        'id': row[0],
-                        'id_corso': row[32],
-                        'start': str(datetime.fromtimestamp(row[1])),
-                        'end': str(datetime.fromtimestamp(row[2])),
-                        'room': {
-                            'name': row[38],
-                            'capacity': capacity,
-                            'description': row[40],
-                            'availability': capacity - res_count
-                        },
-                        'course_name': row[9],
-                        'prof': row[11],
-                        'reservation': {
-                            'reserved_id': resered_id,
-                            'reserved': reserved,
-                            'reserved_by': reserved_by
-                        }
-                    })
-                con.dispose()
-
-                return lectures, 200
-            else:
-                return {'errMsg': 'Wrong username/pass'}, g.status
+            return lectures, 200
         else:
-            return {'errMsg': 'Payload error!'}, 500
+            return {'errMsg': 'Wrong username/pass'}, g.status
