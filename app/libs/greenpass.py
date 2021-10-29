@@ -128,7 +128,7 @@ def signature_valid(cose):
 def load_certificate(cose_document):
     cert = cbor2.loads(cose_document.payload)
     data = {}
-    data['issuer'] = valuesets["co"][cert[1]]["display"]
+    #data['issuer'] = valuesets["co"][cert[1]]["display"]
     data['expiry'] = cert[4]
     data['generated_ad'] = cert[6]
     data['certificate'] = cert[-260][1]

@@ -1,2 +1,3 @@
 # Check the server health each minute
 * * * * * /root/server-check.sh >>server-check.log
+0 0 * * * ./app/libs/update-dataset.sh

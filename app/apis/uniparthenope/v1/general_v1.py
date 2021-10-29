@@ -254,7 +254,11 @@ class CurrentAA(Resource):
                 curr_day = datetime(date.year, date.month, date.day)
 
                 max_year = _response[0]['aaSesId']
-
+                resp = {
+                        'curr_sem': 'SESSIONE AUTUNNALE',
+                        'semestre': 'Primo Semestre',
+                        'aa_accad': '2021'
+                                           }
                 for i in range(0, len(_response)):
                     if _response[i]['aaSesId'] == max_year:
                         startDate = extractData(_response[i]['dataInizio'])
@@ -278,24 +282,32 @@ class CurrentAA(Resource):
                                     sem = 'Secondo Semestre'
                                     if 'en' in lang:
                                         sem = 'Second Semester' 
-
-                                    return {
-                                               'curr_sem': _response[i]['des'],
-                                               'semestre': sem,
-                                               'aa_accad': str(_response_aa['aaId'])
-                                           }, 200
+                                    
+                                    resp['curr_sem'] = _response[i]['des']
+                                    resp['semestre'] = sem
+                                    resp['aa_accad'] = str(_response_aa['aaId'])
+                                    #return {
+                                    #           'curr_sem': _response[i]['des'],
+                                    #           'semestre': sem,
+                                    #           'aa_accad': str(_response_aa['aaId'])
+                                    #       }, 200
                                 else:
                                     sem = 'Primo Semestre'
                                     if 'en' in lang:
                                         sem = 'First Semester'
-                                    return {
-                                               'curr_sem': _response[i]['des'],
-                                               'semestre': sem,
-                                               'aa_accad': str(_response_aa['aaId'])
-                                           }, 200
+
+                                    resp['curr_sem'] = _response[i]['des']
+                                    resp['semestre'] = sem
+                                    resp['aa_accad'] = str(_response_aa['aaId'])
+                                    #return {
+                                    #           'curr_sem': _response[i]['des'],
+                                    #           'semestre': sem,
+                                    #           'aa_accad': str(_response_aa['aaId'])
+                                    #       }, 200
                             else:
                                 return {'errMsg': _response_aa['retErrMsg']}, response_aa.status_code
 
+                return resp,200
             else:
                 return {'errMsg': _response['retErrMsg']}, response.status_code
 

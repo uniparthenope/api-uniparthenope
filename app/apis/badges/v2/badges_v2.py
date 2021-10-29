@@ -387,6 +387,7 @@ class sendRequestInfo(Resource):
                     print("Unexpected error:")
                     print("Title: " + sys.exc_info()[0].__name__)
                     print("Description: " + traceback.format_exc())
+                    print("QR-Code: " + content['receivedToken'])
                     return {
                                "status": "Error",
                                "message": traceback.format_exc()

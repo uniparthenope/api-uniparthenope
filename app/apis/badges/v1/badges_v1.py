@@ -275,6 +275,102 @@ class QrCodeStatus(Resource):
                 return {'status': 'error', 'errMsg': traceback.format_exc()}, 500
 
 
+buildings = ['PAC','CDN','NOLA','ACTON','MED','VDDA']
+
+def queryBuilding(building):
+
+    time_now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+
+    ok_count = Scan.query.filter(Scan.time_stamp > time_now).filter(Scan.result == "OK").filter(
+        Scan.id_tablet.like("%" + building + "%")).count()
+
+    ok_verified = Scan.query.filter(Scan.time_stamp > time_now).filter(
+        Scan.result.like("%COVID-19 verificata%")).filter(
+        Scan.id_tablet.like("%" + building + "%")).count()
+
+    bad_gp_notver = Scan.query.filter(Scan.time_stamp > time_now).filter(
+        Scan.result.like("%non verificata!%")).filter(Scan.id_tablet.like("%" + building + "%")).count()
+    bad_gp_miss = Scan.query.filter(Scan.time_stamp > time_now).filter(
+        Scan.result.like("%Mancante!%")).filter(Scan.id_tablet.like("%" + building + "%")).count()
+    bad_gp_fake = Scan.query.filter(Scan.time_stamp > time_now).filter(
+        Scan.result.like("%non corrisponde%")).filter(Scan.id_tablet.like("%" + building + "%")).count()
+    bad_gp_expired = Scan.query.filter(Scan.time_stamp > time_now).filter(
+        Scan.result.like("%COVID-19 Scaduta%")).filter(
+        Scan.id_tablet.like("%" + building + "%")).count()
+
+    bad_token_count = Scan.query.filter(Scan.time_stamp > time_now).filter(
+        Scan.result.like("%Token%")).filter(Scan.id_tablet.like("%" + building + "%")).count()
+    bad_qr_count = Scan.query.filter(Scan.time_stamp > time_now).filter(
+        Scan.result.like("%Qr-code%")).filter(Scan.id_tablet.like("%" + building + "%")).count()
+
+    ok_general = ok_count + ok_verified
+
+    bad_gp = bad_gp_notver + bad_gp_miss + bad_gp_fake + bad_gp_expired
+    bad_count = bad_token_count + bad_qr_count + bad_gp
+
+    total_count = ok_general + bad_count
+    fail = {
+        "total": bad_count,
+        "total_gp": bad_gp,
+        "gp_notver": bad_gp_notver,
+        "gp_miss": bad_gp_miss,
+        "gp_fake": bad_gp_fake,
+        "gp_expired": bad_gp_expired,
+
+        "expired_token": bad_token_count,
+        "unknown_user": bad_qr_count,
+    }
+    success = {
+        "total": ok_general,
+        "ok_count": ok_count,
+        "ok_gp": ok_verified
+    }
+    return [{
+        'name': building,
+        "total": total_count,
+        "success": success,
+        "fail": fail
+    }]
+
+class QrCodeStatusAll(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    def get(self):
+        """Get all buildings qr-code status"""
+
+        if g.status == 200:
+
+            try:
+                base64_bytes = g.token.encode('utf-8')
+                message_bytes = base64.b64decode(base64_bytes)
+                token_string = message_bytes.decode('utf-8')
+                userId = token_string.split(':')[0]
+                grpId = g.response['user']['grpId']
+
+                user = User.query.filter_by(username=userId).join(Role).filter_by(
+                    role='admin').first() or User.query.filter_by(username=userId).join(Role).filter_by(
+                    role='pta').first()
+                if user is not None or grpId == 99:
+                    total_gp = UserAccess.query.filter(UserAccess.greenpass == True).count()
+                    _buildings = []
+                    for b in buildings:
+                        _buildings.append(queryBuilding(b))
+
+                    return{
+                        "timeStamp": str((datetime.now()).strftime("%Y-%m-%dT%H:%M:%S")),
+                        'total_gp' : total_gp,
+                        'buildings': _buildings
+                          }, 200
+
+                else:
+                    return {'errMsg': 'Not Authorized!'}, 403
+            except:
+                print("Unexpected error:")
+                print("Title: " + sys.exc_info()[0].__name__)
+                print("Description: " + traceback.format_exc())
+
+                return {'status': 'error', 'errMsg': traceback.format_exc()}, 500
+
 inf_token = ns.model("Machine", {
     "machine_id": fields.String(description="Machine ID", required=True),
     "position": fields.String(description="Machine Position", required=True),

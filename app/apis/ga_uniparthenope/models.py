@@ -79,3 +79,11 @@ class UserTemp(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True)
     matricola = db.Column(db.String(16), unique=True)
+
+
+class GaTypes(db.Model):
+    __bind_key__ = 'ga'
+    __tablename__ = 'ga_types'
+    type = db.Column(db.String(4), primary_key=True)
+    type_name_abb = db.Column(db.String(32), nullable=False)
+    type_name_complete = db.Column(db.String(128), nullable=True)

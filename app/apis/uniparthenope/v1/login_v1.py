@@ -105,24 +105,29 @@ def ldap_auth(user, passwd):
     # perform the Bind operation
     c.bind()
 
-    base_dn_1 = "dc=uniparthenope,dc=it"
-    c.search(base_dn_1, '(uid='+ user +')', attributes=['*']) 
+    if c.result['result'] == 0:
+        base_dn_1 = "dc=uniparthenope,dc=it"
+        c.search(base_dn_1, '(uid='+ user +')', attributes=['*']) 
 
-    result = c.response
+        result = c.response
+
+        c.unbind()
     
-    for x in result:
-        try:
-            codFis = x['attributes']['schacPersonalUniqueID'][0]
-        except:
-            codFis = ""
-        nc = x['attributes']['cn'][0]
-        _nc = nc.split(" ")
-        if len(_nc) < 2:
-            return {'user':{'lastName': x['attributes']['sn'][0].upper(), 'firstName': x['attributes']['cn'][0].upper(), 'codFis': codFis, "grpDes": "PTA", "grpId": 99, "userId": x['attributes']['uid'][0]}}
-        else:
-            return {'user':{'lastName': x['attributes']['cn'][0], 'firstName': "", 'codFis': x['attributes']['schacPersonalUniqueID'][0].upper(), "grpDes": "PTA", "grpId": 99, "userId": x['attributes']['uid'][0]}}
+        for x in result:
+            try:
+                codFis = x['attributes']['schacPersonalUniqueID'][0]
+            except:
+                codFis = ""
+            nc = x['attributes']['cn'][0]
+            _nc = nc.split(" ")
+            if len(_nc) < 2:
+                return {'user':{'lastName': x['attributes']['sn'][0].upper(), 'firstName': x['attributes']['cn'][0].upper(), 'codFis': codFis, "grpDes": "PTA", "grpId": 99, "userId": x['attributes']['uid'][0]}}
+            else:
+                return {'user':{'lastName': x['attributes']['cn'][0], 'firstName': "", 'codFis': x['attributes']['schacPersonalUniqueID'][0].upper(), "grpDes": "PTA", "grpId": 99, "userId": x['attributes']['uid'][0]}}
 
-    c.unbind()
+    else:
+        c.unbind()
+        return None
     
     '''
     if c.result['result'] == 0:
@@ -149,6 +154,26 @@ def ldap_auth(user, passwd):
 
         return c.result
     '''
+
+def LDAP(username, password, token_hash):
+    try:
+        r = ldap_auth(username, password)
+        g.response = r
+
+        if r is not None:
+            x = TokenAuth(token_MD5=token_hash, result=str(r), expire_time = datetime.now() + timedelta(minutes=60))
+            db.session.add(x)
+            db.session.commit()
+
+            return r, 200
+        else:
+            return {"errMsg": "Invalid Credentials"}, 401
+    except:
+        db.session.rollback()
+        print("Unexpected error:")
+        print("Title: " + sys.exc_info()[0].__name__)
+        print("Description: " + traceback.format_exc())
+        return {"errMsg": "Invalid Credentials"}, 401
 
 
 @time_log(title="LOGIN_V1", filename="login_v1.log", funcName="auth")
@@ -192,27 +217,11 @@ def auth(token):
             else:
                 response = requests.request("GET", url + "login", headers=headers, timeout=60)
                 if response.status_code == 401:
-                    try:
-                        r = ldap_auth(username, password)
-                        g.response = r
-
-                        if r is not None:
-                            x = TokenAuth(token_MD5=token_hash, result=str(r), expire_time = datetime.now() + timedelta(minutes=60))
-                            db.session.add(x)
-                            db.session.commit()
-                            
-                            return r, 200
-                        else:
-                            return {"errMsg": "Invalid Credentials"}, 401
-                    except:
-                        db.session.rollback()
-                        print("Unexpected error:")
-                        print("Title: " + sys.exc_info()[0].__name__)
-                        print("Description: " + traceback.format_exc())
-                        return {"errMsg": "Invalid Credentials"}, 401
+                    return LDAP(username, password, token_hash)
 
                 elif response.status_code == 503:
-                    return {'errMsg': "Server down!"}, 503
+                    return LDAP(username, password, token_hash)
+                    #return {'errMsg': "Server down!"}, 503
 
                 elif response.status_code == 200:
                     #print("ESSE3 success!")
@@ -248,6 +257,9 @@ def auth(token):
         return {'errMsg': str(e)}, 500
     except:
         print(token)
+        print("Unexpected error:")
+        print("Title: " + sys.exc_info()[0].__name__)
+        print("Description: " + traceback.format_exc())
         return {'errMsg': "Errore generico login"}, 500
 
 # ------------- LOGIN -------------

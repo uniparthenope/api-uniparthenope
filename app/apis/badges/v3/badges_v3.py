@@ -293,11 +293,11 @@ def checkGP(name, surname, birthdate, greenpassToken):
             surnameData = certificate['certificate']['nam']['fn']
             birthdateData = certificate['certificate']['dob']
 
-            completeNameGP = unidecode((surnameData + nameData).replace(' ', '').replace("'", ''))
-            completeNameApp = unidecode((surname + name).replace(' ', '').replace("'", ''))
+            completeNameGP = unidecode((surnameData + nameData).replace(' ', '').replace("'", '').replace('-', ''))
+            completeNameApp = unidecode((surname + name).replace(' ', '').replace("'", '').replace('-', ''))
             print(completeNameGP, completeNameApp)
 
-            if completeNameGP == completeNameApp and birthdate == birthdateData:
+            if completeNameGP.upper() == completeNameApp.upper() and birthdate == birthdateData:
                 return True, expiry, "\u2705\u2705 Certificazione Verde COVID-19 verificata \u2705\u2705"
             else:
                 return False, expiry, "\u274C\u274C L'utente non corrisponde \u274C\u274C\n"
@@ -356,6 +356,9 @@ class GreenPassCheck(Resource):
                         else:
                             return returnMessage("\n\n\u274C\u274C NON AUTORIZZATO \u274C\u274C\n\n" + msg, 1, "#AA0000", 3), 500
                 except:
+                    print("Unexpected error:")
+                    print("Title: " + sys.exc_info()[0].__name__)
+                    print("Description: " + traceback.format_exc())
                     print("GreenPass Token: " + content['token_GP'])
                     return returnMessage("\n\n\u274C\u274C NON AUTORIZZATO \u274C\u274C\n\nCertificazione Verde COVID-19 non riconosciuta!", 1, "#AA0000", 3), 500
             else:
@@ -451,12 +454,14 @@ class GreenPassCheckMobile(Resource):
                                 print("Title: " + sys.exc_info()[0].__name__)
                                 print("Description: " + traceback.format_exc())
                                 print("GreenPass Token: " + content['token_GP'])
+                                print("Username: " + username)
                                 return returnMessage("\n\n\u274C\u274C Token non valido!! \u274C\u274C", 1, "#AA0000", 3), 500
                         except:
                             print("Unexpected error:")
                             print("Title: " + sys.exc_info()[0].__name__)
                             print("Description: " + traceback.format_exc())
                             print("GreenPass Token: " + content['token_GP'])
+                            print("Username: " + username)
                             return returnMessage("\n\n\u274C\u274C Token non valido \u274C\u274C", 1, "#AA0000", 3), 500
             else:
                 msg = 'Error payload'
