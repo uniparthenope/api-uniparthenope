@@ -4,8 +4,6 @@ import traceback
 import sqlalchemy
 from datetime import datetime, timedelta
 import math
-import base64
-import csv
 
 from sqlalchemy import exc
 
@@ -13,7 +11,7 @@ from app import api, db
 from app.apis.uniparthenope.v1.login_v1 import token_required_general
 from app.config import Config
 
-from app.apis.ga_uniparthenope.models import Reservations, Area, Room
+from app.apis.ga_uniparthenope.models import Reservations, Area, Room, GaTypes
 from app.models import User, Role
 
 from flask_restplus import Resource, fields
@@ -271,7 +269,6 @@ class RoomsReservation(Resource):
             return {'errMsg': 'Wrong username/pass'}, g.status
 
 
-
 class WeekReservationReport(Resource):
     @ns.doc(security='Basic Auth')
     @token_required_general
@@ -339,3 +336,95 @@ class WeekReservationReport(Resource):
                 return {'status': 'error', 'errMsg': traceback.format_exc()}, 500
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
+
+
+# ------------- GET ALL GA COURSES -------------
+
+class getAllGACourses(Resource):
+    def get(self):
+        """Get all GA courses"""
+        courses = []
+
+        all_courses = GaTypes.query.all()
+        for course in all_courses:
+            courses.append({'type': course.type, 'type_name_abb': course.type_name_abb,
+                            'type_name_complete': course.type_name_complete})
+
+        return all_courses, 200
+
+
+# ------------- GET GA LECTURES -------------
+
+class getGALectures(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    def get(self):
+        """Get GA Lectures"""
+
+        content = request.json
+
+        if 'type' in content:
+            if g.status == 200:
+                username = g.response['user']['userId']
+
+                lectures = []
+
+                _now = datetime.now() + timedelta(hours=6)
+                start = _now.replace(hour=18, minute=0, second=0, microsecond=0)
+                start = start - timedelta(days=1)
+
+                end = _now.replace(hour=18, minute=0, second=0, microsecond=0)
+                end = end + timedelta(days=2)
+
+                start = start.timestamp()
+                end = end.timestamp()
+
+                con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
+
+                rs = con.execute(
+                    "SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND ((start_time >= '" +
+                    str(datetime.now().timestamp()) + "' AND BINARY type = 'J')  OR (start_time >= '" +
+                    str(start) + "' AND end_time <= '" + str(end) + "' AND BINARY type == '" + type + "'))"
+                )
+
+                for row in rs:
+                    reserved = False
+                    resered_id = None
+                    reserved_by = None
+                    _reservation = Reservations.query.filter_by(id_lezione=row[0])
+                    reservation = _reservation.filter_by(username=username)
+                    res_count = _reservation.count()
+
+                    if reservation.first() is not None:
+                        reserved = True
+                        resered_id = reservation.first().id
+                        reserved_by = reservation.first().reserved_by
+
+                    capacity = math.floor(int(row[41]) / int(Config.CAPACITY_F))
+
+                    lectures.append({
+                        'id': row[0],
+                        'id_corso': row[32],
+                        'start': str(datetime.fromtimestamp(row[1])),
+                        'end': str(datetime.fromtimestamp(row[2])),
+                        'room': {
+                            'name': row[38],
+                            'capacity': capacity,
+                            'description': row[40],
+                            'availability': capacity - res_count
+                        },
+                        'course_name': row[9],
+                        'prof': row[11],
+                        'reservation': {
+                            'reserved_id': resered_id,
+                            'reserved': reserved,
+                            'reserved_by': reserved_by
+                        }
+                    })
+                con.dispose()
+
+                return lectures, 200
+            else:
+                return {'errMsg': 'Wrong username/pass'}, g.status
+        else:
+            return {'errMsg': 'Payload error!'}, 500
