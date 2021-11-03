@@ -12,7 +12,7 @@ import hashlib
 from datetime import datetime, timedelta
 
 from app.apis.eating.models import UserFood
-from app.models import TokenAuth
+from app.models import TokenAuth, OtherUser
 
 from app.apis.uniparthenope.demo import users_demo
 from app.log.log import time_log
@@ -129,31 +129,6 @@ def ldap_auth(user, passwd):
         c.unbind()
         return None
     
-    '''
-    if c.result['result'] == 0:
-        print("LDAP people!")
-
-        c.result["user"] = {"grpDes": "PTA", "grpId": 99, "userId": user}
-        return c.result
-    else:
-        # define the server
-        s = Server(Config.LDAP_SERVER_STUD, get_info=ALL)  # define an unsecure LDAP server, requesting info on DSE and schema
-
-        # the following is the user_dn format provided by the ldap server
-        user_dn = "uid=" + user + ",ou=studenti,dc=uniparthenope,dc=it"
-
-        # define the connection
-        c = Connection(s, user=user_dn, password=passwd)
-
-        # perform the Bind operation
-        c.bind()
-
-        print("LDAP studenti!")
-
-        c.result["user"] = {"grpDes": "StudentiNonImm", "grpId": 4, "userId": user}
-
-        return c.result
-    '''
 
 def LDAP(username, password, token_hash):
     try:
@@ -215,37 +190,49 @@ def auth(token):
                 g.response = r
                 return r, 200
             else:
-                response = requests.request("GET", url + "login", headers=headers, timeout=60)
-                if response.status_code == 401:
-                    return LDAP(username, password, token_hash)
-
-                elif response.status_code == 503:
-                    return LDAP(username, password, token_hash)
-                    #return {'errMsg': "Server down!"}, 503
-
-                elif response.status_code == 200:
-                    #print("ESSE3 success!")
-                    r = response.json()
-                    #if r['credentials']['user'] != r['user']['userId'] and r['credentials']['user'] != r['user']['codFis']:
-                    #        r['user']['userId'] = r['credentials']['user']
+                user = OtherUser.query.filter_by(username=username).first()
+                if user is not None and user.check_password(password):
+                    r = {
+                        'user': {
+                            "userId": username,
+                            "grpId": 101,
+                            "grpDes": "Accenture"
+                        }
+                    }
                     g.response = r
+                    return r, 200
+                else:
+                    response = requests.request("GET", url + "login", headers=headers, timeout=60)
+                    if response.status_code == 401:
+                        return LDAP(username, password, token_hash)
 
-                    if r['user']['grpDes'] == "Docenti" or r['user']['grpDes'] == "Registrati":
-                        return r, 200
+                    elif response.status_code == 503:
+                        return LDAP(username, password, token_hash)
+                        #return {'errMsg': "Server down!"}, 503
 
-                    elif r['user']['grpDes'] == "Studenti" and len(r['user']['trattiCarriera']) == 0:
-                        r['user']['grpId'] = 97
-                        r['user']['grpDes'] = "Dottorandi"
-                        return r, 200
+                    elif response.status_code == 200:
+                        #print("ESSE3 success!")
+                        r = response.json()
+                        #if r['credentials']['user'] != r['user']['userId'] and r['credentials']['user'] != r['user']['codFis']:
+                        #        r['user']['userId'] = r['credentials']['user']
+                        g.response = r
 
-                    else:
-                        for i in range(0, len(r['user']['trattiCarriera'])):
-                            r["user"]["trattiCarriera"][i]["strutturaDes"] = ""
-                            r["user"]["trattiCarriera"][i]["strutturaId"] = ""
-                            r["user"]["trattiCarriera"][i]["strutturaGaId"] = ""
-                            r["user"]["trattiCarriera"][i]["corsoGaId"] = ""
+                        if r['user']['grpDes'] == "Docenti" or r['user']['grpDes'] == "Registrati":
+                            return r, 200
 
-                        return r, 200
+                        elif r['user']['grpDes'] == "Studenti" and len(r['user']['trattiCarriera']) == 0:
+                            r['user']['grpId'] = 97
+                            r['user']['grpDes'] = "Dottorandi"
+                            return r, 200
+
+                        else:
+                            for i in range(0, len(r['user']['trattiCarriera'])):
+                                r["user"]["trattiCarriera"][i]["strutturaDes"] = ""
+                                r["user"]["trattiCarriera"][i]["strutturaId"] = ""
+                                r["user"]["trattiCarriera"][i]["strutturaGaId"] = ""
+                                r["user"]["trattiCarriera"][i]["corsoGaId"] = ""
+
+                            return r, 200
 
     except requests.exceptions.Timeout as e:
         return {'errMsg': 'Timeout Error!'}, 500

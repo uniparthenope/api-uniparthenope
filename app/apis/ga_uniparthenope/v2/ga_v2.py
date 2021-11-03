@@ -1,6 +1,7 @@
 import sys
 import traceback
-
+import csv
+from io import StringIO
 import sqlalchemy
 from datetime import datetime, timedelta
 import math
@@ -9,6 +10,7 @@ from sqlalchemy import exc
 
 from app import api, db
 from app.apis.uniparthenope.v1.login_v1 import token_required_general
+from app.apis.ga_uniparthenope.v1.ga_v1 import get_students_list
 from app.config import Config
 
 from app.apis.ga_uniparthenope.models import Reservations, Area, Room, GaTypes
@@ -16,6 +18,8 @@ from app.models import User, Role
 
 from flask_restplus import Resource, fields
 from flask import g, request
+
+from werkzeug import Response
 
 ns = api.namespace('uniparthenope')
 
@@ -347,10 +351,13 @@ class getAllGACourses(Resource):
 
         all_courses = GaTypes.query.all()
         for course in all_courses:
-            courses.append({'type': course.type, 'type_name_abb': course.type_name_abb,
-                            'type_name_complete': course.type_name_complete})
+            courses.append({'type': course.type.decode("utf-8"), 'type_name_abb': course.type_name_abb,
+                            'type_name_complete': course.type_name_complete,
+                            'cdsId': course.cdsID
+                            })
 
-        return all_courses, 200
+        courses = sorted(courses, key = lambda k: k["type_name_abb"])
+        return courses, 200
 
 
 # ------------- GET GA LECTURES -------------
@@ -378,11 +385,16 @@ class getGALectures(Resource):
 
             con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
 
-            rs = con.execute(
-                "SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND ((start_time >= '" +
-                str(datetime.now().timestamp()) + "' AND BINARY type = 'J')  OR (start_time >= '" +
-                str(start) + "' AND end_time <= '" + str(end) + "' AND BINARY type == '" + type + "'))"
-            )
+            if type == 'J':
+                rs = con.execute(
+                    "SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND start_time >= '" +
+                    str(datetime.now().timestamp()) + "' AND BINARY type = 'J'"
+                )
+            else:
+                rs = con.execute(
+                    "SELECT * FROM `mrbs_entry` E JOIN `mrbs_room` R WHERE E.room_id = R.id AND start_time >= '" +
+                    str(start) + "' AND end_time <= '" + str(end) + "' AND BINARY type = '" + type + "'"
+                )
 
             for row in rs:
                 reserved = False
@@ -420,6 +432,67 @@ class getGALectures(Resource):
                 })
             con.dispose()
 
+            lectures = sorted(lectures, key = lambda k: (k["start"], k["course_name"]))
             return lectures, 200
+        else:
+            return {'errMsg': 'Wrong username/pass'}, g.status
+
+
+# ------------- CSV STUDENTS LIST -------------
+
+
+def create_csv(id_lezione):
+    def generate():
+        try:
+            array = get_students_list(id_lezione)
+
+            data = StringIO()
+            w = csv.writer(data)
+
+            w.writerow(("username", "matricola", "email"))
+            yield data.getvalue()
+            data.seek(0)
+            data.truncate(0)
+
+            for row in array:
+                w.writerow((str(row['username']), str(row['matricola']), row['email']))
+                yield data.getvalue()
+                data.seek(0)
+                data.truncate(0)
+        except:
+            return {
+                'errMsgTitle': sys.exc_info()[0].__name__,
+                'errMsg': traceback.format_exc()
+            }, 500
+
+    response = Response(generate(), mimetype='text/csv')
+    response.headers.set("Content-Disposition", "attachment", filename="students_list.csv")
+    return response
+
+
+class getStudentsListCSV(Resource):
+    @ns.doc(security='Basic Auth')
+    @token_required_general
+    @ns.produces(['text/csv'])
+    def get(self, id_lezione):
+        """Get CSV students list"""
+        if g.status == 200:
+            grpId = g.response['user']['grpId']
+            if grpId == 7 or grpId == 126:
+                return create_csv(id_lezione)
+            elif grpId == 101:
+                con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
+                rs = con.execute("SELECT * FROM `mrbs_entry` WHERE id = '" + id_lezione + "'")
+                
+                for row in rs:
+                    if row[10] == 'J':
+                        return create_csv(id_lezione)
+                    else:
+                        return {
+                            'errMsgTitle': "Attenzione",
+                            'errMsg': "Il tipo di utente non è abilitato a visualizzare la lista degli studenti!"
+                        }, 500
+            else:
+                return {'errMsg': 'Operazione non consentita!!'}, 500
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status

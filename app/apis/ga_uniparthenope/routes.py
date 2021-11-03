@@ -6,7 +6,7 @@ ver = "v1"
 ns = api.namespace('GAUniparthenope', description='Calendar')
 
 from app.apis.ga_uniparthenope.v1.ga_v1 import getTodayLecture, getLectures, getProfLectures,getStudentsList, Reservation, getEvents, ReservationByProf, getTodayServices, ServicesReservation
-from app.apis.ga_uniparthenope.v2.ga_v2 import getAllTodayRooms, RoomsReservation,WeekReservationReport, getGALectures, getAllGACourses
+from app.apis.ga_uniparthenope.v2.ga_v2 import getAllTodayRooms, RoomsReservation,WeekReservationReport, getGALectures, getAllGACourses, getStudentsListCSV
 
 ns.add_resource(getTodayLecture, '/v1/getTodayLecture/<matId>', methods=['GET'])
 ns.add_resource(getLectures, '/v1/getLectures/<matId>', methods=['GET'])
@@ -24,3 +24,4 @@ ns.add_resource(RoomsReservation, '/v2/RoomsReservation/<id_prenotazione>', meth
 ns.add_resource(WeekReservationReport, '/v2/WeekReservationReport/<days>', methods=['GET'])
 ns.add_resource(getAllGACourses, '/v2/getAllGACourses', methods=['GET'])
 ns.add_resource(getGALectures, '/v2/getCourseLectures/<type>', methods=['GET'])
+ns.add_resource(getStudentsListCSV, '/v2/getStudentsListCSV/<id_lezione>', methods=['GET'])

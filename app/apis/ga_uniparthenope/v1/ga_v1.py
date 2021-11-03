@@ -3,7 +3,7 @@ import sys
 import traceback
 import base64
 import math
-
+import requests
 import sqlalchemy
 from sqlalchemy import exc
 
@@ -19,6 +19,7 @@ from app.config import Config
 from app.apis.ga_uniparthenope.models import Reservations, ReservableRoom, Room, Area, Entry, UserTemp
 from app.apis.access.models import UserAccess
 
+url = "https://uniparthenope.esse3.cineca.it/e3rest/api/"
 ns = api.namespace('uniparthenope')
 
 
@@ -773,72 +774,49 @@ class Reservation(Resource):
                     return {
                                'errMsgTitle': sys.exc_info()[0].__name__,
                                'errMsg': traceback.format_exc()
-                           }, 500
-                
-                '''
-                if request.args.get('aaId') != None:
-                    result = getCourses(Resource).get(request.args.get('aaId'))
+                           }, 500 
 
-                    status = json.loads(json.dumps(result))[1]
-                    _result = json.loads(json.dumps(result))[0]
+            elif g.response['user']['grpId'] == 101:
+                try:
+                    reservation = Reservations.query.filter_by(id=id_prenotazione).first()
+                    id_lezione = reservation.id_lezione
+                    if id_lezione is not None:
+                        con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
+                        rs = con.execute("SELECT * FROM `mrbs_entry` WHERE id = '" + id_lezione + "'")
+                        for row in rs:
+                            if row[10] == 'J':
+                                reservation.delete()
+                                db.session.commit()
 
-                    if status == 200:
-                        codici = []
-                        for i in range(len(_result)):
-                            codici.append(_result[i]['adDefAppCod'])
+                                con.dispose()
 
-                        reservation = Reservations.query.filter_by(id=id_prenotazione)
-
-                        if reservation.first().id_corso in codici:
-                            reservation.delete()
-                            db.session.commit()
-
-                            return {
-                                       "status": "Cancellazione effettuata con successo."
-                                   }, 200
-                        else:
-                            return {
-                                       'errMsgTitle': "Attenzione",
-                                       'errMsg': "Operazione non consentita."
-                                   }, 500
+                                return {
+                                   "status": "Cancellazione effettuata con successo."
+                               }, 200
+                            else:
+                                 return {
+                                    'errMsgTitle': "Attenzione",
+                                    'errMsg': "Operazione non consentita."
+                                }, 500
                     else:
                         return {
-                                   'errMsgTitle': "Attenzione",
-                                   'errMsg': "Anno di corso non valido!"
-                               }, 500
-                else:
-                    try:
-                        reservation = Reservations.query.filter_by(id=id_prenotazione).filter_by(
-                            username=username)
-
-                        if reservation.first() is not None:
-                            reservation.delete()
-                            db.session.commit()
-
-                            return {
-                                       "status": "Cancellazione effettuata con successo."
-                                   }, 200
-                        else:
-                            return {
-                                       'errMsgTitle': "Attenzione",
-                                       'errMsg': "Operazione non consentita."
-                                   }, 500
-
-                    except AttributeError as error:
-                        return {
-                                   'errMsgTitle': "Attenzione",
-                                   'errMsg': "Operazione non consentita."
-                               }, 500
-                    except:
-                        db.session.rollback()
-                        print("Unexpected error:")
-                        print("Title: " + sys.exc_info()[0].__name__)
-                        print("Description: " + traceback.format_exc())
-                        return {
-                                   'errMsgTitle': sys.exc_info()[0].__name__,
-                                   'errMsg': traceback.format_exc()
-                            }, 500
-                '''
+                            'errMsgTitle': "Attenzione",
+                            'errMsg': "Operazione non consentita."
+                        }, 500
+                except AttributeError as error:
+                    return {
+                               'errMsgTitle': "Attenzione",
+                               'errMsg': "Operazione non consentita."
+                           }, 500
+                except:
+                    db.session.rollback()
+                    print("Unexpected error:")
+                    print("Title: " + sys.exc_info()[0].__name__)
+                    print("Description: " + traceback.format_exc())
+                    return {
+                               'errMsgTitle': sys.exc_info()[0].__name__,
+                               'errMsg': traceback.format_exc()
+                           }, 500
             else:
                 try:
                     reservation = Reservations.query.filter_by(id=id_prenotazione).filter_by(
@@ -1045,6 +1023,51 @@ class ReservationByProf(Resource):
 parser = api.parser()
 parser.add_argument('id_lezione', required=True, help='')
 
+import concurrent.futures
+from functools import partial
+
+def get_info(row):
+    try:
+        headers = {
+            'Content-Type': "application/json",
+            "Authorization": "Basic " + Config.USER_ROOT
+        }
+
+        response = requests.request("GET", url + "anagrafica-service-v2/utenti/" + row.username, headers=headers, timeout=10)
+        _response = response.json()
+
+        if response.status_code == 200:
+            persId = str(_response[0]['persId'])
+            response = requests.request("GET", url + "anagrafica-service-v2/persone/" + persId, headers=headers, timeout=10)
+            _response = response.json()
+            return {
+                'id': row.id,
+                'matricola': row.matricola,
+                'username': row.username,
+                'email': _response["emailAte"]
+            }
+        else:
+            return "--"
+    except:
+        print("Unexpected error:")
+        print("Title: " + sys.exc_info()[0].__name__)
+        print("Description: " + traceback.format_exc())
+        return "--"
+
+
+def get_students_list(id_lezione):
+    mat = Reservations.query.filter_by(id_lezione=id_lezione).all()
+    
+    array = []
+
+    workers = 30
+    func = partial(get_info)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        for result in executor.map(func, mat):
+            array.append(result)
+
+    return array
+
 
 @ns.doc(parser=parser)
 class getStudentsList(Resource):
@@ -1057,17 +1080,36 @@ class getStudentsList(Resource):
                 ##TODO controllare se la lezione appartiene a quel determinato professore
 
                 try:
-                    mat = Reservations.query.filter_by(id_lezione=id_lezione).all()
-
-                    array = []
-                    for m in mat:
-                        array.append({
-                            'id': m.id,
-                            'matricola': m.matricola,
-                            'username': m.username
-                        })
+                    array = get_students_list(id_lezione)
 
                     return array, 200
+                except:
+                    db.session.rollback()
+                    print("Unexpected error:")
+                    print("Title: " + sys.exc_info()[0].__name__)
+                    print("Description: " + traceback.format_exc())
+                    return {
+                               'errMsgTitle': sys.exc_info()[0].__name__,
+                               'errMsg': traceback.format_exc()
+                           }, 500
+            elif g.response['user']['grpId'] == 101:
+                try:
+                    con = sqlalchemy.create_engine(Config.GA_DATABASE, echo=False)
+                    rs = con.execute("SELECT * FROM `mrbs_entry` WHERE id = '" + id_lezione + "'")
+                    
+                    for row in rs:
+                        if row[10] == 'J':
+                            array = get_students_list(id_lezione)
+
+                            con.dispose()
+
+                            return array, 200
+                        else:
+                            return {
+                                'errMsgTitle': "Attenzione",
+                                'errMsg': "Il tipo di utente non è abilitato a visualizzare la lista degli studenti!"
+                            }, 500
+                    con.dispose()
                 except:
                     db.session.rollback()
                     print("Unexpected error:")
@@ -1080,7 +1122,7 @@ class getStudentsList(Resource):
             else:
                 return {
                            'errMsgTitle': "Attenzione",
-                           'errMsg': "Il tipo di user non è di tipo Studente"
+                           'errMsg': "Il tipo di user non è di tipo Docente"
                        }, 500
         else:
             return {'errMsg': 'Wrong username/pass'}, g.status
