@@ -449,13 +449,13 @@ def create_csv(id_lezione):
             data = StringIO()
             w = csv.writer(data)
 
-            w.writerow(("username", "matricola", "email"))
+            w.writerow(("id", "username", "matricola", "email"))
             yield data.getvalue()
             data.seek(0)
             data.truncate(0)
 
             for row in array:
-                w.writerow((str(row['username']), str(row['matricola']), row['email']))
+                w.writerow((str(row['id']), str(row['username']), str(row['matricola']), row['email']))
                 yield data.getvalue()
                 data.seek(0)
                 data.truncate(0)

@@ -12,6 +12,7 @@ from flask_restplus import Resource, fields
 
 from app.config import Config
 from app import api, db
+from app.models import OtherUser
 from app.apis.uniparthenope.v1.login_v1 import token_required_general
 from app.apis.badges.models import Badges, Scan
 from app.apis.access.models import UserAccess
@@ -63,18 +64,35 @@ def check(username, content, msg):
             return returnMessage("\n\n\u2734\u2734 NON AUTORIZZATO \u2734\u2734\n\n" + msg, 1,
                                  "#0703FC", 3, base64_message, u.id), 501
     except:
-        message_bytes = username.encode('ascii')
-        base64_bytes = base64.b64encode(message_bytes)
-        base64_message = base64_bytes.decode('ascii')
+        user = OtherUser.query.filter_by(username=username).first()
+        if user is not None:
+            info = username + ":" + user.nome + ":" + user.cognome + ":" + user.birthdate.strftime("%Y-%m-%d")
+            message_bytes = info.encode('ascii')
+            base64_bytes = base64.b64encode(message_bytes)
+            base64_message = base64_bytes.decode('ascii')
 
-        u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
+            u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
+                     username=username,
+                     result=msg,
+                     scan_by=g.response['user']['userId'])
+            db.session.add(u)
+            db.session.commit()
+            return returnMessage("\n\n\u2734\u2734 NON AUTORIZZATO \u2734\u2734\n\n" + msg, 1,
+                                 "#0703FC", 3, base64_message, u.id), 501
+
+        else:
+            message_bytes = username.encode('ascii')
+            base64_bytes = base64.b64encode(message_bytes)
+            base64_message = base64_bytes.decode('ascii')
+
+            u = Scan(id_tablet=content['id_tablet'], time_stamp=datetime.now(),
                  username=username,
                  result=msg,
                  scan_by=g.response['user']['userId'])
-        db.session.add(u)
-        db.session.commit()
-        print("Description: " + traceback.format_exc())
-        return returnMessage("\n\n\u2734\u2734 NON AUTORIZZATO \u2734\u2734\n\n" + msg, 1,
+            db.session.add(u)
+            db.session.commit()
+            print("Description: " + traceback.format_exc())
+            return returnMessage("\n\n\u2734\u2734 NON AUTORIZZATO \u2734\u2734\n\n" + msg, 1,
                              "#0703FC", 3, base64_message, u.id), 502
 
 
@@ -410,7 +428,6 @@ class GreenPassCheckMobile(Resource):
         if g.status == 200:
             if 'token_GP' in content:
                 try:
-
                     username = g.response['user']['userId']
                     name_data = g.response['user']['firstName']
                     surname_data = g.response['user']['lastName']

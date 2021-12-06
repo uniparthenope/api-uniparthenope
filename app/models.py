@@ -59,7 +59,13 @@ class OtherUser(db.Model):
     password_hash = db.Column(db.String(128))
     nome = db.Column(db.String(128))
     telefono = db.Column(db.String(64), unique=True)
-    email = db.Column(db.String(120), unique=True)
+    email = db.Column(db.String(128), unique=True)
+    cognome = db.Column(db.String(64))
+    birthdate = db.Column(db.DateTime)
+    sponsor = db.Column(db.String(64))
+    grpId = db.Column(db.Integer)
+    expire_date = db.Column(db.DateTime)
+    codFis = db.Column(db.String(16))
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

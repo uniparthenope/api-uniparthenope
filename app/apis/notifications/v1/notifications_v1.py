@@ -59,6 +59,7 @@ class RegisterDevice(Resource):
 
                 except exc.IntegrityError:
                     db.session.rollback()
+                    print("Device già registrato")
                     return {
                                'errMsgTitle': "Attenzione",
                                'errMsg': "Device già registrato"
