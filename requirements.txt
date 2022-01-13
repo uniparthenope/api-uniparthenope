@@ -21,7 +21,7 @@ alembic~=1.4.2
 flask-cors==3.0.8
 html2text~=2020.1.16
 Babel~=2.8.0
-pillow==8.1.2
+pillow==9.0.0
 pymysql==0.10.1
 cryptography==3.4.6
 apscheduler==3.7.0
